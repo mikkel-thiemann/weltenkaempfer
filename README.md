@@ -65,6 +65,7 @@ Im Spiel kannst du unter **✏️ Name & Skin** aus mitgelieferten Skins wählen
 oder ein eigenes Skin-Bild laden (64 × 64 PNG, ganz alte 64 × 32 gehen auch).
 Das Bild bleibt auf deinem Gerät und wird nirgendwohin geschickt.
 
-Die mitgelieferten Skins liegen als PNG im Ordner `skins/` und sind selbst
-entworfen. Wer eigene beisteuern will: PNG in den Ordner legen und im Spiel
-in `SKIN_SAMMLUNG` eintragen.
+Die mitgelieferten Skins liegen als PNG im Ordner `skins/`. Sie stammen von
+Skin-Seiten und wurden von anderen Leuten gemacht — die Dateinamen weisen auf
+die Vorlage hin. Wer eigene beisteuern will: PNG in den Ordner legen und im
+Spiel in `SKIN_SAMMLUNG` eintragen.
