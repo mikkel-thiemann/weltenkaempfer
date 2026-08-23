@@ -150,7 +150,7 @@
   <div class="leiste"><i class="fmp" id="lmp"></i><span id="tmp"></span></div>
   <div class="leiste"><i class="fxp" id="lxp"></i><span id="txp"></span></div>
   <div class="zeile">
-    <span>🧙 Lv <b id="alevel">1</b></span><span>⚔️ <b id="aatk">9</b></span>
+    <span>🧙 <b id="aname">Held</b> · Lv <b id="alevel">1</b></span><span>⚔️ <b id="aatk">9</b></span>
     <span>🛡️ <b id="adef">3</b></span><span>✨ <b id="amag">7</b></span>
     <span>💰 <b id="agold">30</b></span><span>🧪 <b id="atrank">3</b></span>
   </div>
@@ -180,11 +180,29 @@
   </div>
 </div>
 
-<div class="overlay" id="start">
+<div class="overlay hidden" id="anmeldung">
+  <div class="fenster" style="text-align:center">
+    <div style="font-size:52px">🧙</div>
+    <h2>Wer bist du?</h2>
+    <p class="c-dim" style="margin-top:0">Gib deinen Spielernamen ein – er steht dann über deinem Helden
+      und in jedem Kampf.</p>
+    <div class="neuwelt" style="margin:14px 0">
+      <input id="spielerFeld" maxlength="18" placeholder="Dein Spielername" autocomplete="off">
+      <button class="primary" onclick="nameBestaetigen()">Los geht&#39;s</button>
+    </div>
+    <p class="c-dim" style="font-size:12px">Kein Passwort, keine Anmeldung im Netz: Der Name wird nur
+      auf diesem Gerät gespeichert. Du kannst ihn jederzeit ändern.</p>
+    <p class="c-bad" id="namefehler" style="font-size:12.5px"></p>
+  </div>
+</div>
+
+<div class="overlay hidden" id="start">
   <div class="fenster" style="text-align:center">
     <div style="font-size:52px">⛏️</div>
     <h2>WELTENKÄMPFER · BLOCKWELT</h2>
-    <p class="c-dim" style="margin-top:0">Drei offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.</p>
+    <p class="c-dim" style="margin-top:0">Elf offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.</p>
+    <p style="margin:0 0 4px">Willkommen, <b id="grussName" class="c-gold">Held</b>
+      <button onclick="nameAendern()" style="padding:4px 10px; font-size:12px; margin-left:8px">✏️ Name ändern</button></p>
     <div style="text-align:left; font-size:13.5px; line-height:2; margin:14px 0">
       <span class="taste">W A S D</span> laufen &nbsp; <span class="taste">Leertaste</span> springen &nbsp; <span class="taste">Shift</span> rennen<br>
       <span class="taste">Maus</span> umsehen &nbsp; <span class="taste">Linke Maustaste halten</span> Block abbauen<br>
@@ -2713,7 +2731,7 @@ function kampfStarten(o){
   $("figurG").textContent = o.emoji;
   $("figurG").style.fontSize = o.boss ? "84px" : "58px";
   $("nameG").textContent = o.name + (o.boss ? " 👑" : "");
-  $("nameP").textContent = "Held (Stufe " + s.level + ")";
+  $("nameP").textContent = spielerName + " (Stufe " + s.level + ")";
   kampflog((o.boss ? "⚠️ " : "⚔️ ") + o.name + " stellt sich dir!", o.boss ? "c-bad" : "");
   knoepfe(false);
   oeffne("kampf");
@@ -2966,6 +2984,11 @@ addEventListener("keydown", e => {
   if(k === " " || k.indexOf("Arrow") === 0) e.preventDefault();
 });
 addEventListener("keyup", e => { tasten[e.key.length === 1 ? e.key.toLowerCase() : e.key] = false; });
+addEventListener("keydown", e => {          // Enter im Namensfeld bestätigt
+  if(e.key === "Enter" && !$("anmeldung").classList.contains("hidden")) nameBestaetigen();
+  if(e.key === "Enter" && !$("start").classList.contains("hidden")
+     && document.activeElement && document.activeElement.id === "neuSaat") neueWelt();
+});
 addEventListener("blur", () => { for(const k in tasten) tasten[k] = false; });
 addEventListener("resize", groesseAnpassen);
 
@@ -3070,6 +3093,46 @@ function schleife(zeit){
   }
 }
 
+/* ---------- Spielername ----------
+   Nur lokal gespeichert, kein Passwort, nichts wird verschickt.  */
+const NAME_KEY = "wkSpieler";
+let spielerName = "Held";
+
+function nameLaden(){
+  try{ const n = localStorage.getItem(NAME_KEY); if(n) spielerName = n; return !!n; }
+  catch(e){ return false; }
+}
+function nameSetzen(n){
+  spielerName = n;
+  try{ localStorage.setItem(NAME_KEY, n); }catch(e){}
+  nameAnzeigen();
+}
+function nameAnzeigen(){
+  $("grussName").textContent = spielerName;
+  $("aname").textContent = spielerName;
+  if(gegner) $("nameP").textContent = spielerName + " (Stufe " + s.level + ")";
+}
+function nameBestaetigen(){
+  const roh = $("spielerFeld").value.replace(/[^\p{L}\p{N} _.\-]/gu, "").trim();
+  if(roh.length < 2){
+    $("namefehler").textContent = "Bitte mindestens zwei Zeichen eingeben.";
+    $("spielerFeld").focus();
+    return;
+  }
+  $("namefehler").textContent = "";
+  nameSetzen(roh.slice(0, 18));
+  $("anmeldung").classList.add("hidden");
+  weltlisteZeichnen();
+  $("start").classList.remove("hidden");
+}
+function nameAendern(){
+  $("spielerFeld").value = spielerName;
+  $("namefehler").textContent = "";
+  $("start").classList.add("hidden");
+  $("anmeldung").classList.remove("hidden");
+  setTimeout(() => { $("spielerFeld").focus(); $("spielerFeld").select(); }, 50);
+}
+
 /* ---------- Weltliste auf dem Startbildschirm ---------- */
 /* Die Liste wird Stück für Stück aufgebaut statt als Text zusammengeklebt –
    sonst zerlegt ein Anführungszeichen im Weltnamen die Knöpfe.               */
@@ -3159,6 +3222,14 @@ function zurueckZurListe(){
 
 altenStandUebernehmen();
 glStarten();
-weltlisteZeichnen();
+if(nameLaden()){
+  nameAnzeigen();
+  weltlisteZeichnen();
+  $("start").classList.remove("hidden");
+} else {
+  nameAnzeigen();
+  $("anmeldung").classList.remove("hidden");
+  setTimeout(() => $("spielerFeld").focus(), 100);
+}
 requestAnimationFrame(schleife);
 </script>
