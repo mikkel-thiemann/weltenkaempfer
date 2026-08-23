@@ -141,6 +141,9 @@
     border-radius:9px; padding:10px 12px; color:var(--txt); font:inherit; font-size:14px;
   }
   .neuwelt input:focus{outline:none; border-color:var(--violett)}
+  .skinknopf{background:linear-gradient(180deg,#7d50e0,#5a31b2); border:1px solid #9b78ff;
+             border-radius:10px; padding:10px 15px; font-size:14px; cursor:pointer; color:var(--txt)}
+  .skinknopf:hover{filter:brightness(1.25)}
   .neuwelt input::placeholder{color:#7d8ba1}
   #listeKnopf{color:var(--gold); text-decoration:none; border-bottom:1px dotted var(--gold); cursor:pointer}
   #listeKnopf:hover{filter:brightness(1.3)}
@@ -202,6 +205,16 @@
     <p class="c-dim" style="font-size:12px">Kein Passwort, keine Anmeldung im Netz: Der Name wird nur
       auf diesem Gerät gespeichert. Du kannst ihn jederzeit ändern.</p>
     <p class="c-bad" id="namefehler" style="font-size:12.5px"></p>
+
+    <h3 style="text-align:left; margin-top:6px">Dein Aussehen</h3>
+    <p class="c-dim" style="font-size:12px; margin-top:0; text-align:left">
+      Du kannst dein Minecraft-Skin-Bild nehmen (64×64 PNG). Es bleibt auf deinem Gerät.</p>
+    <div class="neuwelt">
+      <label class="skinknopf">🖼️ Skin wählen
+        <input type="file" id="skinFeld" accept="image/png,image/jpeg" hidden></label>
+      <button id="skinWeg" onclick="skinSetzen(null)">Gezeichnete Figur</button>
+    </div>
+    <p id="skinfehler" style="font-size:12.5px; color:var(--gold)"></p>
   </div>
 </div>
 
@@ -211,7 +224,7 @@
     <h2>WELTENKÄMPFER · BLOCKWELT</h2>
     <p class="c-dim" style="margin-top:0">Elf offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.</p>
     <p style="margin:0 0 4px">Willkommen, <b id="grussName" class="c-gold">Held</b>
-      <button onclick="nameAendern()" style="padding:4px 10px; font-size:12px; margin-left:8px">✏️ Name ändern</button></p>
+      <button onclick="nameAendern()" style="padding:4px 10px; font-size:12px; margin-left:8px">✏️ Name &amp; Skin</button></p>
     <div style="text-align:left; font-size:13.5px; line-height:2; margin:14px 0">
       <span class="taste">W A S D</span> laufen &nbsp; <span class="taste">Leertaste</span> springen &nbsp; <span class="taste">Shift</span> rennen<br>
       <span class="taste">Maus</span> umsehen &nbsp; <span class="taste">Linke Maustaste halten</span> Block abbauen<br>
@@ -2525,6 +2538,100 @@ function tafelZeigen(art){
 }
 
 /* ---------- Inventar mit Handwerksgitter ---------- */
+/* ---------- Eigener Minecraft-Skin ----------
+   Ein Skin ist ein flaches Bild (64×64, ältere sind 64×32). Wir schneiden die
+   Vorderseiten von Kopf, Körper, Armen und Beinen heraus und setzen daraus die
+   Figur zusammen - genau wie Minecraft es tut. Das Bild bleibt auf dem Gerät. */
+const SKIN_KEY = "wkSkin";
+let skinDaten = null;        // das rohe Skin-Bild als Datenzeile
+let skinFigurCache = null;   // daraus zusammengesetzte Figur
+
+function skinLaden(){
+  try{ skinDaten = localStorage.getItem(SKIN_KEY) || null; }catch(e){ skinDaten = null; }
+  if(skinDaten) skinFigurBauen();
+}
+function skinSetzen(url){
+  skinDaten = url;
+  skinFigurCache = null;
+  try{
+    if(url) localStorage.setItem(SKIN_KEY, url);
+    else localStorage.removeItem(SKIN_KEY);
+  }catch(e){}
+  if(url) skinFigurBauen(); else figurenAuffrischen();
+  const f = $("skinfehler");
+  if(f) f.textContent = url ? "" : "Zurück zur gezeichneten Figur.";
+}
+function skinDateiWaehlen(datei){
+  const f = $("skinfehler");
+  if(!datei) return;
+  if(datei.size > 400000){ f.textContent = "Die Datei ist zu groß für einen Skin."; return; }
+  const leser = new FileReader();
+  leser.onerror = () => { f.textContent = "Die Datei ließ sich nicht lesen."; };
+  leser.onload = () => {
+    const bild = new Image();
+    bild.onerror = () => { f.textContent = "Das ist kein Bild, das ich lesen kann."; };
+    bild.onload = () => {
+      if(bild.width !== 64 || (bild.height !== 64 && bild.height !== 32)){
+        f.textContent = "Das Bild ist " + bild.width + "×" + bild.height
+          + " groß. Ein Minecraft-Skin muss 64×64 sein (ganz alte 64×32).";
+        return;
+      }
+      f.textContent = "Skin übernommen ✓";
+      skinSetzen(leser.result);
+    };
+    bild.src = leser.result;
+  };
+  leser.readAsDataURL(datei);
+}
+// Die Vorderseiten aus dem Skin auf eine 16×32 große Figur setzen
+function skinFigurBauen(){
+  const bild = new Image();
+  bild.onload = () => {
+    const E = 8;
+    const c = document.createElement("canvas");
+    c.width = 16*E; c.height = 32*E;
+    const g = c.getContext("2d");
+    g.imageSmoothingEnabled = false;
+    const neu = bild.height === 64;                 // 64×64 hat linke Gliedmaßen und zweite Schicht
+    const teil = (sx, sy, sw, sh, dx, dy, spiegeln) => {
+      if(spiegeln){
+        g.save();
+        g.translate((dx+sw)*E, 0);
+        g.scale(-1, 1);
+        g.drawImage(bild, sx, sy, sw, sh, 0, dy*E, sw*E, sh*E);
+        g.restore();
+      } else g.drawImage(bild, sx, sy, sw, sh, dx*E, dy*E, sw*E, sh*E);
+    };
+    // Grundschicht
+    teil(8,8,8,8,    4,0);                          // Kopf
+    teil(20,20,8,12, 4,8);                          // Rumpf
+    teil(44,20,4,12, 0,8);                          // rechter Arm (im Bild links)
+    neu ? teil(36,52,4,12, 12,8) : teil(44,20,4,12, 12,8, true);
+    teil(4,20,4,12,  4,20);                         // rechtes Bein
+    neu ? teil(20,52,4,12, 8,20) : teil(4,20,4,12, 8,20, true);
+    // Zweite Schicht: Hut, Jacke, Ärmel, Hosenbeine
+    teil(40,8,8,8,   4,0);
+    if(neu){
+      teil(20,36,8,12, 4,8);
+      teil(44,36,4,12, 0,8);
+      teil(52,52,4,12, 12,8);
+      teil(4,36,4,12,  4,20);
+      teil(4,52,4,12,  8,20);
+    }
+    skinFigurCache = c.toDataURL();
+    figurenAuffrischen();
+  };
+  bild.onerror = () => { skinFigurCache = null; figurenAuffrischen(); };
+  bild.src = skinDaten;
+}
+// Alle sichtbaren Heldenbilder neu setzen
+function figurenAuffrischen(){
+  const url = heldBild();
+  const v = $("heldVorschau"); if(v) v.src = url;
+  const k = $("figurP");       if(k) k.src = url;
+  const knopf = $("skinWeg");  if(knopf) knopf.disabled = !skinDaten;
+}
+
 /* ---------- Heldenfigur ----------
    Nachgezeichnet nach dem Steve-Rig von Blaze: dunkelbraune Haare mit langen
    Seitensträhnen, große blau-weiße Augen, blaue Karojacke mit hellem Streifen,
@@ -2541,6 +2648,7 @@ const HELD_FARBEN = {
 };
 let heldCache = null;
 function heldBild(){
+  if(skinFigurCache) return skinFigurCache;   // eigener Skin geht vor
   if(heldCache) return heldCache;
   const E = 8, BX = 16, BY = 32;          // Figur: 16 × 32 Skin-Pixel
   const c = document.createElement("canvas");
@@ -3204,8 +3312,7 @@ function nameSetzen(n){
   nameAnzeigen();
 }
 function nameAnzeigen(){
-  const v = $("heldVorschau");
-  if(v && !v.src) v.src = heldBild();
+  figurenAuffrischen();
   $("grussName").textContent = spielerName;
   $("aname").textContent = spielerName;
   if(gegner) $("nameP").textContent = spielerName + " (Stufe " + s.level + ")";
@@ -3320,6 +3427,11 @@ function zurueckZurListe(){
 
 altenStandUebernehmen();
 glStarten();
+$("skinFeld").addEventListener("change", e => {
+  skinDateiWaehlen(e.target.files && e.target.files[0]);
+  e.target.value = "";                      // dieselbe Datei erneut wählbar lassen
+});
+skinLaden();
 if(nameLaden()){
   nameAnzeigen();
   weltlisteZeichnen();
