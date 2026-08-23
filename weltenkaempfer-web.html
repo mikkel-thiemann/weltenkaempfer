@@ -107,6 +107,8 @@
   .arena{display:flex; align-items:flex-end; justify-content:space-around; gap:12px; margin:6px 0 14px}
   .kaempfer{text-align:center; flex:1}
   .figur{font-size:58px; display:block; line-height:1.1}
+  img.held{width:70px; height:140px; image-rendering:pixelated; margin:0 auto 4px;
+           filter:drop-shadow(0 4px 10px rgba(0,0,0,.55))}
   .treffer{animation:tr .32s}
   @keyframes tr{0%{transform:none}30%{transform:translateX(-10px) scale(.9); filter:brightness(2.5)}100%{transform:none}}
   .schlagA{animation:sA .32s} @keyframes sA{50%{transform:translateX(22px) scale(1.12)}}
@@ -182,7 +184,7 @@
 
 <div class="overlay hidden" id="anmeldung">
   <div class="fenster" style="text-align:center">
-    <div style="font-size:52px">🧙</div>
+    <img class="held" id="heldVorschau" alt="Held" style="width:60px; height:120px">
     <h2>Wer bist du?</h2>
     <p class="c-dim" style="margin-top:0">Gib deinen Spielernamen ein – er steht dann über deinem Helden
       und in jedem Kampf.</p>
@@ -235,7 +237,7 @@
     <h3 id="kampfort">Kampf</h3>
     <div class="arena">
       <div class="kaempfer">
-        <span class="figur" id="figurP">🧙</span><b id="nameP">Held</b>
+        <img class="figur held" id="figurP" alt="Held"><b id="nameP">Held</b>
         <div class="leiste"><i class="fhp" id="klhp"></i><span id="kthp"></span></div>
         <div class="leiste"><i class="fmp" id="klmp"></i><span id="ktmp"></span></div>
       </div>
@@ -2516,6 +2518,65 @@ function tafelZeigen(art){
 }
 
 /* ---------- Inventar mit Handwerksgitter ---------- */
+/* ---------- Heldenfigur ----------
+   Nachgezeichnet nach dem Steve-Rig von Blaze: braune Haare, blaue Jacke,
+   heller Streifen vorn, dunkle Hose. Wird als Bild gezeichnet, bleibt also
+   bei jeder Größe scharf.                                                   */
+const HELD_FARBEN = {
+  haar:      "#4a2a17", haarHell: "#6b3d20",
+  haut:      "#e8b98c", hautDunkel:"#c99a6f",
+  auge:      "#2f6ecb", augeWeiss:"#e8eef7",
+  mund:      "#8a5a3c",
+  jacke:     "#1e5fd0", jackeHell:"#3f86f0", jackeDunkel:"#123f8f",
+  streifen:  "#dde8f5",
+  hose:      "#16213d", hoseHell: "#22315c",
+  schuh:     "#101010"
+};
+let heldCache = null;
+function heldBild(){
+  if(heldCache) return heldCache;
+  const E = 8;                       // ein Skin-Pixel in Bildpunkten
+  const bx = 16, by = 32;            // Figur ist 16 × 32 Skin-Pixel
+  const c = document.createElement("canvas");
+  c.width = bx*E; c.height = by*E;
+  const g = c.getContext("2d");
+  const F = HELD_FARBEN;
+  const p = (x, y, w, h, farbe) => { g.fillStyle = farbe; g.fillRect(x*E, y*E, w*E, h*E); };
+
+  // --- Kopf (8×8, mittig) ---
+  p(4, 0, 8, 8, F.haut);
+  p(4, 0, 8, 2, F.haar);                       // Pony
+  p(4, 2, 1, 4, F.haar); p(11, 2, 1, 4, F.haar);   // Seitensträhnen
+  p(4, 2, 2, 1, F.haarHell); p(10, 2, 2, 1, F.haarHell);
+  p(6, 3, 1, 1, F.augeWeiss); p(9, 3, 1, 1, F.augeWeiss);
+  p(6, 3, 1, 1, F.auge);      p(9, 3, 1, 1, F.auge);
+  p(5, 3, 1, 1, F.augeWeiss); p(10, 3, 1, 1, F.augeWeiss);
+  p(7, 4, 2, 1, F.hautDunkel);                 // Nase
+  p(7, 6, 2, 1, F.mund);                       // Mund
+
+  // --- Körper: Jacke (8 breit, 12 hoch) ---
+  p(4, 8, 8, 12, F.jacke);
+  p(7, 8, 2, 12, F.streifen);                  // Reißverschluss-Streifen
+  p(4, 8, 8, 1, F.jackeDunkel);                // Kragen
+  p(4, 12, 8, 1, F.jackeHell);                 // Lichtkante
+  p(4, 18, 8, 2, F.jackeDunkel);               // Saum
+
+  // --- Arme ---
+  p(1, 8, 3, 10, F.jacke);  p(12, 8, 3, 10, F.jacke);
+  p(1, 8, 3, 1, F.jackeDunkel); p(12, 8, 3, 1, F.jackeDunkel);
+  p(1, 11, 3, 1, F.jackeHell);  p(12, 11, 3, 1, F.jackeHell);
+  p(1, 18, 3, 2, F.haut);   p(12, 18, 3, 2, F.haut);   // Hände
+
+  // --- Beine ---
+  p(4, 20, 4, 10, F.hose);  p(8, 20, 4, 10, F.hose);
+  p(4, 20, 4, 1, F.hoseHell); p(8, 20, 4, 1, F.hoseHell);
+  p(7, 20, 2, 10, F.hoseHell);                 // Naht in der Mitte
+  p(4, 30, 4, 2, F.schuh);  p(8, 30, 4, 2, F.schuh);
+
+  heldCache = c.toDataURL();
+  return heldCache;
+}
+
 // Symbole für Ergebnisse, die keine Blöcke sind
 const SONDER = {
   hacke:(g,T)=>{
@@ -2728,6 +2789,7 @@ function kampfStarten(o){
   gegner = o; spielerDran = true;
   $("kampflog").innerHTML = "";
   $("kampfort").textContent = WELTEN[s.welt].name + " · Kampf";
+  $("figurP").src = heldBild();
   $("figurG").textContent = o.emoji;
   $("figurG").style.fontSize = o.boss ? "84px" : "58px";
   $("nameG").textContent = o.name + (o.boss ? " 👑" : "");
@@ -3108,6 +3170,8 @@ function nameSetzen(n){
   nameAnzeigen();
 }
 function nameAnzeigen(){
+  const v = $("heldVorschau");
+  if(v && !v.src) v.src = heldBild();
   $("grussName").textContent = spielerName;
   $("aname").textContent = spielerName;
   if(gegner) $("nameP").textContent = spielerName + " (Stufe " + s.level + ")";
