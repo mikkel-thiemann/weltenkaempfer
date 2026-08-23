@@ -139,6 +139,10 @@
   .skinknopf{background:linear-gradient(180deg,#7d50e0,#5a31b2); border:1px solid #9b78ff;
              border-radius:10px; padding:10px 15px; font-size:14px; cursor:pointer; color:var(--txt)}
   .skinknopf:hover{filter:brightness(1.25)}
+  #uebertragung textarea{width:100%; background:rgba(0,0,0,.45); border:1px solid var(--rahmen);
+    border-radius:9px; padding:9px 11px; color:var(--txt); font-family:monospace; font-size:11px;
+    resize:vertical}
+  #uebertragung textarea:focus{outline:none; border-color:var(--violett)}
   #skingalerie{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px}
   .skinfeld{background:rgba(255,255,255,.05); border:2px solid var(--rahmen); border-radius:10px;
             padding:7px 6px 5px; cursor:pointer; text-align:center; width:74px; transition:border-color .12s}
@@ -226,7 +230,8 @@
     <h2>WELTENKÄMPFER · BLOCKWELT</h2>
     <p class="c-dim" style="margin-top:0">Elf offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.</p>
     <p style="margin:0 0 4px">Willkommen, <b id="grussName" class="c-gold">Held</b>
-      <button onclick="nameAendern()" style="padding:4px 10px; font-size:12px; margin-left:8px">✏️ Name &amp; Skin</button></p>
+      <button onclick="nameAendern()" style="padding:4px 10px; font-size:12px; margin-left:8px">✏️ Name &amp; Skin</button>
+      <button onclick="uebertragZeigen()" style="padding:4px 10px; font-size:12px; margin-left:4px">💾 Spielstand übertragen</button></p>
     <div style="text-align:left; font-size:13.5px; line-height:2; margin:14px 0">
       <span class="taste">W A S D</span> laufen &nbsp; <span class="taste">Leertaste</span> springen &nbsp; <span class="taste">Shift</span> rennen<br>
       <span class="taste">Maus</span> umsehen &nbsp; <span class="taste">Linke Maustaste halten</span> Block abbauen<br>
@@ -319,6 +324,36 @@
     <p class="c-dim" style="margin-top:0">Wohin willst du reisen? Deine Bauten bleiben in jeder Welt stehen.</p>
     <div id="reiseZiele"></div>
     <button class="primary" style="margin-top:10px" onclick="schliesse('reise')">Hierbleiben</button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="uebertragung">
+  <div class="fenster">
+    <h2>💾 Spielstand übertragen</h2>
+    <p class="c-dim" style="margin-top:0">Jede Adresse hat ihren eigenen Speicher: die Datei auf
+      deinem PC, der claude.ai-Link und die GitHub-Seite wissen nichts voneinander. Hier kannst du
+      deinen Stand von einer zur anderen mitnehmen.</p>
+
+    <h3>1. Hier sichern</h3>
+    <textarea id="sicherungText" readonly rows="4"></textarea>
+    <div class="reihe" style="justify-content:flex-start; margin-top:8px">
+      <button class="primary" onclick="sicherungKopieren()">📋 Text kopieren</button>
+      <button id="dateiKnopf" onclick="sicherungDatei()">💾 Als Datei speichern</button>
+      <span class="c-dim" id="sicherungGroesse" style="align-self:center; font-size:12px"></span>
+    </div>
+
+    <h3 style="margin-top:16px">2. Dort einfügen</h3>
+    <textarea id="einleseText" rows="4" placeholder="Sicherungstext hier einfügen"></textarea>
+    <div class="reihe" style="justify-content:flex-start; margin-top:8px">
+      <button class="primary" onclick="sicherungEinlesen($('einleseText').value)">📥 Übernehmen</button>
+      <label class="skinknopf" id="dateiLadenKnopf">📂 Datei laden
+        <input type="file" id="sicherungFeld" accept="application/json,.json" hidden></label>
+    </div>
+    <p id="uebertragMeldung" style="color:var(--gold); font-size:12.5px"></p>
+
+    <div class="reihe" style="margin-top:10px">
+      <button class="primary" onclick="schliesse('uebertragung')">Weiter</button>
+    </div>
   </div>
 </div>
 
@@ -2492,7 +2527,7 @@ function oeffne(id){
 }
 function schliesse(id){
   $(id).classList.add("hidden");
-  const offen = ["kampf","tafel","lager","stufe","info","reise","start"].some(x => !$(x).classList.contains("hidden"));
+  const offen = ["kampf","tafel","lager","stufe","info","reise","uebertragung","start"].some(x => !$(x).classList.contains("hidden"));
   if(!offen) modus = "welt";
 }
 function infoZeigen(icon, titel, text){
@@ -3369,6 +3404,111 @@ function nameAendern(){
   setTimeout(() => { $("spielerFeld").focus(); $("spielerFeld").select(); }, 50);
 }
 
+/* ---------- Spielstand sichern und übertragen ----------
+   Jede Adresse (Datei auf dem PC, claude.ai-Link, GitHub-Seite) hat ihren
+   eigenen Speicher. Damit man seinen Fortschritt trotzdem mitnehmen kann,
+   lässt sich hier alles in einen Text packen und woanders wieder einlesen. */
+function sicherungBauen(){
+  const daten = {marke:"weltenkaempfer", version:1, zeit:Date.now(),
+                 spieler:null, skin:null, liste:[], staende:{}};
+  try{
+    daten.spieler = localStorage.getItem(NAME_KEY);
+    daten.skin = localStorage.getItem(SKIN_KEY);
+    daten.liste = weltListe();
+    daten.liste.forEach(w => {
+      const roh = localStorage.getItem(standKey(w.id));
+      if(roh) daten.staende[w.id] = roh;
+    });
+  }catch(e){}
+  return JSON.stringify(daten);
+}
+function sicherungEinlesen(text){
+  const meldungsfeld = $("uebertragMeldung");
+  let daten;
+  try{ daten = JSON.parse(text); }
+  catch(e){ meldungsfeld.textContent = "Das ist kein gültiger Sicherungstext."; return false; }
+  if(!daten || daten.marke !== "weltenkaempfer"){
+    meldungsfeld.textContent = "Dieser Text gehört nicht zu Weltenkämpfer.";
+    return false;
+  }
+  let welten = 0;
+  try{
+    if(daten.spieler) localStorage.setItem(NAME_KEY, daten.spieler);
+    if(daten.skin) localStorage.setItem(SKIN_KEY, daten.skin);
+    // Vorhandene Welten behalten, gesicherte dazulegen
+    const jetzt = weltListe();
+    (daten.liste || []).forEach(w => {
+      const roh = daten.staende[w.id];
+      if(!roh) return;
+      localStorage.setItem(standKey(w.id), roh);
+      const da = jetzt.find(x => x.id === w.id);
+      if(da) Object.assign(da, w); else jetzt.push(w);
+      welten++;
+    });
+    listeSchreiben(jetzt);
+  }catch(e){
+    meldungsfeld.textContent = "Der Speicher ist voll – es passt nicht alles hinein.";
+    return false;
+  }
+  nameLaden(); skinLaden(); nameAnzeigen(); weltlisteZeichnen();
+  meldungsfeld.textContent = welten + " Welt(en) übernommen"
+    + (daten.spieler ? ", Spieler: " + daten.spieler : "") + " ✓";
+  return true;
+}
+// Im claude.ai-Fenster darf eine Seite keine Dateien speichern - dort nur Zwischenablage
+const dateiSpeichernGeht = !/claudeusercontent|claude\.ai/.test(location.hostname);
+function uebertragZeigen(){
+  const dk = $("dateiKnopf");
+  if(dk) dk.style.display = dateiSpeichernGeht ? "" : "none";
+  const dl = $("dateiLadenKnopf");
+  if(dl) dl.style.display = dateiSpeichernGeht ? "" : "none";
+  const text = sicherungBauen();
+  $("sicherungText").value = text;
+  $("sicherungGroesse").textContent = "Sicherung: " + Math.round(text.length/1024) + " kB";
+  $("einleseText").value = "";
+  $("uebertragMeldung").textContent = "";
+  $("uebertragung").classList.remove("hidden");
+}
+function sicherungKopieren(){
+  const feld = $("sicherungText");
+  feld.select();
+  feld.setSelectionRange(0, feld.value.length);
+  let geklappt = false;
+  try{ geklappt = document.execCommand("copy"); }catch(e){}
+  if(navigator.clipboard && !geklappt){
+    navigator.clipboard.writeText(feld.value)
+      .then(() => { $("uebertragMeldung").textContent = "In die Zwischenablage kopiert ✓"; })
+      .catch(() => { $("uebertragMeldung").textContent = "Bitte den Text von Hand markieren und kopieren."; });
+    return;
+  }
+  $("uebertragMeldung").textContent = geklappt
+    ? "In die Zwischenablage kopiert ✓"
+    : "Bitte den Text von Hand markieren und kopieren.";
+}
+function sicherungDatei(){
+  try{
+    const blob = new Blob([sicherungBauen()], {type:"application/json"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "weltenkaempfer-sicherung.json";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    $("uebertragMeldung").textContent = "Datei gespeichert – falls nichts passiert, "
+      + "nimm den Weg über die Zwischenablage.";
+  }catch(e){
+    $("uebertragMeldung").textContent = "Speichern als Datei geht hier nicht – "
+      + "nimm den Text und die Zwischenablage.";
+  }
+}
+function sicherungDateiLesen(datei){
+  if(!datei) return;
+  const leser = new FileReader();
+  leser.onload = () => { $("einleseText").value = leser.result; sicherungEinlesen(leser.result); };
+  leser.onerror = () => { $("uebertragMeldung").textContent = "Die Datei ließ sich nicht lesen."; };
+  leser.readAsText(datei);
+}
+
 /* ---------- Weltliste auf dem Startbildschirm ---------- */
 /* Die Liste wird Stück für Stück aufgebaut statt als Text zusammengeklebt –
    sonst zerlegt ein Anführungszeichen im Weltnamen die Knöpfe.               */
@@ -3451,13 +3591,17 @@ function zurueckZurListe(){
   modus = "start";
   for(const k in tasten) tasten[k] = false;
   if(document.pointerLockElement) document.exitPointerLock();
-  ["kampf","tafel","lager","stufe","info","reise"].forEach(x => $(x).classList.add("hidden"));
+  ["kampf","tafel","lager","stufe","info","reise","uebertragung"].forEach(x => $(x).classList.add("hidden"));
   weltlisteZeichnen();
   $("start").classList.remove("hidden");
 }
 
 altenStandUebernehmen();
 glStarten();
+$("sicherungFeld").addEventListener("change", e => {
+  sicherungDateiLesen(e.target.files && e.target.files[0]);
+  e.target.value = "";
+});
 $("skinFeld").addEventListener("change", e => {
   skinDateiWaehlen(e.target.files && e.target.files[0]);
   e.target.value = "";                      // dieselbe Datei erneut wählbar lassen
