@@ -2550,24 +2550,28 @@ function heldBild(){
   const p = (x, y, w, h, farbe) => { g.fillStyle = farbe; g.fillRect(x*E, y*E, w*E, h*E); };
   const K = 4;                            // linke Kopfspalte in der Figur
 
-  /* --- Kopf (8 breit, 8 hoch) --- */
+  /* --- Kopf (8 breit, 8 hoch) ---
+     Nach dem Rig-Bild ausgemessen: Pony über drei Reihen, darunter ein
+     Streifen Stirn, dann die Augen, dann Wangen und Kinn. Die Frisur fällt
+     zur Seite - links endet sie an der Wange, rechts hängt eine dicke
+     Strähne bis über die Schulter.                                      */
   p(K, 0, 8, 8, F.haut);                                  // Grundfläche Haut
 
-  // Haare: voller Schopf oben, lange Strähnen an beiden Seiten bis auf die Schultern
-  p(K, 0, 8, 3, F.haarDunkel);                            // dichter Scheitel
-  p(K+1, 0, 6, 1, F.haar);                                // Lichtkante ganz oben
-  p(K, 2, 8, 1, F.haar);                                  // wärmere Schicht über der Stirn
-  p(K, 3, 1, 7, F.haarDunkel);                            // linke Strähne bis unter das Kinn
-  p(K+7, 3, 1, 8, F.haarDunkel);                          // rechte Strähne, etwas länger
-  p(K+6, 3, 1, 5, F.haarDunkel);                          // rechts dicker, wie im Vorbild
-  p(K, 3, 1, 3, F.haar);   p(K+7, 3, 1, 3, F.haar);       // Glanz an den Seiten
-  p(K, 8, 1, 2, F.haarWarm); p(K+7, 9, 1, 2, F.haarWarm); // helle Spitzen
-  p(K+3, 2, 1, 2, F.haarWarm);                            // Strähne auf der Stirn
+  p(K, 0, 8, 3, F.haarDunkel);                            // Pony
+  p(K+1, 0, 5, 1, F.haar);                                // Lichtkante oben
+  p(K+2, 2, 2, 1, F.haarWarm);                            // warme Strähne
+  p(K, 3, 1, 4, F.haarDunkel);                            // links bis zur Wange
+  p(K, 3, 1, 2, F.haar);
+  p(K+6, 3, 1, 5, F.haarDunkel);                          // rechts breiter
+  p(K+7, 3, 1, 8, F.haarDunkel);                          // ... und länger
+  p(K+6, 5, 1, 3, F.haar);                                // Glanz darin
+  p(K+7, 9, 1, 2, F.haarWarm);                            // helle Spitze
 
-  // Augen: außen weiß, innen blau
-  p(K+1, 3, 1, 2, F.augeWeiss); p(K+2, 3, 1, 2, F.augeBlau);
-  p(K+4, 3, 1, 2, F.augeBlau);  p(K+5, 3, 1, 2, F.augeWeiss);
-  p(K+3, 3, 1, 2, F.haut);                                // Nasenrücken dazwischen
+  // Augen: zwei Reihen hoch, außen weiß und innen blau
+  p(K+1, 4, 1, 2, F.augeWeiss); p(K+2, 4, 1, 2, F.augeBlau);
+  p(K+4, 4, 1, 2, F.augeBlau);  p(K+5, 4, 1, 2, F.augeWeiss);
+  p(K+3, 4, 1, 2, F.haut);                                // Nasenrücken
+
   p(K+1, 7, 5, 1, F.hautSchatten);                        // Kinnschatten
 
   /* --- Jacke (8 breit, 12 hoch) --- */
