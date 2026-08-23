@@ -1,0 +1,3173 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Weltenkämpfer Blockwelt</title>
+<style>
+  :root{
+    --gold:#f5c451; --hp:#e8484f; --mp:#4aa3ff; --xp:#7ee787;
+    --violett:#a877ff; --txt:#eef2f9;
+    --rahmen:rgba(255,255,255,.16); --glas:rgba(10,14,22,.8);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{height:100%; margin:0}
+  body{
+    background:#05070c; color:var(--txt); overflow:hidden; user-select:none;
+    font-family:"Trebuchet MS",Verdana,sans-serif;
+  }
+  canvas#welt{position:fixed; inset:0; width:100%; height:100%; display:block; cursor:crosshair}
+
+  .hud{position:fixed; z-index:5; pointer-events:none}
+  #hudLinks{left:12px; top:12px; width:225px}
+  .leiste{height:15px; background:rgba(0,0,0,.6); border:1px solid var(--rahmen);
+          border-radius:8px; overflow:hidden; position:relative; margin-bottom:5px}
+  .leiste > i{display:block; height:100%; width:0; transition:width .2s}
+  .leiste > span{position:absolute; inset:0; font-size:10px; line-height:13px; text-align:center; text-shadow:0 1px 2px #000}
+  .fhp{background:linear-gradient(90deg,#ff8f8f,var(--hp))}
+  .fmp{background:linear-gradient(90deg,#9ed3ff,var(--mp))}
+  .fxp{background:linear-gradient(90deg,#c2f7cd,var(--xp))}
+  .zeile{display:flex; gap:8px; flex-wrap:wrap; font-size:12px; background:var(--glas);
+         border:1px solid var(--rahmen); border-radius:9px; padding:5px 8px; margin-bottom:6px}
+
+  #hudRechts{right:12px; top:12px; text-align:right}
+  #karte{width:150px; height:150px; border:1px solid var(--rahmen); border-radius:10px; background:#05070c; display:block}
+  #questbox{margin-top:8px; width:212px; font-size:11.5px; text-align:left; background:var(--glas);
+            border:1px solid var(--rahmen); border-radius:9px; padding:7px 9px}
+  #questbox b{color:var(--gold); font-size:11px; letter-spacing:1px}
+  .qz{margin-top:4px; color:#c9d5e6}
+  .qz.ok{color:var(--xp)}
+  .bosszeile{margin-top:6px; padding-top:6px; border-top:1px solid var(--rahmen); line-height:1.45}
+
+  #meldungen{left:12px; bottom:96px; width:340px; font-size:12.5px; line-height:1.5; text-shadow:0 2px 5px #000}
+  #hinweis{left:50%; transform:translateX(-50%); bottom:120px; font-size:15px; background:var(--glas);
+           border:1px solid var(--gold); border-radius:10px; padding:7px 14px; color:var(--gold)}
+  #kreuz{left:50%; top:50%; transform:translate(-50%,-50%); width:20px; height:20px; opacity:.75}
+  #kreuz:before,#kreuz:after{content:""; position:absolute; background:#fff; box-shadow:0 0 2px #000}
+  #kreuz:before{left:9px; top:0; width:2px; height:20px}
+  #kreuz:after{top:9px; left:0; height:2px; width:20px}
+
+  #gurt{left:50%; transform:translateX(-50%); bottom:14px; display:flex; gap:5px; pointer-events:auto}
+  #gurt .fach{width:50px; height:50px; background:rgba(8,12,20,.75); border:2px solid var(--rahmen);
+              border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+              cursor:pointer; position:relative}
+  #gurt .fach.an{border-color:#fff; background:rgba(60,80,120,.6); transform:scale(1.08)}
+  #gurt .fach canvas{width:30px; height:30px; image-rendering:pixelated; border-radius:3px}
+  #gurt .fach small{font-size:9px; color:#93a1b8; position:absolute; top:1px; left:4px}
+  #gurt .fach b{font-size:11px; position:absolute; bottom:1px; right:4px; text-shadow:0 1px 2px #000}
+  #gurt .leer{background:var(--glas); border:1px solid var(--rahmen); border-radius:9px;
+              padding:9px 14px; font-size:12px; color:#93a1b8}
+
+  #abbaubox{left:50%; transform:translateX(-50%); top:calc(50% + 26px); width:140px; height:9px;
+            background:rgba(0,0,0,.65); border:1px solid var(--rahmen); border-radius:5px; overflow:hidden}
+  #abbaubalken{height:100%; width:0; background:linear-gradient(90deg,#f5c451,#fff)}
+
+  /* Handwerksgitter */
+  .bastel{display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+          background:rgba(255,255,255,.04); border:1px solid var(--rahmen); border-radius:12px; padding:14px}
+  .gitterfeld{display:grid; gap:5px}
+  .gitterfeld.g2{grid-template-columns:repeat(2,52px)}
+  .gitterfeld.g3{grid-template-columns:repeat(3,52px)}
+  .slot{width:52px; height:52px; background:rgba(0,0,0,.45); border:2px solid var(--rahmen);
+        border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+        position:relative; transition:border-color .12s, background .12s}
+  .slot:hover{border-color:#8fa6c8; background:rgba(255,255,255,.08)}
+  .slot.voll{border-color:#7f8fa8}
+  .slot img{width:38px; height:38px; image-rendering:pixelated}
+  .slot.ergebnis{width:62px; height:62px; border-color:var(--gold); cursor:default; opacity:.55}
+  .slot.ergebnis.bereit{opacity:1; cursor:pointer; box-shadow:0 0 14px rgba(245,196,81,.5)}
+  .slot.ergebnis u{position:absolute; bottom:2px; right:5px; font-size:12px; text-decoration:none; text-shadow:0 1px 2px #000}
+  .pfeil{font-size:24px; color:var(--gold)}
+  .ergebnistext{flex:1; min-width:150px; font-size:13px; line-height:1.5}
+
+  .gitter{display:grid; grid-template-columns:repeat(auto-fill,minmax(104px,1fr)); gap:8px}
+  .zelle{background:rgba(255,255,255,.05); border:1px solid var(--rahmen); border-radius:10px;
+         padding:8px; text-align:center; font-size:11.5px; position:relative}
+  .zelle img{width:34px; height:34px; image-rendering:pixelated; border-radius:4px; display:block; margin:0 auto 4px}
+  .zelle span{display:block; color:#c9d5e6}
+  .zelle b{position:absolute; top:5px; right:8px; color:var(--gold)}
+  .zelle{cursor:pointer; transition:border-color .12s, background .12s}
+  .zelle:hover{border-color:#8fa6c8; background:rgba(255,255,255,.09)}
+  .zelle.gewaehlt{border-color:var(--gold); background:rgba(245,196,81,.14)}
+  .zelle.leerbestand{opacity:.45}
+
+  .c-good{color:var(--xp)} .c-bad{color:#ff9a9a} .c-gold{color:var(--gold)} .c-mag{color:#cbb0ff} .c-dim{color:#93a1b8}
+
+  button{background:linear-gradient(180deg,#333f58,#222b3d); color:var(--txt); border:1px solid var(--rahmen);
+         border-radius:10px; padding:10px 15px; font:inherit; font-size:14px; cursor:pointer; transition:filter .12s}
+  button:hover:not(:disabled){filter:brightness(1.3)}
+  button:disabled{opacity:.4; cursor:not-allowed}
+  .primary{background:linear-gradient(180deg,#7d50e0,#5a31b2); border-color:#9b78ff}
+  .goldbtn{background:linear-gradient(180deg,#cba63c,#8e6f1d); border-color:var(--gold); color:#1c1503}
+
+  .overlay{position:fixed; inset:0; z-index:20; display:flex; align-items:center; justify-content:center;
+           background:rgba(4,6,11,.8); backdrop-filter:blur(3px); padding:16px}
+  .fenster{background:linear-gradient(180deg,#141a26,#0d121b); border:1px solid var(--rahmen); border-radius:16px;
+           padding:20px; width:min(580px,100%); max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.7)}
+  .fenster h2{margin:0 0 6px; font-size:22px}
+  .fenster h3{margin:0 0 10px; font-size:12px; letter-spacing:2px; text-transform:uppercase; color:#93a1b8}
+  .reihe{display:flex; gap:9px; flex-wrap:wrap; justify-content:center}
+  .hidden{display:none !important}
+
+  .arena{display:flex; align-items:flex-end; justify-content:space-around; gap:12px; margin:6px 0 14px}
+  .kaempfer{text-align:center; flex:1}
+  .figur{font-size:58px; display:block; line-height:1.1}
+  .treffer{animation:tr .32s}
+  @keyframes tr{0%{transform:none}30%{transform:translateX(-10px) scale(.9); filter:brightness(2.5)}100%{transform:none}}
+  .schlagA{animation:sA .32s} @keyframes sA{50%{transform:translateX(22px) scale(1.12)}}
+  .schlagB{animation:sB .32s} @keyframes sB{50%{transform:translateX(-22px) scale(1.12)}}
+  #kampflog{height:76px; overflow-y:auto; background:rgba(0,0,0,.45); border:1px solid var(--rahmen);
+            border-radius:10px; padding:8px 10px; font-size:12.5px; line-height:1.5; margin-bottom:12px}
+  .karte2{background:rgba(255,255,255,.05); border:1px solid var(--rahmen); border-radius:10px; padding:9px 12px;
+          margin-bottom:8px; font-size:14px; display:flex; justify-content:space-between; align-items:center; gap:10px}
+  .karte2.ok{border-color:var(--xp)}
+  .balkenmini{height:6px; background:rgba(0,0,0,.5); border-radius:3px; overflow:hidden; margin-top:6px}
+  .balkenmini > i{display:block; height:100%; background:linear-gradient(90deg,var(--gold),var(--xp))}
+
+  #touch{position:fixed; inset:auto 0 74px 0; z-index:6; display:none; padding:10px; pointer-events:none}
+  #touch .pad{display:flex; justify-content:space-between; align-items:flex-end}
+  #touch button{pointer-events:auto; width:56px; height:52px; font-size:18px; opacity:.8; margin:3px; padding:0}
+  body.touch #touch{display:block}
+  body.touch #kreuz{opacity:.4}
+  .taste{display:inline-block; background:rgba(255,255,255,.09); border:1px solid var(--rahmen);
+         border-radius:6px; padding:2px 8px; font-size:12px; margin:2px}
+  #ladebalken{position:fixed; left:0; top:0; height:3px; background:var(--gold); width:0; z-index:30; transition:width .2s}
+  #ladebalken2{display:none}
+  .neuwelt{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+  .neuwelt input{
+    flex:1; min-width:150px; background:rgba(0,0,0,.45); border:1px solid var(--rahmen);
+    border-radius:9px; padding:10px 12px; color:var(--txt); font:inherit; font-size:14px;
+  }
+  .neuwelt input:focus{outline:none; border-color:var(--violett)}
+  .neuwelt input::placeholder{color:#7d8ba1}
+  #listeKnopf{color:var(--gold); text-decoration:none; border-bottom:1px dotted var(--gold); cursor:pointer}
+  #listeKnopf:hover{filter:brightness(1.3)}
+</style>
+</head>
+<body>
+
+<canvas id="welt"></canvas>
+<div id="ladebalken"></div>
+
+<div class="hud" id="kreuz"></div>
+<div class="hud hidden" id="abbaubox"><div id="abbaubalken"></div></div>
+
+<div class="hud" id="hudLinks">
+  <div class="leiste"><i class="fhp" id="lhp"></i><span id="thp"></span></div>
+  <div class="leiste"><i class="fmp" id="lmp"></i><span id="tmp"></span></div>
+  <div class="leiste"><i class="fxp" id="lxp"></i><span id="txp"></span></div>
+  <div class="zeile">
+    <span>🧙 Lv <b id="alevel">1</b></span><span>⚔️ <b id="aatk">9</b></span>
+    <span>🛡️ <b id="adef">3</b></span><span>✨ <b id="amag">7</b></span>
+    <span>💰 <b id="agold">30</b></span><span>🧪 <b id="atrank">3</b></span>
+  </div>
+  <div class="zeile" style="font-size:11px"><span id="koord">x 0 · y 0 · z 0</span><span id="fps">–</span>
+    <span style="pointer-events:auto"><a href="#" id="listeKnopf" onclick="zurueckZurListe();return false;">🌍 Welten</a></span></div>
+</div>
+
+<div class="hud" id="hudRechts">
+  <canvas id="karte" width="150" height="150"></canvas>
+  <div id="questbox"></div>
+</div>
+
+<div class="hud" id="meldungen"></div>
+<div class="hud hidden" id="hinweis"></div>
+<div class="hud" id="gurt"></div>
+
+<div id="touch">
+  <div class="pad">
+    <div>
+      <div style="text-align:center"><button data-k="w">▲</button></div>
+      <div><button data-k="a">◀</button><button data-k="s">▼</button><button data-k="d">▶</button></div>
+    </div>
+    <div>
+      <div style="text-align:center"><button data-k=" ">⤒</button><button data-k="e">✋</button></div>
+      <div><button data-k="pfeilL">↰</button><button data-k="abbau">⛏️</button><button data-k="pfeilR">↱</button></div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="start">
+  <div class="fenster" style="text-align:center">
+    <div style="font-size:52px">⛏️</div>
+    <h2>WELTENKÄMPFER · BLOCKWELT</h2>
+    <p class="c-dim" style="margin-top:0">Drei offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.</p>
+    <div style="text-align:left; font-size:13.5px; line-height:2; margin:14px 0">
+      <span class="taste">W A S D</span> laufen &nbsp; <span class="taste">Leertaste</span> springen &nbsp; <span class="taste">Shift</span> rennen<br>
+      <span class="taste">Maus</span> umsehen &nbsp; <span class="taste">Linke Maustaste halten</span> Block abbauen<br>
+      <span class="taste">Rechtsklick</span> Block setzen &nbsp; <span class="taste">1–9</span> Material wählen<br>
+      <span class="taste">E</span> benutzen &nbsp; <span class="taste">Q</span> Quests &nbsp; <span class="taste">I</span> Inventar &amp; Herstellen &nbsp; <span class="taste">Esc</span> Maus frei
+      <div class="c-dim" style="line-height:1.6; margin-top:8px">
+        Du fängst mit leeren Händen an. Halte die linke Maustaste auf einen Block, bis er zerbricht –
+        dann wandert er in dein Inventar. Setzen kannst du nur, was du hast.<br>
+        Bau dir aus Holz zuerst eine <b>Werkbank</b>, stell sie hin und geh mit <b>E</b> ran: dort legst du
+        im 3×3-Gitter Muster für <b>Schwert, Axt und Spitzhacke</b>. Die Axt fällt Holz, die Spitzhacke
+        bricht Stein, das Schwert schlägt im Kampf zu.
+      </div>
+    </div>
+    <h3 style="text-align:left; margin-top:18px">Deine Welten</h3>
+    <div id="weltliste"></div>
+
+    <h3 style="text-align:left; margin-top:18px">Neue Welt anlegen</h3>
+    <div class="neuwelt">
+      <input id="neuName" maxlength="24" placeholder="Name der Welt" value="">
+      <input id="neuSaat" maxlength="16" placeholder="Startwert (Zahl oder Wort, freilassen = zufällig)">
+      <button class="primary" onclick="neueWelt()">🌱 Welt erschaffen</button>
+    </div>
+    <p class="c-dim" style="font-size:12px">Gleicher Startwert = gleiche Landschaft. Jede Welt hat ihre
+      eigenen Bauten, ihr eigenes Inventar und ihren eigenen Fortschritt.</p>
+  </div>
+</div>
+
+<div class="overlay hidden" id="kampf">
+  <div class="fenster">
+    <h3 id="kampfort">Kampf</h3>
+    <div class="arena">
+      <div class="kaempfer">
+        <span class="figur" id="figurP">🧙</span><b id="nameP">Held</b>
+        <div class="leiste"><i class="fhp" id="klhp"></i><span id="kthp"></span></div>
+        <div class="leiste"><i class="fmp" id="klmp"></i><span id="ktmp"></span></div>
+      </div>
+      <div style="font-size:20px; color:#93a1b8">⚡</div>
+      <div class="kaempfer">
+        <span class="figur" id="figurG">🐺</span><b id="nameG">Wolf</b>
+        <div class="leiste"><i class="fhp" id="glhp"></i><span id="gthp"></span></div>
+      </div>
+    </div>
+    <div id="kampflog"></div>
+    <div class="reihe" id="kampfknoepfe">
+      <button onclick="aktion('angriff')">🗡️ Angriff</button>
+      <button onclick="aktion('feuer')">🔥 Feuerball <small>8 MP</small></button>
+      <button onclick="aktion('heil')">💚 Heilung <small>10 MP</small></button>
+      <button onclick="aktion('trank')">🧪 Trank <span id="ktrank">0</span></button>
+      <button onclick="aktion('flucht')">🏃 Fliehen</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="tafel">
+  <div class="fenster">
+    <h2 id="tafelTitel">Quests</h2>
+    <div id="tafelInhalt"></div>
+    <div class="reihe" style="margin-top:12px"><button class="primary" onclick="tafelSchliessen()">Weiter</button></div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="lager">
+  <div class="fenster">
+    <div style="text-align:center; font-size:44px">🔥</div>
+    <h2 style="text-align:center">Lagerfeuer</h2>
+    <div id="ladenInhalt"></div>
+    <div class="reihe" style="margin-top:12px">
+      <button class="goldbtn" id="rastknopf" onclick="rasten()">😴 Rasten (10 💰)</button>
+      <button class="primary" onclick="schliesse('lager')">Weiter</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="stufe">
+  <div class="fenster" style="text-align:center">
+    <div style="font-size:48px">🌟</div>
+    <h2>Stufe <span id="neueStufe">2</span>!</h2>
+    <p class="c-dim">Wähle dein Talent.</p>
+    <div class="reihe">
+      <button onclick="talent('hp')">❤️ +20 Leben</button><button onclick="talent('atk')">⚔️ +4 Angriff</button>
+      <button onclick="talent('mag')">✨ +4 Magie</button><button onclick="talent('def')">🛡️ +3 Rüstung</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="reise">
+  <div class="fenster" style="text-align:center">
+    <div style="font-size:48px">🌀</div>
+    <h2>Portal</h2>
+    <p class="c-dim" style="margin-top:0">Wohin willst du reisen? Deine Bauten bleiben in jeder Welt stehen.</p>
+    <div id="reiseZiele"></div>
+    <button class="primary" style="margin-top:10px" onclick="schliesse('reise')">Hierbleiben</button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="info">
+  <div class="fenster" style="text-align:center">
+    <div style="font-size:48px" id="infoIcon">🎉</div>
+    <h2 id="infoTitel"></h2><p id="infoText"></p>
+    <button class="primary" onclick="schliesse('info')">Weiter</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const rnd = (a,b) => Math.floor(Math.random()*(b-a+1))+a;
+const klemm = (v,a,b) => v<a?a:(v>b?b:v);
+
+/* =====================================================================
+   BLÖCKE   (Kachel-Nummern im Atlas: 4×4 Raster)
+   ===================================================================== */
+const AN = 8;                       // Atlas ist AN x AN Kacheln gross
+const UVW = 1/AN - 0.0016;          // Breite einer Kachel im UV-Raum (mit kleinem Rand)
+const K = {gras:0, grasSeite:1, erde:2, stein:3, sand:4, wasser:5, holz:6, holzOben:7,
+           laub:8, bretter:9, glut:10, obsidian:11, portal:12, lava:13, dunkel:14, kristall:15,
+           werkOben:16, werkSeite:17, kirschHolz:18, kirschOben:19, kirschLaub:20, kirschBoden:21,
+           kaktus:22, kaktusOben:23, smaragd:24, pech:25, eis:26, spore:27,
+           schnee:28, dschungelHolz:29, dschungelLaub:30, sumpfErde:31,
+           pilzHut:32, pilzStiel:33, myzel:34,
+           schwefel:35, schwefelStein:36, seelenSand:37, seelenFeuer:38,
+           knochen:39, seelenKristall:40, dunkelHolz:41, schattenLaub:42, moosBoden:43, rotFels:44, hoehlenWasser:45};
+// [oben, unten, seite] · haerte = Sekunden mit bloßen Händen · gibt = was beim Abbau herausfällt
+const BLOECKE = [
+  null,
+  {name:"Gras",       kacheln:[K.gras,K.erde,K.grasSeite], fest:true,  dicht:true, haerte:0.9, gibt:2},
+  {name:"Erde",       kacheln:[K.erde,K.erde,K.erde],      fest:true,  dicht:true, haerte:0.9, gibt:2},
+  {name:"Stein",      kacheln:[K.stein,K.stein,K.stein],   fest:true,  dicht:true, haerte:3.4, gibt:3, werkzeug:"hacke"},
+  {name:"Sand",       kacheln:[K.sand,K.sand,K.sand],      fest:true,  dicht:true, haerte:0.8, gibt:4},
+  {name:"Wasser",     kacheln:[K.wasser,K.wasser,K.wasser],fest:false, dicht:false, fluessig:true, unzerstoerbar:true},
+  {name:"Holz",       kacheln:[K.holzOben,K.holzOben,K.holz], fest:true, dicht:true, haerte:2.2, gibt:6, werkzeug:"axt"},
+  {name:"Laub",       kacheln:[K.laub,K.laub,K.laub],      fest:true,  dicht:true, haerte:0.4, gibt:7},
+  {name:"Bretter",    kacheln:[K.bretter,K.bretter,K.bretter], fest:true, dicht:true, haerte:1.8, gibt:8, werkzeug:"axt"},
+  {name:"Glutstein",  kacheln:[K.glut,K.glut,K.glut],      fest:true,  dicht:true, leuchtet:true, haerte:2.6, gibt:9, werkzeug:"hacke"},
+  {name:"Obsidian",   kacheln:[K.obsidian,K.obsidian,K.obsidian], fest:true, dicht:true, haerte:11, gibt:10, werkzeug:"hacke"},
+  {name:"Portal",     kacheln:[K.portal,K.portal,K.portal],fest:false, dicht:false, fluessig:true, leuchtet:true, unzerstoerbar:true},
+  {name:"Lava",       kacheln:[K.lava,K.lava,K.lava],      fest:false, dicht:false, fluessig:true, leuchtet:true, heiss:true, unzerstoerbar:true},
+  {name:"Dunkelstein",kacheln:[K.dunkel,K.dunkel,K.dunkel],fest:true,  dicht:true, haerte:3.6, gibt:13, werkzeug:"hacke"},
+  {name:"Kristall",   kacheln:[K.kristall,K.kristall,K.kristall], fest:true, dicht:true, leuchtet:true, haerte:4.2, gibt:14, werkzeug:"hacke"},
+  {name:"Werkbank",   kacheln:[K.werkOben,K.bretter,K.werkSeite], fest:true, dicht:true, haerte:1.8, gibt:15, werkzeug:"axt"},
+  {name:"Kirschholz", kacheln:[K.kirschOben,K.kirschOben,K.kirschHolz], fest:true, dicht:true, haerte:2.2, gibt:16, werkzeug:"axt"},
+  {name:"Kirschlaub", kacheln:[K.kirschLaub,K.kirschLaub,K.kirschLaub], fest:true, dicht:true, haerte:0.4, gibt:17},
+  {name:"Blütenboden",kacheln:[K.kirschBoden,K.erde,K.grasSeite], fest:true, dicht:true, haerte:0.9, gibt:2},
+  {name:"Kaktus",     kacheln:[K.kaktusOben,K.kaktusOben,K.kaktus], fest:true, dicht:true, haerte:1.4, gibt:19, werkzeug:"axt", stachlig:true},
+  {name:"Smaragderz", kacheln:[K.smaragd,K.smaragd,K.smaragd], fest:true, dicht:true, haerte:6.5, gibt:20, werkzeug:"hacke"},
+  {name:"Pechstein",  kacheln:[K.pech,K.pech,K.pech], fest:true, dicht:true, haerte:8.5, gibt:21, werkzeug:"hacke"},
+  {name:"Ewiges Eis", kacheln:[K.eis,K.eis,K.eis], fest:true, dicht:true, haerte:5.5, gibt:22, werkzeug:"hacke"},
+  {name:"Sporenstein",kacheln:[K.spore,K.spore,K.spore], fest:true, dicht:true, leuchtet:true, haerte:12, gibt:23, werkzeug:"hacke"},
+  {name:"Schnee",     kacheln:[K.schnee,K.schnee,K.schnee], fest:true, dicht:true, haerte:0.6, gibt:24},
+  {name:"Dschungelholz",kacheln:[K.kirschOben,K.kirschOben,K.dschungelHolz], fest:true, dicht:true, haerte:2.4, gibt:25, werkzeug:"axt"},
+  {name:"Dschungellaub",kacheln:[K.dschungelLaub,K.dschungelLaub,K.dschungelLaub], fest:true, dicht:true, haerte:0.4, gibt:26},
+  {name:"Sumpferde",  kacheln:[K.sumpfErde,K.sumpfErde,K.sumpfErde], fest:true, dicht:true, haerte:1.1, gibt:27},
+  {name:"Pilzhut",    kacheln:[K.pilzHut,K.pilzHut,K.pilzHut], fest:true, dicht:true, haerte:1.6, gibt:28, werkzeug:"axt"},
+  {name:"Pilzstiel",  kacheln:[K.pilzStiel,K.pilzStiel,K.pilzStiel], fest:true, dicht:true, haerte:1.6, gibt:29, werkzeug:"axt"},
+  {name:"Myzel",      kacheln:[K.myzel,K.erde,K.myzel], fest:true, dicht:true, haerte:0.9, gibt:30},
+  {name:"Schwefel",   kacheln:[K.schwefel,K.schwefel,K.schwefel], fest:true, dicht:true, leuchtet:true, haerte:14, gibt:31, werkzeug:"hacke"},
+  {name:"Schwefelstein",kacheln:[K.schwefelStein,K.schwefelStein,K.schwefelStein], fest:true, dicht:true, haerte:4.2, gibt:32, werkzeug:"hacke"},
+  {name:"Seelensand", kacheln:[K.seelenSand,K.seelenSand,K.seelenSand], fest:true, dicht:true, haerte:1.2, gibt:33},
+  {name:"Seelenfeuer",kacheln:[K.seelenFeuer,K.seelenFeuer,K.seelenFeuer], fest:false, dicht:false, fluessig:true, leuchtet:true, heiss:true},
+  {name:"Knochenholz",kacheln:[K.knochen,K.knochen,K.knochen], fest:true, dicht:true, haerte:2.6, gibt:35, werkzeug:"axt"},
+  {name:"Seelenkristall",kacheln:[K.seelenKristall,K.seelenKristall,K.seelenKristall], fest:true, dicht:true, leuchtet:true, haerte:17, gibt:36, werkzeug:"hacke"},
+  {name:"Schattenholz",kacheln:[K.dunkelHolz,K.dunkelHolz,K.dunkelHolz], fest:true, dicht:true, haerte:3.0, gibt:37, werkzeug:"axt"},
+  {name:"Schattenlaub",kacheln:[K.schattenLaub,K.schattenLaub,K.schattenLaub], fest:true, dicht:true, haerte:0.5, gibt:38},
+  {name:"Moosboden",  kacheln:[K.moosBoden,K.erde,K.moosBoden], fest:true, dicht:true, haerte:1.0, gibt:39},
+  {name:"Rotfels",    kacheln:[K.rotFels,K.rotFels,K.rotFels], fest:true, dicht:true, haerte:4.0, gibt:40, werkzeug:"hacke"},
+  {name:"Höhlenwasser",kacheln:[K.hoehlenWasser,K.hoehlenWasser,K.hoehlenWasser],
+                      fest:false, dicht:false, fluessig:true, leuchtet:true}
+];
+const B_LUFT=0, B_GRAS=1, B_ERDE=2, B_STEIN=3, B_SAND=4, B_WASSER=5, B_HOLZ=6,
+      B_LAUB=7, B_BRETTER=8, B_GLUT=9, B_OBSIDIAN=10, B_PORTAL=11, B_LAVA=12,
+      B_DUNKEL=13, B_KRISTALL=14, B_WERKBANK=15, B_KIRSCHHOLZ=16, B_KIRSCHLAUB=17, B_BLUETENBODEN=18,
+      B_KAKTUS=19, B_SMARAGD=20, B_PECH=21, B_EIS=22, B_SPORE=23, B_SCHNEE=24,
+      B_DSCHUNGELHOLZ=25, B_DSCHUNGELLAUB=26, B_SUMPFERDE=27, B_PILZHUT=28,
+      B_PILZSTIEL=29, B_MYZEL=30, B_SCHWEFEL=31, B_SCHWEFELSTEIN=32,
+      B_SEELENSAND=33, B_SEELENFEUER=34, B_KNOCHEN=35, B_SEELENKRISTALL=36,
+      B_SCHATTENHOLZ=37, B_SCHATTENLAUB=38, B_MOOSBODEN=39, B_ROTFELS=40, B_HOEHLENWASSER=41;
+
+// Gegenstände (keine Blöcke – kann man nicht setzen). IDs ab 100.
+const I_STOCK = 100;
+const ITEMS = {
+  100:{name:"Stock", mal:(g,T)=>{
+    g.fillStyle="#8a6331"; g.save(); g.translate(T/2,T/2); g.rotate(-0.7);
+    g.fillRect(-2.5,-T*0.38,5,T*0.76); g.restore();
+    g.fillStyle="#a5793f"; g.save(); g.translate(T/2,T/2); g.rotate(-0.7);
+    g.fillRect(-1,-T*0.34,2,T*0.68); g.restore();
+  }}
+};
+// Werkzeuge: die Spitzhacke für Stein, die Axt für Holz. Stufe 0 = bloße Hände.
+const HACKEN = [
+  {name:"keine Spitzhacke",   bonus:0},   {name:"Holzspitzhacke",     bonus:0.9},
+  {name:"Steinspitzhacke",    bonus:2.0}, {name:"Glutspitzhacke",     bonus:3.2},
+  {name:"Kristallspitzhacke", bonus:4.4}, {name:"Obsidianspitzhacke", bonus:6.0},
+  {name:"Dornenspitzhacke",   bonus:7.8}, {name:"Smaragdspitzhacke",  bonus:9.8},
+  {name:"Pechspitzhacke",     bonus:12},  {name:"Eisspitzhacke",      bonus:15},
+  {name:"Sporenspitzhacke",   bonus:19}, {name:"Schwefelspitzhacke", bonus:24},
+  {name:"Seelenspitzhacke",   bonus:30}
+];
+const AEXTE = [
+  {name:"keine Axt",   bonus:0},   {name:"Holzaxt",     bonus:0.9},
+  {name:"Steinaxt",    bonus:2.0}, {name:"Glutaxt",     bonus:3.2},
+  {name:"Kristallaxt", bonus:4.4}, {name:"Obsidianaxt", bonus:6.0},
+  {name:"Dornenaxt",   bonus:7.8}, {name:"Smaragdaxt",  bonus:9.8},
+  {name:"Pechaxt",     bonus:12},  {name:"Eisaxt",      bonus:15},
+  {name:"Sporenaxt",   bonus:19}, {name:"Schwefelaxt", bonus:24},
+  {name:"Seelenaxt",   bonus:30}
+];
+// Aus diesen Stoffen lassen sich Schwert, Axt und Spitzhacke bauen
+const WERKSTOFFE = [
+  {name:"Holz",     b:B_BRETTER,  stufe:1},   {name:"Stein",    b:B_STEIN,    stufe:2},
+  {name:"Glut",     b:B_GLUT,     stufe:3},   {name:"Kristall", b:B_KRISTALL, stufe:4},
+  {name:"Obsidian", b:B_OBSIDIAN, stufe:5},   {name:"Dornen",   b:B_KAKTUS,   stufe:6},
+  {name:"Smaragd",  b:B_SMARAGD,  stufe:7},   {name:"Pech",     b:B_PECH,     stufe:8},
+  {name:"Eis",      b:B_EIS,      stufe:9},   {name:"Sporen",   b:B_SPORE,    stufe:10},
+  {name:"Schwefel", b:B_SCHWEFEL, stufe:11},  {name:"Seelen",   b:B_SEELENKRISTALL, stufe:12}
+];
+const fest  = id => id > 0 && BLOECKE[id].fest;
+const dicht = id => id > 0 && BLOECKE[id].dicht;
+
+/* =====================================================================
+   WELTEN
+   ===================================================================== */
+const WELTEN = [
+  {
+    name:"Grünwald", emoji:"🌲", saat:1337,
+    himmelOben:"#69a8dd", himmelUnten:"#bcd9ec", nebel:[0.72,0.84,0.92],
+    oben:B_GRAS, unter:B_ERDE, tief:B_STEIN, strand:B_SAND,
+    fluessig:B_WASSER, seehoehe:11, grund:12, hoehe:9, baeume:true,
+    beschreibung:"Hügel, Seen und dichte Wälder. Irgendwo dort draußen wartet ein Troll.",
+    gegner:[
+      {id:"wolf",   name:"Wolf",       emoji:"🐺", hp:32, atk:7,  def:2, xp:14, gold:9,  tempo:2.4},
+      {id:"goblin", name:"Goblin",     emoji:"👺", hp:40, atk:9,  def:3, xp:18, gold:13, tempo:2.0},
+      {id:"spinne", name:"Waldspinne", emoji:"🕷️", hp:26, atk:11, def:1, xp:16, gold:11, tempo:2.8}
+    ],
+    boss:{id:"troll", name:"Waldtroll", emoji:"👹", hp:240, atk:21, def:8, xp:200, gold:220},
+    item:{id:"kraut", name:"🌿 Heilkraut", emoji:"🌿"},
+    quests:[
+      {id:"w0q1", typ:"kill",    ziel:"wolf",  anz:5, text:"Vertreibe 5 Wölfe",     xp:45,  gold:45},
+      {id:"w0q2", typ:"sammeln", ziel:"kraut", anz:5, text:"Sammle 5 Heilkräuter",  xp:55,  gold:55},
+      {id:"w0q3", typ:"boss",    ziel:"troll", anz:1, text:"Besiege den Waldtroll", xp:110, gold:130}
+    ]
+  },
+  {
+    name:"Kirschblütenhain", emoji:"🌸", saat:2468,
+    himmelOben:"#8fbfe8", himmelUnten:"#f8d3e4", nebel:[0.94,0.82,0.88],
+    oben:B_BLUETENBODEN, unter:B_ERDE, tief:B_STEIN, strand:B_SAND,
+    fluessig:B_WASSER, seehoehe:11, grund:13, hoehe:8, baumArt:"kirsch",
+    beschreibung:"Rosa Blüten, so weit das Auge reicht. Schön – aber nicht harmlos.",
+    gegner:[
+      {id:"fuchs",  name:"Blütenfuchs", emoji:"🦊", hp:56, atk:13, def:4, xp:26, gold:19, tempo:2.7},
+      {id:"biene",  name:"Riesenbiene", emoji:"🐝", hp:44, atk:17, def:2, xp:29, gold:21, tempo:3.0},
+      {id:"keiler", name:"Hainkeiler",  emoji:"🐗", hp:88, atk:11, def:8, xp:33, gold:24, tempo:2.0}
+    ],
+    boss:{id:"waechter", name:"Blütenwächter", emoji:"🦌", hp:430, atk:30, def:13, xp:350, gold:400},
+    item:{id:"bluete", name:"🌸 Kirschblüte", emoji:"🌸"},
+    quests:[
+      {id:"w3q1", typ:"kill",    ziel:"fuchs",    anz:6, text:"Verjage 6 Blütenfüchse",     xp:80,  gold:80},
+      {id:"w3q2", typ:"sammeln", ziel:"bluete",   anz:6, text:"Sammle 6 Kirschblüten",      xp:95,  gold:95},
+      {id:"w3q3", typ:"boss",    ziel:"waechter", anz:1, text:"Bezwinge den Blütenwächter", xp:200, gold:230}
+    ]
+  },
+  {
+    name:"Feuerwüste", emoji:"🌋", saat:4242,
+    himmelOben:"#5c1c0d", himmelUnten:"#d1662a", nebel:[0.55,0.24,0.12],
+    oben:B_SAND, unter:B_SAND, tief:B_STEIN, strand:B_SAND,
+    fluessig:B_LAVA, seehoehe:9, grund:11, hoehe:13, baeume:false, saeulen:true,
+    beschreibung:"Dünen aus schwarzem Sand, Lavaseen und Felsnadeln. Fass die Lava nicht an.",
+    gegner:[
+      {id:"skorpion",name:"Glutskorpion",emoji:"🦂", hp:76,  atk:18, def:7,  xp:44, gold:30, tempo:2.6},
+      {id:"geist",   name:"Feuergeist",  emoji:"🔥", hp:64,  atk:24, def:4,  xp:50, gold:34, tempo:3.0},
+      {id:"golem",   name:"Magmagolem",  emoji:"🗿", hp:120, atk:15, def:12, xp:60, gold:44, tempo:1.6}
+    ],
+    boss:{id:"drache", name:"Lavadrache", emoji:"🐉", hp:700, atk:45, def:19, xp:620, gold:780},
+    item:{id:"glut", name:"🔴 Glutstein", emoji:"🔴"},
+    quests:[
+      {id:"w1q1", typ:"kill",    ziel:"geist",  anz:6, text:"Lösche 6 Feuergeister aus", xp:130, gold:130},
+      {id:"w1q2", typ:"sammeln", ziel:"glut",   anz:6, text:"Sammle 6 Glutsteine",       xp:150, gold:150},
+      {id:"w1q3", typ:"boss",    ziel:"drache", anz:1, text:"Erlege den Lavadrachen",    xp:320, gold:380}
+    ]
+  },
+  {
+    name:"Schattenreich", emoji:"🌑", saat:9001,
+    himmelOben:"#05040c", himmelUnten:"#2a1b47", nebel:[0.10,0.08,0.18],
+    oben:B_DUNKEL, unter:B_DUNKEL, tief:B_STEIN, strand:B_DUNKEL,
+    fluessig:B_WASSER, seehoehe:8, grund:13, hoehe:11, baeume:false, kristalle:true,
+    beschreibung:"Schwarzes Gestein, leuchtende Kristalle, kein Sonnenlicht. Der Fürst wartet.",
+    gegner:[
+      {id:"schatten",name:"Schattenwesen",emoji:"👤", hp:160, atk:40, def:16, xp:120, gold:75, tempo:2.8},
+      {id:"ritter",  name:"Todesritter",  emoji:"🗡️", hp:215, atk:46, def:22, xp:150, gold:100,tempo:2.2},
+      {id:"hexe",    name:"Nachthexe",    emoji:"🧟", hp:140, atk:55, def:10, xp:140, gold:92, tempo:2.6}
+    ],
+    boss:{id:"fuerst", name:"Schattenfürst", emoji:"💀", hp:1500, atk:92, def:36, xp:2400, gold:3200},
+    item:{id:"seele", name:"🔮 Seelenstein", emoji:"🔮"},
+    quests:[
+      {id:"w2q1", typ:"kill",    ziel:"ritter", anz:7, text:"Zerschlage 7 Todesritter",     xp:420,  gold:320},
+      {id:"w2q2", typ:"sammeln", ziel:"seele",  anz:8, text:"Sammle 8 Seelensteine",        xp:470,  gold:370},
+      {id:"w2q3", typ:"boss",    ziel:"fuerst", anz:1, text:"Bezwinge den Schattenfürsten", xp:1100, gold:1600}
+    ]
+  },
+  {
+    name:"Dornenwüste", emoji:"🌵", saat:5150,
+    himmelOben:"#4a9fd6", himmelUnten:"#f0d9a8", nebel:[0.90,0.82,0.62],
+    oben:B_SAND, unter:B_SAND, tief:B_STEIN, strand:B_SAND,
+    fluessig:B_WASSER, seehoehe:6, grund:12, hoehe:11, bewuchs:"kaktus", dichte:0.020,
+    beschreibung:"Endlose Dünen. Und die Kakteen hier stehen nicht nur herum – sie laufen.",
+    gegner:[
+      {id:"kaktus",  name:"Lebender Kaktus", emoji:"🌵", hp:620, atk:105, def:38, xp:520,  gold:340, tempo:2.2},
+      {id:"skarab",  name:"Riesenskarabäus", emoji:"🪲", hp:520, atk:118, def:26, xp:560,  gold:360, tempo:3.2},
+      {id:"mumie",   name:"Sandmumie",       emoji:"🧟", hp:760, atk:96, def:44, xp:600,  gold:390, tempo:1.9}
+    ],
+    boss:{id:"koenig", name:"Dornenkönig", emoji:"👑", hp:1900, atk:85, def:60, xp:4200, gold:6000},
+    item:{id:"dorn", name:"🌵 Wüstendorn", emoji:"🌵"},
+    quests:[
+      {id:"w4q1", typ:"kill",    ziel:"kaktus", anz:8,  text:"Fälle 8 lebende Kakteen",     xp:1400, gold:900},
+      {id:"w4q2", typ:"sammeln", ziel:"dorn",   anz:10, text:"Sammle 10 Wüstendornen",      xp:1600, gold:1000},
+      {id:"w4q3", typ:"boss",    ziel:"koenig", anz:1,  text:"Stürze den Dornenkönig",      xp:3000, gold:3500}
+    ]
+  },
+  {
+    name:"Dschungeltiefe", emoji:"🌴", saat:6270,
+    himmelOben:"#2e7a5c", himmelUnten:"#9fd4a8", nebel:[0.42,0.62,0.44],
+    oben:B_GRAS, unter:B_ERDE, tief:B_STEIN, strand:B_SAND, erz:B_SMARAGD,
+    fluessig:B_WASSER, seehoehe:10, grund:14, hoehe:11, bewuchs:"dschungel", dichte:0.013,
+    beschreibung:"Bäume so hoch wie Türme, kein Sonnenstrahl am Boden. Etwas beobachtet dich.",
+    gegner:[
+      {id:"panther", name:"Schattenpanther", emoji:"🐆", hp:850, atk:150, def:44, xp:900,  gold:560, tempo:3.6},
+      {id:"schlange",name:"Würgeschlange",   emoji:"🐍", hp:980, atk:138, def:56, xp:950,  gold:590, tempo:2.4},
+      {id:"affe",    name:"Brüllaffe",       emoji:"🦧", hp:1150, atk:128, def:70, xp:1000, gold:620, tempo:2.8}
+    ],
+    boss:{id:"ranke", name:"Uralte Ranke", emoji:"🌿", hp:2900, atk:120, def:85, xp:7000, gold:11000},
+    item:{id:"smaragdsplitter", name:"💚 Smaragdsplitter", emoji:"💚"},
+    quests:[
+      {id:"w5q1", typ:"kill",    ziel:"panther",         anz:9,  text:"Erlege 9 Schattenpanther",   xp:2400, gold:1600},
+      {id:"w5q2", typ:"sammeln", ziel:"smaragdsplitter", anz:10, text:"Sammle 10 Smaragdsplitter",  xp:2700, gold:1800},
+      {id:"w5q3", typ:"boss",    ziel:"ranke",           anz:1,  text:"Zerschneide die Uralte Ranke", xp:5000, gold:6000}
+    ]
+  },
+  {
+    name:"Seuchensumpf", emoji:"🐸", saat:7380,
+    himmelOben:"#3a4436", himmelUnten:"#7d8a5e", nebel:[0.33,0.38,0.27],
+    oben:B_SUMPFERDE, unter:B_SUMPFERDE, tief:B_STEIN, strand:B_SUMPFERDE, erz:B_PECH,
+    fluessig:B_WASSER, seehoehe:13, grund:12, hoehe:4, bewuchs:"sumpf", dichte:0.012,
+    beschreibung:"Knietiefes Brackwasser, fauler Nebel, tote Bäume. Hier verrottet alles.",
+    gegner:[
+      {id:"kroete", name:"Giftkröte",     emoji:"🐸", hp:1300, atk:195, def:66,  xp:1500, gold:900,  tempo:2.6},
+      {id:"hexer",  name:"Sumpfhexer",    emoji:"🧙", hp:1150, atk:215, def:52,  xp:1600, gold:950,  tempo:2.2},
+      {id:"golem2", name:"Schlammgolem",  emoji:"🗿", hp:1800, atk:175, def:105, xp:1750, gold:1050, tempo:1.5}
+    ],
+    boss:{id:"molch", name:"Seuchenmolch", emoji:"🦎", hp:4500, atk:180, def:125, xp:13000, gold:22000},
+    item:{id:"pechtropfen", name:"🖤 Pechtropfen", emoji:"🖤"},
+    quests:[
+      {id:"w6q1", typ:"kill",    ziel:"hexer",       anz:10, text:"Bezwinge 10 Sumpfhexer",   xp:4500, gold:3000},
+      {id:"w6q2", typ:"sammeln", ziel:"pechtropfen", anz:12, text:"Sammle 12 Pechtropfen",    xp:5000, gold:3400},
+      {id:"w6q3", typ:"boss",    ziel:"molch",       anz:1,  text:"Töte den Seuchenmolch",    xp:9000, gold:12000}
+    ]
+  },
+  {
+    name:"Ewiges Eis", emoji:"❄️", saat:8490,
+    himmelOben:"#6f9fc8", himmelUnten:"#dfeef8", nebel:[0.86,0.92,0.97],
+    oben:B_SCHNEE, unter:B_ERDE, tief:B_STEIN, strand:B_SCHNEE, erz:B_EIS,
+    fluessig:B_EIS, seehoehe:12, grund:14, hoehe:13, bewuchs:"fichte", dichte:0.012,
+    beschreibung:"Zugefrorene Seen, Schneesturm, Stille. Die Kälte frisst sich durch alles.",
+    gegner:[
+      {id:"yeti",   name:"Yeti",          emoji:"🦍", hp:2400, atk:255, def:130, xp:2800, gold:1700, tempo:2.4},
+      {id:"eiswolf",name:"Frostwolf",     emoji:"🐺", hp:1900, atk:285, def:95,  xp:3000, gold:1800, tempo:4.0},
+      {id:"eisgeist",name:"Eisgeist",     emoji:"👻", hp:1600, atk:310, def:70,  xp:3200, gold:1900, tempo:3.2}
+    ],
+    boss:{id:"koloss", name:"Frostkoloss", emoji:"🧊", hp:6000, atk:260, def:190, xp:26000, gold:48000},
+    item:{id:"eissplitter", name:"🧊 Eissplitter", emoji:"🧊"},
+    quests:[
+      {id:"w7q1", typ:"kill",    ziel:"eiswolf",     anz:12, text:"Reiß 12 Frostwölfe nieder", xp:9000,  gold:6000},
+      {id:"w7q2", typ:"sammeln", ziel:"eissplitter", anz:14, text:"Sammle 14 Eissplitter",     xp:10000, gold:7000},
+      {id:"w7q3", typ:"boss",    ziel:"koloss",      anz:1,  text:"Zerschmettere den Frostkoloss", xp:18000, gold:26000}
+    ]
+  },
+  {
+    name:"Pilzland", emoji:"🍄", saat:9510,
+    himmelOben:"#3b1f4a", himmelUnten:"#a86bb8", nebel:[0.42,0.26,0.48],
+    oben:B_MYZEL, unter:B_ERDE, tief:B_STEIN, strand:B_MYZEL, erz:B_SPORE,
+    fluessig:B_WASSER, seehoehe:8, grund:13, hoehe:9, bewuchs:"pilz", dichte:0.012,
+    beschreibung:"Pilze so groß wie Häuser, violetter Nebel, Sporen in der Luft. Die letzte Welt.",
+    gegner:[
+      {id:"sporling",name:"Sporling",      emoji:"🍄", hp:3400, atk:330, def:170, xp:5500, gold:3400, tempo:2.6},
+      {id:"schleim", name:"Riesenschleim", emoji:"🟢", hp:4600, atk:300, def:210, xp:6000, gold:3700, tempo:1.8},
+      {id:"brut",    name:"Sporenbrut",    emoji:"🦠", hp:2900, atk:360, def:140, xp:6500, gold:4000, tempo:3.6}
+    ],
+    boss:{id:"mutter", name:"Sporenmutter", emoji:"🕸️", hp:7800, atk:320, def:280, xp:60000, gold:120000},
+    item:{id:"sporenkapsel", name:"🟣 Sporenkapsel", emoji:"🟣"},
+    quests:[
+      {id:"w8q1", typ:"kill",    ziel:"brut",          anz:14, text:"Vernichte 14 Sporenbruten", xp:20000, gold:14000},
+      {id:"w8q2", typ:"sammeln", ziel:"sporenkapsel",  anz:16, text:"Sammle 16 Sporenkapseln",   xp:24000, gold:16000},
+      {id:"w8q3", typ:"boss",    ziel:"mutter",        anz:1,  text:"Besiege die Sporenmutter",  xp:45000, gold:60000}
+    ]
+  },
+  {
+    name:"Schwefelhöhle", emoji:"🟡", saat:11620,
+    himmelOben:"#161208", himmelUnten:"#3a2f10", nebel:[0.16,0.13,0.05],
+    oben:B_SCHWEFELSTEIN, unter:B_SCHWEFELSTEIN, tief:B_STEIN, strand:B_SCHWEFELSTEIN, erz:B_SCHWEFEL,
+    fluessig:B_LAVA, seehoehe:9, grund:13, hoehe:8, bewuchs:"schwefel", dichte:0.020,
+    decke:36,
+    beschreibung:"Eine riesige Höhle unter einem Steindach. Schwefel glüht in der Dunkelheit, unten brodelt Lava.",
+    gegner:[
+      {id:"fledermaus",name:"Giftfledermaus", emoji:"🦇", hp:2000, atk:410, def:170, xp:9000,  gold:6000, tempo:4.2},
+      {id:"lauerer",   name:"Höhlenlauerer",  emoji:"🕷️", hp:2600, atk:370, def:230, xp:9800,  gold:6500, tempo:3.0},
+      {id:"wurm",      name:"Schwefelwurm",   emoji:"🐛", hp:3400, atk:340, def:280, xp:10600, gold:7000, tempo:2.2}
+    ],
+    boss:{id:"wyrm", name:"Schwefelwyrm", emoji:"🐲", hp:8000, atk:430, def:330, xp:110000, gold:220000},
+    item:{id:"schwefelklumpen", name:"🟡 Schwefelklumpen", emoji:"🟡"},
+    quests:[
+      {id:"w9q1", typ:"kill",    ziel:"fledermaus",      anz:15, text:"Erschlage 15 Giftfledermäuse", xp:34000, gold:24000},
+      {id:"w9q2", typ:"sammeln", ziel:"schwefelklumpen", anz:18, text:"Sammle 18 Schwefelklumpen",    xp:40000, gold:28000},
+      {id:"w9q3", typ:"boss",    ziel:"wyrm",            anz:1,  text:"Erlege den Schwefelwyrm",      xp:80000, gold:110000}
+    ]
+  },
+  {
+    name:"Seelengarten", emoji:"🌫️", saat:12730,
+    himmelOben:"#6b6459", himmelUnten:"#9d9689", nebel:[0.34,0.33,0.30],
+    oben:B_MOOSBODEN, unter:B_ERDE, tief:B_STEIN, strand:B_MOOSBODEN, erz:B_SEELENKRISTALL,
+    fluessig:B_WASSER, seehoehe:9, grund:13, hoehe:7, bewuchs:"schattenbaum", dichte:0.011,
+    beschreibung:"Ein Wald ohne Sonne. Riesige schwarze Stämme, fahles Blätterdach, moosiger Boden – und etwas Großes, das dich beobachtet.",
+    gegner:[
+      {id:"riese",    name:"Schattenriese", emoji:"🕴️", hp:4600, atk:520, def:330, xp:21000, gold:13500, tempo:3.0},
+      {id:"knochen",  name:"Knochenritter", emoji:"💀", hp:4200, atk:480, def:360, xp:22000, gold:14000, tempo:2.6},
+      {id:"irrlicht", name:"Irrlicht",      emoji:"🕯️", hp:2200, atk:610, def:190, xp:24000, gold:15000, tempo:4.6}
+    ],
+    boss:{id:"huter", name:"Hüter der Seelen", emoji:"👁️", hp:10000, atk:530, def:430, xp:300000, gold:600000},
+    item:{id:"seelenlicht", name:"🕯️ Seelenlicht", emoji:"🕯️"},
+    quests:[
+      {id:"w10q1", typ:"kill",    ziel:"riese",       anz:14, text:"Erlege 14 Schattenriesen",    xp:90000,  gold:60000},
+      {id:"w10q2", typ:"sammeln", ziel:"seelenlicht", anz:20, text:"Sammle 20 Seelenlichter",     xp:110000, gold:70000},
+      {id:"w10q3", typ:"boss",    ziel:"huter",       anz:1,  text:"Bezwinge den Hüter der Seelen", xp:250000, gold:400000}
+    ]
+  }
+];
+
+const WAFFEN = [
+  {name:"bloße Fäuste",atk:0,preis:0},{name:"Holzschwert",atk:5,preis:90},{name:"Steinschwert",atk:12,preis:280},
+  {name:"Glutschwert",atk:24,preis:850},{name:"Kristallschwert",atk:40,preis:2300},{name:"Obsidianklinge",atk:65,preis:6200},
+  {name:"Dornenschwert",atk:95,preis:14000},{name:"Smaragdschwert",atk:140,preis:32000},
+  {name:"Pechschwert",atk:200,preis:70000},{name:"Eisschwert",atk:280,preis:150000},
+  {name:"Sporenklinge",atk:400,preis:320000},
+  {name:"Schwefelklinge",atk:560,preis:700000},{name:"Seelenklinge",atk:800,preis:1500000}
+];
+const RUESTUNGEN = [
+  {name:"Stofffetzen",def:0,preis:0},{name:"Lederrüstung",def:4,preis:80},{name:"Kettenhemd",def:9,preis:260},
+  {name:"Plattenpanzer",def:17,preis:760},{name:"Drachenschuppe",def:28,preis:2100},{name:"Schattenmantel",def:45,preis:5800},
+  {name:"Dornenpanzer",def:70,preis:13000},{name:"Smaragdrüstung",def:105,preis:30000},
+  {name:"Pechrüstung",def:150,preis:66000},{name:"Eispanzer",def:210,preis:140000},
+  {name:"Sporenrüstung",def:300,preis:300000},
+  {name:"Schwefelrüstung",def:420,preis:650000},{name:"Seelenrüstung",def:600,preis:1400000}
+];
+// Reihenfolge der Materialien in der Leiste (nur was du wirklich besitzt, wird gezeigt)
+const REIHENFOLGE = [B_GRAS, B_BLUETENBODEN, B_MYZEL, B_ERDE, B_SUMPFERDE, B_SAND, B_SCHNEE, B_STEIN,
+                     B_DUNKEL, B_HOLZ, B_KIRSCHHOLZ, B_DSCHUNGELHOLZ, B_PILZSTIEL, B_LAUB, B_KIRSCHLAUB,
+                     B_DSCHUNGELLAUB, B_PILZHUT, B_KAKTUS, B_BRETTER, B_WERKBANK, B_GLUT, B_KRISTALL,
+                     B_OBSIDIAN, B_SMARAGD, B_PECH, B_EIS, B_SPORE,
+                     B_SCHWEFEL, B_SCHWEFELSTEIN, B_SEELENSAND, B_KNOCHEN, B_SEELENKRISTALL,
+                     B_SCHATTENHOLZ, B_SCHATTENLAUB, B_MOOSBODEN, B_ROTFELS];
+
+/* Baupläne fürs Handwerksgitter.
+   form  = Muster, Zeile für Zeile ("" = leeres Feld) – zählt wie im Original die Anordnung
+   formlos = nur die Zutaten, egal wo sie liegen
+   gross = braucht 3×3, also eine Werkbank                                              */
+const BAUPLAENE = [
+  {name:"Bretter",   ergebnis:{b:B_BRETTER, n:4}, formlos:[B_HOLZ]},
+  {name:"Bretter aus Kirschholz", ergebnis:{b:B_BRETTER, n:4}, formlos:[B_KIRSCHHOLZ]},
+  {name:"Stöcke",    ergebnis:{i:I_STOCK, n:4},   form:[["p"],["p"]],           schluessel:{p:B_BRETTER}},
+  {name:"Werkbank",  ergebnis:{b:B_WERKBANK, n:1},form:[["p","p"],["p","p"]],   schluessel:{p:B_BRETTER}},
+  {name:"Gras",      ergebnis:{b:B_GRAS, n:2},    formlos:[B_ERDE,B_ERDE,B_ERDE,B_ERDE,B_LAUB], gross:true},
+  {name:"Obsidian",  ergebnis:{b:B_OBSIDIAN, n:2},formlos:[B_STEIN,B_STEIN,B_STEIN,B_STEIN,B_GLUT], gross:true},
+  {name:"Heiltrank", ergebnis:{trank:1},          formlos:[B_GLUT,B_GLUT]}
+];
+
+/* Werkzeuge und Waffen – für jeden Werkstoff dieselben drei Muster wie im Original:
+   Schwert = 2 Stoff senkrecht über einem Stock
+   Axt     = 2 Stoff oben, 1 Stoff + Stock, darunter ein Stock
+   Hacke   = 3 Stoff quer, darunter zwei Stöcke                                     */
+WERKSTOFFE.forEach(function(m){
+  BAUPLAENE.push({
+    name: m.name + "schwert", ergebnis:{waffe:m.stufe}, gross:true,
+    form:[["m"],["m"],["s"]], schluessel:{m:m.b, s:I_STOCK}
+  });
+  BAUPLAENE.push({
+    name: m.name + "axt", ergebnis:{axt:m.stufe}, gross:true,
+    form:[["m","m"],["m","s"],["","s"]], schluessel:{m:m.b, s:I_STOCK}
+  });
+  BAUPLAENE.push({
+    name: m.name + "spitzhacke", ergebnis:{hacke:m.stufe}, gross:true,
+    form:[["m","m","m"],["","s",""],["","s",""]], schluessel:{m:m.b, s:I_STOCK}
+  });
+});
+
+// Tränke aus Questgegenständen – ein Klick, kein Gitter
+const BRAUEN = [
+  {text:"3× Heilkraut → 1× Heiltrank",      ein:{s:"kraut", n:3}, aus:{trank:1}},
+  {text:"1× Seelenstein → 40 Magie sofort", ein:{s:"seele", n:1}, aus:{mp:40}}
+];
+
+/* =====================================================================
+   SPIELSTAND
+   ===================================================================== */
+let s;
+function neuerStand(){
+  return {id:null, name:"Welt", saat:0, level:1, xp:0, xpNext:30, hp:70, maxHp:70, mp:25, maxMp:25, atk:9, def:3, mag:7,
+          gold:30, traenke:3, welt:0, freigeschaltet:0, waffe:0, ruestung:0, hacke:0, axt:0, kills:{}, sachen:{}, gesammelt:{},
+          fertig:{}, gewonnen:false, aenderungen:{}, inventar:{}, version:2};
+}
+/* ---------- Mehrere Spielwelten nebeneinander ----------
+   "wkListe"        = Übersicht aller Welten
+   "wkStand:<id>"   = der vollständige Spielstand einer Welt                      */
+const LISTE_KEY = "wkListe";
+const standKey = id => "wkStand:" + id;
+
+function weltListe(){
+  try{ const l = JSON.parse(localStorage.getItem(LISTE_KEY)); return Array.isArray(l) ? l : []; }
+  catch(e){ return []; }
+}
+function listeSchreiben(l){ try{ localStorage.setItem(LISTE_KEY, JSON.stringify(l)); }catch(e){} }
+
+function speichern(){
+  if(!s || !s.id) return;
+  try{
+    localStorage.setItem(standKey(s.id), JSON.stringify(s));
+    const l = weltListe();
+    const eintrag = {id:s.id, name:s.name, saat:s.saat, stufe:s.level, welt:s.welt, zuletzt:Date.now()};
+    const alt = l.find(x => x.id === s.id);
+    if(alt) Object.assign(alt, eintrag); else l.push(eintrag);
+    listeSchreiben(l);
+  }catch(e){}
+}
+function standPruefen(){                     // fehlende Felder älterer Stände ergänzen
+  if(!s.aenderungen) s.aenderungen = {};
+  if(!s.inventar) s.inventar = {};
+  if(!s.hacke) s.hacke = 0;
+  if(!s.axt) s.axt = 0;
+  if(s.freigeschaltet === undefined) s.freigeschaltet = s.welt || 0;
+  standUmziehen();
+  if(!s.gesammelt) s.gesammelt = Object.assign({}, s.sachen);
+}
+function standLaden(id){
+  try{
+    const d = JSON.parse(localStorage.getItem(standKey(id)));
+    if(!d || !d.level) return false;
+    s = d; s.id = id;
+    standPruefen();
+    return true;
+  }catch(e){ return false; }
+}
+// Text oder Zahl in einen Startwert verwandeln
+function saatAus(text){
+  text = (text || "").trim();
+  if(!text) return Math.floor(Math.random()*900000) + 1000;
+  if(/^-?\d+$/.test(text)) return Math.abs(+text) % 1000000;
+  let h = 0;
+  for(let i=0; i<text.length; i++) h = (Math.imul(h, 31) + text.charCodeAt(i)) | 0;
+  return Math.abs(h) % 1000000;
+}
+function weltAnlegen(name, saatText){
+  s = neuerStand();
+  s.id = "w" + Date.now().toString(36) + Math.floor(Math.random()*1000).toString(36);
+  s.name = (name || "").trim() || "Neue Welt";
+  s.saat = saatAus(saatText);
+  speichern();
+  return s;
+}
+function weltLoeschen(id){
+  const l = weltListe().filter(x => x.id !== id);
+  listeSchreiben(l);
+  try{ localStorage.removeItem(standKey(id)); }catch(e){}
+  if(s && s.id === id) s = null;      // sonst schreibt das nächste Speichern sie zurück
+  weltlisteZeichnen();
+}
+// Der alte Einzelspielstand wird beim ersten Start zur ersten Welt der Liste
+function altenStandUebernehmen(){
+  if(weltListe().length) return;
+  let d = null;
+  try{ d = JSON.parse(localStorage.getItem("wkBlock")); }catch(e){}
+  if(!d || !d.level) return;
+  d.id = "wAlt"; d.name = "Meine erste Welt"; d.saat = 0;
+  s = d; standPruefen(); speichern();
+  try{ localStorage.removeItem("wkBlock"); }catch(e){}
+  s = null;
+}
+/* Der Kirschblütenhain wurde nachträglich an Stelle 1 eingefügt.
+   Ältere Spielstände zählen noch 0,1,2 – hier werden sie auf 0,2,3 umgeschrieben. */
+function standUmziehen(){
+  if(s.version >= 2) return;
+  const neu = {0:0, 1:2, 2:3};
+  s.welt = neu[s.welt] !== undefined ? neu[s.welt] : 0;
+  s.freigeschaltet = neu[s.freigeschaltet] !== undefined ? neu[s.freigeschaltet] : 0;
+  const umzug = {};
+  for(const k in s.aenderungen){
+    const teil = k.split(":");
+    const alteWelt = +teil[0];
+    umzug[(neu[alteWelt] !== undefined ? neu[alteWelt] : alteWelt) + ":" + teil[1]] = s.aenderungen[k];
+  }
+  s.aenderungen = umzug;
+  if(s.fertig["portal1"]){ delete s.fertig["portal1"]; s.fertig["portal2"] = true; }
+  s.version = 2;
+  speichern();
+}
+function habe(id){ return s.inventar[id] || 0; }
+function gibMaterial(id, anz){
+  s.inventar[id] = habe(id) + anz;
+  gurtBauen();
+}
+function nimmMaterial(id, anz){
+  if(habe(id) < anz) return false;
+  s.inventar[id] -= anz;
+  if(s.inventar[id] <= 0) delete s.inventar[id];
+  gurtBauen();
+  return true;
+}
+function besitz(){ return REIHENFOLGE.filter(id => habe(id) > 0); }
+function alleSachen(){                                  // Blöcke + Gegenstände fürs Inventar
+  return REIHENFOLGE.filter(id => habe(id) > 0).concat(Object.keys(ITEMS).map(Number).filter(id => habe(id) > 0));
+}
+const dingName = id => id >= 100 ? ITEMS[id].name : BLOECKE[id].name;
+
+/* ---------- Handwerksgitter ---------- */
+let gitter = new Array(9).fill(0);     // 3×3, bei 2×2 nur die Felder 0,1,3,4
+let handMaterial = 0;                  // was gerade zum Legen ausgewählt ist
+const KLEIN = [0,1,3,4];
+
+function gitterFelder(gross){ return gross ? [0,1,2,3,4,5,6,7,8] : KLEIN; }
+function gitterLeeren(){ gitter = new Array(9).fill(0); }
+// Wie oft liegt id schon im Gitter?
+function imGitter(id){ return gitter.filter(x => x === id).length; }
+
+// Muster auf den kleinsten Ausschnitt zuschneiden
+function ausschnitt(){
+  let x0=3, x1=-1, y0=3, y1=-1;
+  for(let y=0; y<3; y++) for(let x=0; x<3; x++)
+    if(gitter[y*3+x]){ if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; }
+  if(x1 < 0) return null;
+  const reihen = [];
+  for(let y=y0; y<=y1; y++){
+    const r = [];
+    for(let x=x0; x<=x1; x++) r.push(gitter[y*3+x]);
+    reihen.push(r);
+  }
+  return reihen;
+}
+function passtPlan(plan){
+  const belegt = gitter.filter(x => x > 0);
+  if(!belegt.length) return false;
+  if(plan.formlos){
+    if(belegt.length !== plan.formlos.length) return false;
+    const a = belegt.slice().sort((p,q) => p-q), b = plan.formlos.slice().sort((p,q) => p-q);
+    return a.every((v,i) => v === b[i]);
+  }
+  const aus = ausschnitt();
+  if(!aus || aus.length !== plan.form.length || aus[0].length !== plan.form[0].length) return false;
+  for(let y=0; y<aus.length; y++){
+    if(aus[y].length !== plan.form[y].length) return false;
+    for(let x=0; x<aus[y].length; x++){
+      const soll = plan.form[y][x];
+      const ist = aus[y][x];
+      if(soll === ""){ if(ist !== 0) return false; }
+      else if(ist !== plan.schluessel[soll]) return false;
+    }
+  }
+  return true;
+}
+function findePlan(gross){
+  for(const plan of BAUPLAENE){
+    if(plan.gross && !gross) continue;
+    if(passtPlan(plan)) return plan;
+  }
+  return null;
+}
+// Reicht der Vorrat für das, was im Gitter liegt?
+function vorratReicht(){
+  const noetig = {};
+  gitter.forEach(id => { if(id) noetig[id] = (noetig[id]||0) + 1; });
+  return Object.keys(noetig).every(id => habe(+id) >= noetig[id]);
+}
+function bauen(gross){
+  const plan = findePlan(gross);
+  if(!plan || !vorratReicht()) return;
+  gitter.forEach(id => { if(id) nimmMaterial(id, 1); });
+  const e = plan.ergebnis;
+  if(e.b !== undefined) gibMaterial(e.b, e.n);
+  if(e.i !== undefined) gibMaterial(e.i, e.n);
+  if(e.trank) s.traenke += e.trank;
+  if(e.hacke !== undefined)      werkzeugAnlegen("hacke", e.hacke, HACKEN, "⛏️", "Spitzhacke");
+  else if(e.axt !== undefined)    werkzeugAnlegen("axt",   e.axt,   AEXTE,  "🪓", "Axt");
+  else if(e.waffe !== undefined)  werkzeugAnlegen("waffe", e.waffe, WAFFEN, "🗡️", "Waffe");
+  else meldung("🔨 Hergestellt: " + plan.name, "c-gold");
+  gitterLeeren();
+  speichern(); hudZeichnen(); bastelZeichnen();
+}
+function werkzeugAnlegen(feld, stufe, liste, symbol, art){
+  if(stufe > s[feld]){
+    s[feld] = stufe;
+    meldung(symbol + " " + liste[stufe].name + " hergestellt und angelegt!", "c-gold");
+  } else {
+    meldung("Du trägst schon eine bessere " + art + " (" + liste[s[feld]].name + ").", "c-dim");
+  }
+}
+// Bauplan anklicken → Gitter automatisch füllen (wie das Rezeptbuch)
+function planLegen(nr, gross){
+  const plan = BAUPLAENE[nr];
+  if(plan.gross && !gross){ meldung("Dafür brauchst du eine Werkbank.", "c-bad"); return; }
+  gitterLeeren();
+  if(plan.formlos){
+    const felder = gitterFelder(gross);
+    plan.formlos.forEach((id, i) => { if(i < felder.length) gitter[felder[i]] = id; });
+  } else {
+    for(let y=0; y<plan.form.length; y++)
+      for(let x=0; x<plan.form[y].length; x++){
+        const k = plan.form[y][x];
+        if(k !== "") gitter[y*3+x] = plan.schluessel[k];
+      }
+  }
+  bastelZeichnen();
+}
+function tafelSchliessen(){
+  gitterLeeren();
+  handMaterial = 0;
+  schliesse("tafel");
+}
+function werkbankNah(){
+  const x0 = Math.floor(pos.x), y0 = Math.floor(pos.y), z0 = Math.floor(pos.z);
+  for(let y=y0-2; y<=y0+2; y++)
+    for(let z=z0-3; z<=z0+3; z++)
+      for(let x=x0-3; x<=x0+3; x++)
+        if(block(x,y,z) === B_WERKBANK) return true;
+  return false;
+}
+const gesAtk = () => s.atk + WAFFEN[s.waffe].atk;
+const gesDef = () => s.def + RUESTUNGEN[s.ruestung].def;
+
+/* =====================================================================
+   WELTDATEN
+   ===================================================================== */
+const WX = 192, WY = 56, WZ = 192, CH = 16;
+const CX = WX/CH, CZ = WZ/CH;
+let bloecke = new Uint8Array(WX*WY*WZ);
+let hoehen  = new Int16Array(WX*WZ);
+const idx = (x,y,z) => (y*WZ + z)*WX + x;
+function block(x,y,z){
+  if(y < 0) return B_STEIN;
+  if(x < 0 || z < 0 || x >= WX || z >= WZ || y >= WY) return B_LUFT;
+  return bloecke[idx(x,y,z)];
+}
+function setzeBlock(x,y,z,id,merken){
+  if(x < 0 || y < 0 || z < 0 || x >= WX || y >= WY || z >= WZ) return;
+  bloecke[idx(x,y,z)] = id;
+  if(merken){
+    const k = s.welt + ":" + idx(x,y,z);
+    if(Object.keys(s.aenderungen).length < 6000 || s.aenderungen[k] !== undefined) s.aenderungen[k] = id;
+  }
+}
+function bodenHoehe(x,z){
+  x = Math.floor(x); z = Math.floor(z);
+  const start = deckenHoehe ? Math.min(WY-1, deckenHoehe-2) : WY-1;   // unter der Höhlendecke suchen
+  for(let y = start; y >= 0; y--) if(fest(block(x,y,z))) return y+1;
+  return 0;
+}
+
+/* ---- Rauschen ---- */
+// Würfel mit festem Startwert: gleiche Saat → immer dieselbe Zahlenfolge
+function zufall(saat){
+  let z = (saat >>> 0) || 1;
+  return function(){
+    z = (Math.imul(z, 1664525) + 1013904223) >>> 0;
+    return z / 4294967296;
+  };
+}
+function hashZ(x, y, saat){
+  // Math.imul, weil normales * bei 32-Bit-Werten die Genauigkeit verliert
+  let n = Math.imul(x, 1619) ^ Math.imul(y, 31337) ^ Math.imul(saat, 6971);
+  n = (n << 13) ^ n;
+  const m = Math.imul(n, Math.imul(Math.imul(n, n), 15731) + 789221) + 1376312589;
+  return 1 - (m & 0x7fffffff) / 1073741824;
+}
+function glatt(x, y, saat){
+  const x0 = Math.floor(x), y0 = Math.floor(y);
+  const fx = x-x0, fy = y-y0;
+  const sx = fx*fx*(3-2*fx), sy = fy*fy*(3-2*fy);
+  const a = hashZ(x0,y0,saat),   b = hashZ(x0+1,y0,saat);
+  const c = hashZ(x0,y0+1,saat), d = hashZ(x0+1,y0+1,saat);
+  return (a + (b-a)*sx) + ((c + (d-c)*sx) - (a + (b-a)*sx)) * sy;
+}
+function fbm(x, y, saat, oktaven, skala){
+  let summe = 0, amp = 1, norm = 0, f = skala;
+  for(let i=0; i<oktaven; i++){ summe += glatt(x*f, y*f, saat+i*101)*amp; norm += amp; amp *= 0.5; f *= 2; }
+  return summe/norm;
+}
+
+/* ---- Geländeerzeugung ---- */
+let lagerOrt, portalOrt, bossOrt, startOrt;
+let gelaendeHoehen = null;
+let deckenHoehe = null;
+let schneeWelt = false;   // nur im Eis liegt Schnee auf den Fichten
+function weltErzeugen(){
+  const w = WELTEN[s.welt];
+  const saat = (w.saat + (s.saat||0)*7919) | 0;      // jede Spielwelt sieht anders aus
+  const wuerfel = zufall(saat + 4711);               // fester Zufall: Orte bleiben, wo sie sind
+  bloecke = new Uint8Array(WX*WY*WZ);
+
+  for(let z=0; z<WZ; z++){
+    for(let x=0; x<WX; x++){
+      const mx = (x - WX/2)/(WX/2), mz = (z - WZ/2)/(WZ/2);
+      const rand = Math.pow(Math.max(Math.abs(mx), Math.abs(mz)), 5) * 26;   // Bergrand als Weltgrenze
+      let h = Math.round(w.grund + fbm(x, z, saat, 4, 0.045)*w.hoehe + rand);
+      if(w.terrassen) h = Math.round(h/2)*2;      // Absätze statt sanfter Hänge
+      h = klemm(h, 3, WY-6);
+      hoehen[z*WX+x] = h;
+      for(let y=0; y<=h; y++){
+        let b = w.tief;
+        if(y === h){
+          b = (h <= w.seehoehe+1 ? w.strand : w.oben);
+          if(w.flecken && h > w.seehoehe+1){
+            const misch = fbm(x, z, saat+606, 3, 0.085);
+            b = misch > 0.12 ? w.flecken[0] : (misch < -0.18 ? w.flecken[2] : w.flecken[1]);
+          }
+        }
+        else if(y > h-4) b = (h <= w.seehoehe+1 ? w.strand : w.unter);
+        else if(w.erz && y > 2 && (hashZ(x + y*131, z - y*57, saat+900)+1)/2 > 0.972) b = w.erz;
+        setzeBlock(x,y,z,b);
+      }
+      for(let y=h+1; y<=w.seehoehe; y++) setzeBlock(x,y,z,w.fluessig);
+      if(w.seehoehe > h) hoehen[z*WX+x] = w.seehoehe;
+    }
+  }
+  schneeWelt = (w.oben === B_SCHNEE);
+
+  if(w.decke){                                   // geschlossene Höhle: Dach einziehen
+    deckenHoehe = w.decke;
+    for(let z=0; z<WZ; z++)
+      for(let x=0; x<WX; x++){
+        const wellig = Math.round(fbm(x, z, saat+321, 3, 0.07) * 3);
+        const unterkante = w.decke + wellig;
+        for(let y=unterkante; y<unterkante+4 && y<WY; y++){
+          // Deckenflecken wie am Boden: Schwefel, roter und schwarzer Fels
+          let b = w.tief;
+          if(w.flecken){
+            const misch = fbm(x, z, saat+808, 3, 0.075);
+            b = misch > 0.14 ? w.flecken[0] : (misch < -0.16 ? w.flecken[2] : w.flecken[1]);
+          }
+          setzeBlock(x, y, z, b);
+        }
+        if(w.zapfen){                            // Schwefelzapfen hängen dicht von der Decke
+          const r = (hashZ(x, z, saat+404)+1)/2;
+          if(r > 0.62){
+            const laenge = 2 + Math.floor((r-0.62)*36);      // bis zu 15 Blöcke lang
+            const dickBis = Math.max(1, Math.floor(laenge*0.4));
+            for(let i=1; i<=laenge; i++){
+              const y = unterkante - i;
+              if(y <= 3 || block(x, y, z) !== B_LUFT) break;
+              setzeBlock(x, y, z, B_SCHWEFEL);
+              if(i <= dickBis){                  // oben dick, nach unten spitz zulaufend
+                if(block(x+1, y, z) === B_LUFT) setzeBlock(x+1, y, z, B_SCHWEFEL);
+                if(block(x, y, z+1) === B_LUFT) setzeBlock(x, y, z+1, B_SCHWEFEL);
+                if(i <= dickBis-2){
+                  if(block(x-1, y, z) === B_LUFT) setzeBlock(x-1, y, z, B_SCHWEFEL);
+                  if(block(x, y, z-1) === B_LUFT) setzeBlock(x, y, z-1, B_SCHWEFEL);
+                }
+              }
+            }
+          }
+        }
+      }
+  } else deckenHoehe = null;
+
+  gelaendeHoehen = hoehen.slice();      // Höhen OHNE Bäume – dafür sind Bauplätze da
+
+  // Bewuchs
+  for(let z=2; z<WZ-2; z++){
+    for(let x=2; x<WX-2; x++){
+      const h = hoehen[z*WX+x];
+      if(!w.flecken && block(x,h-1,z) !== w.oben && block(x,h,z) !== w.oben) continue;
+      if(w.flecken && !w.decke){          // draußen: nur auf Erde und Gras, nicht auf nacktem Fels
+        const unterGrund = block(x, h-1, z);
+        if(unterGrund !== B_GRAS && unterGrund !== B_ERDE) continue;
+      }
+      const r = (hashZ(x, z, saat+555)+1)/2;
+      if(w.baeume && r > 0.988) baumSetzen(x, h, z);
+      else if(w.baumArt === "kirsch" && r > 0.992) kirschbaumSetzen(x, h, z);
+      else if(w.saeulen && r > 0.993) saeuleSetzen(x, h, z, w);
+      else if(w.kristalle && r > 0.990) kristallSetzen(x, h, z);
+      else if(w.bewuchs && r > 1 - w.dichte) BEWUCHS[w.bewuchs](x, h, z);
+    }
+  }
+  // Orte bestimmen (immer an Land, geglättet)
+  startOrt  = platzSuchen(WX/2, WZ/2, w, wuerfel);
+  lagerOrt  = platzSuchen(WX*0.30, WZ*0.62, w, wuerfel);
+  bossOrt   = platzSuchen(WX*0.74, WZ*0.28, w, wuerfel);
+  portalOrt = platzSuchen(WX*0.82, WZ*0.80, w, wuerfel);
+  lagerBauen(lagerOrt);
+  portalBauen(portalOrt);
+  arenaBauen(bossOrt);
+
+  hoehenNeu();                     // Höhen stimmen jetzt – die Bauwerke brauchen sie
+  platzRaeumen(startOrt, 5, 16, w.oben);      // freie Lichtung am Startpunkt
+  bauwerkeSetzen(w, wuerfel);
+
+  // gespeicherte Änderungen zurückspielen
+  for(const k in s.aenderungen){
+    const t = k.split(":");
+    if(+t[0] !== s.welt) continue;
+    const i = +t[1];
+    bloecke[i] = s.aenderungen[k];
+  }
+  hoehenNeu();
+  kartenbildErzeugen();
+}
+function platzSuchen(zx, zz, w, wuerfel){
+  zx = Math.round(zx); zz = Math.round(zz);
+  const streu = r => Math.round(wuerfel()*2*r - r);
+  for(let r=0; r<40; r++){
+    for(let i=0; i<12; i++){
+      const x = klemm(zx + streu(r), 6, WX-7), z = klemm(zz + streu(r), 6, WZ-7);
+      const h = hoehen[z*WX+x];
+      if(h > w.seehoehe+1 && h < WY-14) return {x:x, y:h, z:z};
+    }
+  }
+  return {x:zx, y:hoehen[zz*WX+zx], z:zz};
+}
+const BEWUCHS = {
+  kaktus: kaktusSetzen, dschungel: dschungelbaumSetzen, sumpf: sumpfbaumSetzen,
+  fichte: fichteSetzen, pilz: riesenpilzSetzen,
+  schwefel: schwefelSetzen, knochenbaum: knochenbaumSetzen, schattenbaum: schattenbaumSetzen
+};
+function schattenbaumSetzen(x, h, z){             // hoher dunkler Stamm mit fahlem Dach
+  const hoch = 14 + Math.floor(Math.abs(hashZ(x,z,57))*9);   // hohe Stämme, Dach weit oben
+  const dick = Math.abs(hashZ(x,z,59)) > 0.5 ? 1 : 0;       // manche Stämme 2×2
+  for(let y=h; y<h+hoch; y++)
+    for(let dz=0; dz<=dick; dz++)
+      for(let dx=0; dx<=dick; dx++) setzeBlock(x+dx, y, z+dz, B_SCHATTENHOLZ);
+  const k = h + hoch;
+  for(let dy=0; dy<=2; dy++){                                // breites, flaches Dach
+    const r = dy === 2 ? 2 : (dy === 1 ? 4 : 5);
+    for(let dz=-r; dz<=r; dz++)
+      for(let dx=-r; dx<=r; dx++){
+        if(dx*dx + dz*dz > r*r) continue;
+        if((hashZ(x+dx, z+dz+dy*5, 61)+1)/2 < 0.12) continue;
+        if(block(x+dx, k+dy, z+dz) === B_LUFT) setzeBlock(x+dx, k+dy, z+dz, B_SCHATTENLAUB);
+      }
+  }
+  for(let i=0; i<5; i++){                                    // herabhängende Ranken
+    const w2 = (hashZ(x+i, z-i, 63)+1)*Math.PI, r = 2 + Math.abs(hashZ(x-i, z+i, 65))*3;
+    const hx = x + Math.round(Math.cos(w2)*r), hz = z + Math.round(Math.sin(w2)*r);
+    for(let y=k-1; y>k-4; y--)
+      if(block(hx, y, hz) === B_LUFT && block(hx, y+1, hz) === B_SCHATTENLAUB)
+        setzeBlock(hx, y, hz, B_SCHATTENLAUB);
+  }
+}
+function schwefelSetzen(x, h, z){                 // glühende Schwefelzacken
+  const hoch = 1 + Math.floor(Math.abs(hashZ(x,z,51))*4);
+  for(let y=h; y<h+hoch; y++) setzeBlock(x, y, z, B_SCHWEFEL);
+  if(hoch > 2){ setzeBlock(x+1, h, z, B_SCHWEFEL); setzeBlock(x, h, z+1, B_SCHWEFEL); }
+}
+function knochenbaumSetzen(x, h, z){              // kahler, weißer Baum
+  const hoch = 5 + Math.floor(Math.abs(hashZ(x,z,53))*5);
+  for(let y=h; y<h+hoch; y++) setzeBlock(x, y, z, B_KNOCHEN);
+  const k = h + hoch;
+  for(let a=0; a<4; a++){                          // dürre Äste, kein Laub
+    const r = 1 + Math.floor(Math.abs(hashZ(x+a, z-a, 55))*3);
+    const dx = a < 2 ? (a === 0 ? 1 : -1) : 0, dz = a < 2 ? 0 : (a === 2 ? 1 : -1);
+    for(let i=1; i<=r; i++) setzeBlock(x+dx*i, k-1+Math.floor(i/2), z+dz*i, B_KNOCHEN);
+  }
+}
+function kaktusSetzen(x, h, z){
+  const hoch = 2 + (Math.abs(Math.round(hashZ(x,z,31)*3)) % 3);
+  for(let y=h; y<h+hoch; y++) setzeBlock(x, y, z, B_KAKTUS);
+}
+function dschungelbaumSetzen(x, h, z){
+  const hoch = 8 + (Math.abs(Math.round(hashZ(x,z,33)*6)) % 6);
+  for(let y=h; y<h+hoch; y++){
+    setzeBlock(x, y, z, B_DSCHUNGELHOLZ);
+    if(hoch > 10){ setzeBlock(x+1, y, z, B_DSCHUNGELHOLZ); setzeBlock(x, y, z+1, B_DSCHUNGELHOLZ); }
+  }
+  const k = h+hoch;
+  for(let dy=-2; dy<=1; dy++){
+    const r = dy === 1 ? 2 : (dy === 0 ? 4 : 3);
+    for(let dz=-r; dz<=r; dz++) for(let dx=-r; dx<=r; dx++){
+      if(dx*dx + dz*dz > r*r) continue;
+      if(block(x+dx, k+dy, z+dz) === B_LUFT) setzeBlock(x+dx, k+dy, z+dz, B_DSCHUNGELLAUB);
+    }
+  }
+}
+function sumpfbaumSetzen(x, h, z){
+  const hoch = 4 + (Math.abs(Math.round(hashZ(x,z,35)*3)) % 3);
+  for(let y=h; y<h+hoch; y++) setzeBlock(x, y, z, B_HOLZ);
+  const k = h+hoch;                                   // flache, ausgefranste Krone
+  for(let dz=-3; dz<=3; dz++) for(let dx=-3; dx<=3; dx++){
+    if(dx*dx + dz*dz > 9) continue;
+    if((hashZ(x+dx, z+dz, 37)+1)/2 < 0.4) continue;
+    if(block(x+dx, k, z+dz) === B_LUFT) setzeBlock(x+dx, k, z+dz, B_LAUB);
+  }
+}
+function fichteSetzen(x, h, z){
+  const hoch = 6 + (Math.abs(Math.round(hashZ(x,z,39)*4)) % 4);
+  for(let y=h; y<h+hoch; y++) setzeBlock(x, y, z, B_HOLZ);
+  for(let stufe=0; stufe<4; stufe++){                 // kegelförmig, oben schmal
+    const y = h + hoch - 1 - stufe*2;
+    const r = stufe;
+    if(y < h) break;
+    for(let dz=-r; dz<=r; dz++) for(let dx=-r; dx<=r; dx++){
+      if(Math.abs(dx) + Math.abs(dz) > r) continue;
+      if(block(x+dx, y, z+dz) === B_LUFT) setzeBlock(x+dx, y, z+dz, B_LAUB);
+      if(schneeWelt && block(x+dx, y+1, z+dz) === B_LUFT && stufe > 0) setzeBlock(x+dx, y+1, z+dz, B_SCHNEE);
+    }
+  }
+  if(schneeWelt) setzeBlock(x, h+hoch, z, B_SCHNEE);
+}
+function riesenpilzSetzen(x, h, z){
+  const hoch = 4 + (Math.abs(Math.round(hashZ(x,z,41)*4)) % 4);
+  for(let y=h; y<h+hoch; y++) setzeBlock(x, y, z, B_PILZSTIEL);
+  const k = h+hoch;
+  for(let dz=-3; dz<=3; dz++) for(let dx=-3; dx<=3; dx++){        // runder Hut
+    if(dx*dx + dz*dz > 9) continue;
+    if(block(x+dx, k, z+dz) === B_LUFT) setzeBlock(x+dx, k, z+dz, B_PILZHUT);
+    const rand = dx*dx + dz*dz > 4;
+    if(!rand && block(x+dx, k+1, z+dz) === B_LUFT) setzeBlock(x+dx, k+1, z+dz, B_PILZHUT);
+  }
+}
+function kirschbaumSetzen(x, h, z){
+  const hoch = 4 + (Math.abs(Math.round(hashZ(x,z,21)*3)) % 3);
+  for(let y=h; y<h+hoch; y++) setzeBlock(x,y,z,B_KIRSCHHOLZ);
+  const k = h+hoch;
+  for(let dy=-1; dy<=2; dy++){                       // breite, runde Blütenkrone
+    const r = dy >= 2 ? 1 : (dy === 1 ? 2 : 3);
+    for(let dz=-r; dz<=r; dz++) for(let dx=-r; dx<=r; dx++){
+      if(dx*dx + dz*dz > r*r + 1) continue;
+      if(block(x+dx, k+dy, z+dz) === B_LUFT) setzeBlock(x+dx, k+dy, z+dz, B_KIRSCHLAUB);
+    }
+  }
+}
+function baumSetzen(x, h, z){
+  const hoch = 4 + (Math.abs(Math.round(hashZ(x,z,7)*3)) % 3);
+  for(let y=h; y<h+hoch; y++) setzeBlock(x,y,z,B_HOLZ);
+  const kx = h+hoch;
+  for(let dy=-2; dy<=1; dy++){
+    const r = dy >= 0 ? 1 : 2;
+    for(let dz=-r; dz<=r; dz++) for(let dx=-r; dx<=r; dx++){
+      if(Math.abs(dx) === r && Math.abs(dz) === r && dy < 1) continue;
+      if(block(x+dx, kx+dy, z+dz) === B_LUFT) setzeBlock(x+dx, kx+dy, z+dz, B_LAUB);
+    }
+  }
+}
+function saeuleSetzen(x, h, z, w){
+  const hoch = 3 + Math.floor(Math.abs(hashZ(x,z,11))*7);
+  for(let y=h; y<h+hoch; y++)
+    for(let dz=0; dz<=1; dz++) for(let dx=0; dx<=1; dx++)
+      setzeBlock(x+dx, y, z+dz, y > h+hoch-2 ? B_GLUT : B_STEIN);
+}
+function kristallSetzen(x, h, z){
+  const hoch = 2 + Math.floor(Math.abs(hashZ(x,z,13))*5);
+  for(let y=h; y<h+hoch; y++) setzeBlock(x, y, z, B_KRISTALL);
+}
+function ebnen(o, r, b){
+  for(let dz=-r; dz<=r; dz++) for(let dx=-r; dx<=r; dx++){
+    const x = o.x+dx, z = o.z+dz;
+    if(x<1 || z<1 || x>=WX-1 || z>=WZ-1) continue;
+    for(let y=o.y; y<o.y+9; y++) setzeBlock(x,y,z,B_LUFT);
+    setzeBlock(x, o.y-1, z, b);
+    for(let y=o.y-2; y>o.y-5; y--) if(block(x,y,z) === B_LUFT) setzeBlock(x,y,z,b);
+  }
+}
+function lagerBauen(o){
+  ebnen(o, 3, B_BRETTER);
+  setzeBlock(o.x, o.y, o.z, B_GLUT);
+  for(const d of [[-3,-3],[3,-3],[-3,3],[3,3]]){
+    for(let y=o.y; y<o.y+3; y++) setzeBlock(o.x+d[0], y, o.z+d[1], B_HOLZ);
+  }
+}
+function portalBauen(o){
+  ebnen(o, 3, B_OBSIDIAN);
+  for(let y=0; y<5; y++) for(let dx=-2; dx<=2; dx++){
+    const rahmen = (y === 0 || y === 4 || dx === -2 || dx === 2);
+    setzeBlock(o.x+dx, o.y+y, o.z, rahmen ? B_OBSIDIAN : B_PORTAL);
+  }
+}
+function arenaBauen(o){
+  ebnen(o, 5, WELTEN[s.welt].oben);
+  for(let a=0; a<32; a++){                       // Steinring
+    const w2 = a/32*Math.PI*2;
+    const x = o.x + Math.round(Math.cos(w2)*6), z = o.z + Math.round(Math.sin(w2)*6);
+    for(let y=o.y; y<o.y+2; y++) setzeBlock(x, y, z, B_OBSIDIAN);
+  }
+}
+function hoehenNeu(){
+  for(let z=0; z<WZ; z++) for(let x=0; x<WX; x++){
+    let h = 0;
+    for(let y=WY-1; y>=0; y--) if(block(x,y,z) !== B_LUFT){ h = y+1; break; }
+    hoehen[z*WX+x] = h;
+  }
+}
+
+/* =====================================================================
+   TEXTUR-ATLAS
+   ===================================================================== */
+function atlasBauen(){
+  const T = 32, N = AN, c = document.createElement("canvas");
+  c.width = c.height = T*N;
+  const g = c.getContext("2d");
+  const kachel = (nr, mal) => {
+    const ox = (nr%N)*T, oy = Math.floor(nr/N)*T;
+    g.save(); g.translate(ox, oy); g.beginPath(); g.rect(0,0,T,T); g.clip(); mal(g, T); g.restore();
+  };
+  const rauschen = (g,T,farben,dichte) => {
+    for(let i=0; i<T*T*dichte; i++){
+      g.fillStyle = farben[Math.floor(Math.random()*farben.length)];
+      g.fillRect(Math.floor(Math.random()*T), Math.floor(Math.random()*T), 2, 2);
+    }
+  };
+  const grund = (g,T,f) => { g.fillStyle = f; g.fillRect(0,0,T,T); };
+
+  kachel(K.gras,      (g,T)=>{ grund(g,T,"#5aa03c"); rauschen(g,T,["#66b344","#4c8c33","#72c04d"],.6); });
+  kachel(K.grasSeite, (g,T)=>{ grund(g,T,"#8a6b45"); rauschen(g,T,["#7a5c3a","#96754c"],.5);
+                               g.fillStyle="#5aa03c"; g.fillRect(0,0,T,9);
+                               for(let i=0;i<T;i+=2){ g.fillRect(i,9,2,1+Math.floor(Math.random()*4)); } });
+  kachel(K.erde,      (g,T)=>{ grund(g,T,"#8a6b45"); rauschen(g,T,["#7a5c3a","#96754c","#6d5133"],.6); });
+  kachel(K.stein,     (g,T)=>{ grund(g,T,"#8a8f96"); rauschen(g,T,["#7b8087","#9aa0a7","#6e7379"],.7); });
+  kachel(K.sand,      (g,T)=>{ grund(g,T,"#d8c489"); rauschen(g,T,["#e2d097","#c9b478"],.5); });
+  kachel(K.wasser,    (g,T)=>{ grund(g,T,"#2f6ecb"); rauschen(g,T,["#3b7ddb","#2a62b8"],.4); });
+  kachel(K.holz,      (g,T)=>{ grund(g,T,"#6b4d2c"); for(let i=0;i<T;i+=5){ g.fillStyle="#5a3f23"; g.fillRect(i,0,2,T);} rauschen(g,T,["#77572f"],.2); });
+  kachel(K.holzOben,  (g,T)=>{ grund(g,T,"#8a6a3c"); g.strokeStyle="#5a3f23"; for(let r=3;r<T/2;r+=4){ g.beginPath(); g.arc(T/2,T/2,r,0,6.3); g.stroke(); } });
+  kachel(K.laub,      (g,T)=>{ grund(g,T,"#2f6f2c"); rauschen(g,T,["#3c8a33","#255c24","#46a03a"],.9); });
+  kachel(K.bretter,   (g,T)=>{ grund(g,T,"#a5793f"); g.fillStyle="#8a6331"; for(let y=0;y<T;y+=8) g.fillRect(0,y,T,2); rauschen(g,T,["#b0854a"],.2); });
+  kachel(K.glut,      (g,T)=>{ grund(g,T,"#e0761f"); rauschen(g,T,["#ffb23a","#ff8c1a","#c94f10"],.8); });
+  kachel(K.obsidian,  (g,T)=>{ grund(g,T,"#1c1830"); rauschen(g,T,["#2a2348","#141024","#3b2f66"],.5); });
+  kachel(K.portal,    (g,T)=>{ grund(g,T,"#7a3fd6"); rauschen(g,T,["#a878ff","#5a2aa8","#d0b0ff"],.9); });
+  kachel(K.lava,      (g,T)=>{ grund(g,T,"#e04a10"); rauschen(g,T,["#ff8a1e","#ffd23a","#a82c08"],.8); });
+  kachel(K.dunkel,    (g,T)=>{ grund(g,T,"#2b2738"); rauschen(g,T,["#37324a","#211d2c"],.6); });
+  kachel(K.kristall,  (g,T)=>{ grund(g,T,"#8f6ee0"); rauschen(g,T,["#bda6ff","#6a4bb8","#e0d0ff"],.7); });
+  kachel(K.werkOben,  (g,T)=>{ grund(g,T,"#a5793f"); g.fillStyle="#6b4d2c";
+                               g.fillRect(2,2,T-4,2); g.fillRect(2,T-4,T-4,2); g.fillRect(2,2,2,T-4); g.fillRect(T-4,2,2,T-4);
+                               g.fillRect(T/2-1,4,2,T-8); g.fillRect(4,T/2-1,T-8,2); rauschen(g,T,["#b0854a"],.2); });
+  kachel(K.kirschHolz,(g,T)=>{ grund(g,T,"#5c3b3f"); for(let i=0;i<T;i+=5){ g.fillStyle="#472c30"; g.fillRect(i,0,2,T);} rauschen(g,T,["#6b464b","#3d2529"],.3); });
+  kachel(K.kirschOben,(g,T)=>{ grund(g,T,"#8a5f63"); g.strokeStyle="#4a2f33"; for(let r=3;r<T/2;r+=4){ g.beginPath(); g.arc(T/2,T/2,r,0,6.3); g.stroke(); } });
+  kachel(K.kirschLaub,(g,T)=>{ grund(g,T,"#f2a8c8"); rauschen(g,T,["#ffc4dd","#e08cb4","#ffd9e8","#c9749c"],1.0); });
+  kachel(K.kirschBoden,(g,T)=>{ grund(g,T,"#6fae4a"); rauschen(g,T,["#7cbd53","#5f9a3f"],.5);
+                                for(let i=0;i<26;i++){ g.fillStyle=["#ffc4dd","#f2a8c8","#ffd9e8"][i%3];
+                                  g.fillRect(Math.random()*T, Math.random()*T, 2, 2); } });
+  kachel(K.kaktus,    (g,T)=>{ grund(g,T,"#3f7d3a"); rauschen(g,T,["#4a8f42","#356b31"],.4);
+                               g.fillStyle="#2c5a29"; for(let i=4;i<T;i+=8) g.fillRect(i,0,2,T);
+                               g.fillStyle="#e8f0c8"; for(let i=0;i<14;i++) g.fillRect(Math.random()*T, Math.random()*T, 2, 2); });
+  kachel(K.kaktusOben,(g,T)=>{ grund(g,T,"#4a8f42"); g.fillStyle="#2c5a29"; g.beginPath(); g.arc(T/2,T/2,T*0.3,0,6.3); g.fill();
+                               rauschen(g,T,["#3f7d3a"],.3); });
+  kachel(K.smaragd,   (g,T)=>{ grund(g,T,"#8a8f96"); rauschen(g,T,["#7b8087","#9aa0a7"],.5);
+                               g.fillStyle="#2fd67f"; for(let i=0;i<7;i++){ const x=Math.random()*(T-8), y=Math.random()*(T-8);
+                                 g.beginPath(); g.moveTo(x+4,y); g.lineTo(x+8,y+4); g.lineTo(x+4,y+8); g.lineTo(x,y+4); g.closePath(); g.fill(); } });
+  kachel(K.pech,      (g,T)=>{ grund(g,T,"#241d16"); rauschen(g,T,["#332920","#160f0a"],.6);
+                               g.fillStyle="#4a3a22"; for(let i=0;i<9;i++){ g.beginPath();
+                                 g.arc(Math.random()*T, Math.random()*T, 1+Math.random()*3, 0, 6.3); g.fill(); } });
+  kachel(K.eis,       (g,T)=>{ grund(g,T,"#a8d8f0"); rauschen(g,T,["#c4e6f7","#8cc4e0"],.4);
+                               g.strokeStyle="rgba(255,255,255,.6)"; g.lineWidth=1.5;
+                               for(let i=0;i<5;i++){ g.beginPath(); g.moveTo(Math.random()*T,0); g.lineTo(Math.random()*T,T); g.stroke(); } });
+  kachel(K.spore,     (g,T)=>{ grund(g,T,"#5a4462"); rauschen(g,T,["#6d5375","#453450"],.5);
+                               g.fillStyle="#c47fd6"; for(let i=0;i<11;i++){ g.beginPath();
+                                 g.arc(Math.random()*T, Math.random()*T, 1.5+Math.random()*2.5, 0, 6.3); g.fill(); } });
+  kachel(K.schnee,    (g,T)=>{ grund(g,T,"#eef4fa"); rauschen(g,T,["#ffffff","#dbe7f2"],.5); });
+  kachel(K.dschungelHolz,(g,T)=>{ grund(g,T,"#4a3a1f"); for(let i=0;i<T;i+=4){ g.fillStyle="#3a2c17"; g.fillRect(i,0,2,T);} rauschen(g,T,["#5c4a28"],.3); });
+  kachel(K.dschungelLaub,(g,T)=>{ grund(g,T,"#1e5c1a"); rauschen(g,T,["#2a7a24","#164414","#35942c"],1.0); });
+  kachel(K.sumpfErde, (g,T)=>{ grund(g,T,"#4a4a2c"); rauschen(g,T,["#3a3a22","#5c5c38","#2e3a20"],.7); });
+  kachel(K.pilzHut,   (g,T)=>{ grund(g,T,"#c22e2e"); rauschen(g,T,["#a82424"],.3);
+                               g.fillStyle="#f5ece0"; for(let i=0;i<6;i++){ g.beginPath();
+                                 g.arc(4+Math.random()*(T-8), 4+Math.random()*(T-8), 2.5+Math.random()*3, 0, 6.3); g.fill(); } });
+  kachel(K.pilzStiel, (g,T)=>{ grund(g,T,"#e8ddc8"); rauschen(g,T,["#d6c9ae","#f5ece0"],.4); });
+  kachel(K.myzel,     (g,T)=>{ grund(g,T,"#6b5a72"); rauschen(g,T,["#7d6a85","#5a4a62","#8f7a96"],.8); });
+  kachel(K.schwefel,     (g,T)=>{ grund(g,T,"#e8d64a"); rauschen(g,T,["#fff08a","#c9b52e","#ffffff"],.8);
+                                  g.fillStyle="#fffbc0"; for(let i=0;i<6;i++){ const x=Math.random()*T,y=Math.random()*T;
+                                    g.beginPath(); g.moveTo(x,y-4); g.lineTo(x+3,y); g.lineTo(x,y+4); g.lineTo(x-3,y); g.closePath(); g.fill(); } });
+  kachel(K.schwefelStein,(g,T)=>{ grund(g,T,"#4a4230"); rauschen(g,T,["#5c5340","#3a3325","#6b6048"],.7);
+                                  g.fillStyle="rgba(232,214,74,.5)"; for(let i=0;i<9;i++)
+                                    g.fillRect(Math.random()*T, Math.random()*T, 2, 2); });
+  kachel(K.seelenSand,   (g,T)=>{ grund(g,T,"#5a4638"); rauschen(g,T,["#6b5444","#48372c"],.6);
+                                  g.fillStyle="rgba(20,14,10,.75)";           // Gesichter im Sand
+                                  for(let i=0;i<3;i++){ const x=4+Math.random()*(T-12), y=4+Math.random()*(T-12);
+                                    g.beginPath(); g.arc(x,y,3.5,0,6.3); g.fill();
+                                    g.beginPath(); g.arc(x+7,y,3.5,0,6.3); g.fill();
+                                    g.fillRect(x-1, y+6, 10, 2); } });
+  kachel(K.seelenFeuer,  (g,T)=>{ grund(g,T,"#1a4a8a"); rauschen(g,T,["#3a8ad6","#7ad0ff","#0d2a5a"],.9);
+                                  g.fillStyle="#bfeaff"; for(let i=0;i<7;i++){ const x=Math.random()*T,y=Math.random()*T;
+                                    g.beginPath(); g.moveTo(x,y-5); g.lineTo(x+3,y+2); g.lineTo(x-3,y+2); g.closePath(); g.fill(); } });
+  kachel(K.knochen,      (g,T)=>{ grund(g,T,"#ddd6c2"); rauschen(g,T,["#c9c1ab","#f0ebdc"],.5);
+                                  g.fillStyle="#b3ab94"; for(let i=0;i<T;i+=8) g.fillRect(i,0,2,T); });
+  kachel(K.seelenKristall,(g,T)=>{ grund(g,T,"#2a4a6b"); rauschen(g,T,["#3a6b96","#7ac4f0","#1a3350"],.7);
+                                  g.fillStyle="#a8e4ff"; for(let i=0;i<5;i++){ const x=4+Math.random()*(T-8), y=4+Math.random()*(T-8);
+                                    g.beginPath(); g.moveTo(x,y-5); g.lineTo(x+4,y); g.lineTo(x,y+5); g.lineTo(x-4,y); g.closePath(); g.fill(); } });
+  kachel(K.dunkelHolz,  (g,T)=>{ grund(g,T,"#4a3a33"); rauschen(g,T,["#57453c","#3a2c26","#2e231e"],.8);
+                                 g.fillStyle="#2e231e"; for(let i=0;i<T;i+=6) g.fillRect(i,0,3,T);
+                                 g.fillStyle="#614c40"; for(let i=3;i<T;i+=6) g.fillRect(i,0,1,T); });
+  kachel(K.schattenLaub,(g,T)=>{ grund(g,T,"#5a6b56"); rauschen(g,T,["#6e7f68","#48583f","#7f8f78","#3a4632"],1.1); });
+  kachel(K.moosBoden,   (g,T)=>{ grund(g,T,"#49543f"); rauschen(g,T,["#556049","#3c4634","#626d54"],.9);
+                                 g.fillStyle="#77835f"; for(let i=0;i<18;i++)
+                                   g.fillRect(Math.random()*T, Math.random()*T, 2, 3); });
+  kachel(K.rotFels,     (g,T)=>{ grund(g,T,"#6e2a24"); rauschen(g,T,["#7f342c","#59201b","#8c3f33"],.8);
+                                 g.fillStyle="#4a1a16"; for(let i=0;i<7;i++)
+                                   g.fillRect(Math.random()*T, Math.random()*T, 3+Math.random()*5, 2); });
+  kachel(K.hoehlenWasser,      (g,T)=>{ grund(g,T,"#2fb89a"); rauschen(g,T,["#48d6b4","#1e9c82","#7ff0d8"],.7);
+                                 g.fillStyle="#b6ffee"; for(let i=0;i<5;i++){ const x=Math.random()*T,y=Math.random()*T;
+                                   g.beginPath(); g.arc(x,y,1.5+Math.random()*2,0,6.3); g.fill(); } });
+  kachel(K.werkSeite, (g,T)=>{ grund(g,T,"#8a6331"); g.fillStyle="#5a3f23"; g.fillRect(0,0,T,6);
+                               g.fillStyle="#a5793f"; g.fillRect(3,10,T-6,9);
+                               g.fillStyle="#5a3f23"; g.fillRect(4,22,4,T-22); g.fillRect(T-8,22,4,T-22); });
+  return c;
+}
+function kachelBild(nr, groesse){
+  const c = document.createElement("canvas");
+  c.width = c.height = groesse;
+  const g = c.getContext("2d");
+  g.imageSmoothingEnabled = false;
+  g.drawImage(atlas, (nr%AN)*32, Math.floor(nr/AN)*32, 32, 32, 0, 0, groesse, groesse);
+  return c;
+}
+const emojiCache = {};
+function emojiTextur(gl, emoji){
+  if(emojiCache[emoji]) return emojiCache[emoji];
+  const G = 128, c = document.createElement("canvas");
+  c.width = c.height = G;
+  const g = c.getContext("2d");
+  g.font = Math.floor(G*0.8) + "px serif";
+  g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillText(emoji, G/2, G/2 + G*0.04);
+  const t = texturVon(gl, c);
+  emojiCache[emoji] = t;
+  return t;
+}
+
+/* =====================================================================
+   WEBGL
+   ===================================================================== */
+const leinwand = $("welt");
+const gl = leinwand.getContext("webgl", {antialias:false, alpha:false});
+let atlas, atlasTex, prog, progHimmel, himmelBuf, linienBuf, bbBuf, weissTex;
+let U = {}, A = {};
+
+function shader(typ, quelle){
+  const sh = gl.createShader(typ);
+  gl.shaderSource(sh, quelle); gl.compileShader(sh);
+  if(!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(sh));
+  return sh;
+}
+function programm(vs, fs){
+  const p = gl.createProgram();
+  gl.attachShader(p, shader(gl.VERTEX_SHADER, vs));
+  gl.attachShader(p, shader(gl.FRAGMENT_SHADER, fs));
+  gl.linkProgram(p);
+  if(!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+  return p;
+}
+function texturVon(gl, bild){
+  const t = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bild);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  return t;
+}
+function glStarten(){
+  atlas = atlasBauen();
+  atlasTex = texturVon(gl, atlas);
+  const w = document.createElement("canvas"); w.width = w.height = 2;
+  const wg = w.getContext("2d"); wg.fillStyle = "#fff"; wg.fillRect(0,0,2,2);
+  weissTex = texturVon(gl, w);
+
+  prog = programm(
+    "attribute vec3 aPos; attribute vec2 aUV; attribute float aLicht;" +
+    "uniform mat4 uMVP; uniform vec3 uAuge;" +
+    "varying vec2 vUV; varying float vLicht; varying float vDist;" +
+    "void main(){ gl_Position = uMVP*vec4(aPos,1.0); vUV=aUV; vLicht=aLicht; vDist=distance(aPos,uAuge); }",
+
+    "precision mediump float;" +
+    "uniform sampler2D uTex; uniform vec3 uNebel; uniform float uSicht; uniform float uFlach; uniform vec4 uFarbe;" +
+    "varying vec2 vUV; varying float vLicht; varying float vDist;" +
+    "void main(){" +
+    "  vec4 c = uFlach > 0.5 ? uFarbe : texture2D(uTex, vUV);" +
+    "  if(uFlach < 0.5 && c.a < 0.35) discard;" +
+    "  c.rgb *= vLicht;" +
+    "  float n = clamp((vDist - uSicht*0.55)/(uSicht*0.45), 0.0, 1.0);" +
+    "  gl_FragColor = vec4(mix(c.rgb, uNebel, n), c.a);" +
+    "}"
+  );
+  gl.useProgram(prog);
+  A.pos = gl.getAttribLocation(prog,"aPos");
+  A.uv = gl.getAttribLocation(prog,"aUV");
+  A.licht = gl.getAttribLocation(prog,"aLicht");
+  ["uMVP","uAuge","uTex","uNebel","uSicht","uFlach","uFarbe"].forEach(n => U[n] = gl.getUniformLocation(prog,n));
+
+  progHimmel = programm(
+    "attribute vec2 aP; varying float vT; void main(){ vT=(aP.y+1.0)*0.5; gl_Position=vec4(aP,0.999,1.0); }",
+    "precision mediump float; uniform vec3 uOben; uniform vec3 uUnten; varying float vT;" +
+    "void main(){ gl_FragColor = vec4(mix(uUnten,uOben,vT),1.0); }"
+  );
+  himmelBuf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, himmelBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]), gl.STATIC_DRAW);
+
+  linienBuf = gl.createBuffer();
+  bbBuf = gl.createBuffer();
+
+  gl.enable(gl.DEPTH_TEST);
+  gl.disable(gl.CULL_FACE);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+}
+
+/* ---- Matrizen ---- */
+function perspektive(fov, seit, nah, fern){
+  const f = 1/Math.tan(fov/2), nf = 1/(nah-fern);
+  return new Float32Array([f/seit,0,0,0, 0,f,0,0, 0,0,(fern+nah)*nf,-1, 0,0,2*fern*nah*nf,0]);
+}
+function blickAuf(ax,ay,az, bx,by,bz){
+  let zx = ax-bx, zy = ay-by, zz = az-bz;
+  let l = Math.hypot(zx,zy,zz) || 1; zx/=l; zy/=l; zz/=l;
+  let xx = zz*0 - zy*0, xy = 0, xz = 0;               // up = (0,1,0)
+  xx = 1*zz - 0*zy; xy = 0*zx - 0*zz; xz = 0*zy - 1*zx;
+  l = Math.hypot(xx,xy,xz) || 1; xx/=l; xy/=l; xz/=l;
+  const yx = zy*xz - zz*xy, yy = zz*xx - zx*xz, yz = zx*xy - zy*xx;
+  return new Float32Array([
+    xx, yx, zx, 0,
+    xy, yy, zy, 0,
+    xz, yz, zz, 0,
+    -(xx*ax + xy*ay + xz*az), -(yx*ax + yy*ay + yz*az), -(zx*ax + zy*ay + zz*az), 1
+  ]);
+}
+function malMat(a,b){
+  const o = new Float32Array(16);
+  for(let i=0; i<4; i++) for(let j=0; j<4; j++){
+    let sum = 0;
+    for(let k=0; k<4; k++) sum += a[k*4+j]*b[i*4+k];
+    o[i*4+j] = sum;
+  }
+  return o;
+}
+
+/* =====================================================================
+   CHUNK-NETZE
+   ===================================================================== */
+const SEITEN = [
+  {d:[ 0, 1, 0], licht:1.00, kachel:0, ecken:[[0,1,0],[0,1,1],[1,1,1],[1,1,0]]},
+  {d:[ 0,-1, 0], licht:0.42, kachel:1, ecken:[[0,0,0],[1,0,0],[1,0,1],[0,0,1]]},
+  {d:[ 0, 0, 1], licht:0.80, kachel:2, ecken:[[0,0,1],[1,0,1],[1,1,1],[0,1,1]]},
+  {d:[ 0, 0,-1], licht:0.66, kachel:2, ecken:[[1,0,0],[0,0,0],[0,1,0],[1,1,0]]},
+  {d:[ 1, 0, 0], licht:0.74, kachel:2, ecken:[[1,0,1],[1,0,0],[1,1,0],[1,1,1]]},
+  {d:[-1, 0, 0], licht:0.58, kachel:2, ecken:[[0,0,0],[0,0,1],[0,1,1],[0,1,0]]}
+];
+const UVE = [[0,1],[1,1],[1,0],[0,0]];
+let chunks = [], bauliste = [];
+
+function chunkNr(cx,cz){ return cz*CX + cx; }
+function chunksAnlegen(){
+  gl.disableVertexAttribArray(A.pos);
+  gl.disableVertexAttribArray(A.uv);
+  gl.disableVertexAttribArray(A.licht);
+  gl.bindBuffer(gl.ARRAY_BUFFER, null);
+  chunks.forEach(c => { if(c.vbo) gl.deleteBuffer(c.vbo); if(c.vboF) gl.deleteBuffer(c.vboF); });
+  chunks = []; bauliste = [];
+  for(let cz=0; cz<CZ; cz++) for(let cx=0; cx<CX; cx++){
+    chunks.push({cx:cx, cz:cz, vbo:null, anz:0, vboF:null, anzF:0, schmutzig:true});
+    bauliste.push(chunkNr(cx,cz));
+  }
+}
+function chunkSchmutzig(x,z){
+  const cx = klemm(Math.floor(x/CH), 0, CX-1), cz = klemm(Math.floor(z/CH), 0, CZ-1);
+  const c = chunks[chunkNr(cx,cz)];
+  if(c && !c.schmutzig){ c.schmutzig = true; bauliste.unshift(chunkNr(cx,cz)); }
+}
+function netzBauen(c){
+  const fest2 = [], fluss = [];
+  const x0 = c.cx*CH, z0 = c.cz*CH;
+  for(let z=z0; z<z0+CH; z++){
+    for(let x=x0; x<x0+CH; x++){
+      const sonne = hoehen[z*WX+x];
+      for(let y=0; y<WY; y++){
+        const b = block(x,y,z);
+        if(b === B_LUFT) continue;
+        const def = BLOECKE[b];
+        const ziel = def.fluessig ? fluss : fest2;
+        for(let f=0; f<6; f++){
+          const S = SEITEN[f];
+          const nb = block(x+S.d[0], y+S.d[1], z+S.d[2]);
+          if(def.fluessig ? (nb === b || dicht(nb)) : dicht(nb)) continue;
+          const kachel = def.kacheln[S.kachel];
+          const ku = (kachel%AN)/AN, kv = Math.floor(kachel/AN)/AN;
+          let licht = def.leuchtet ? 1.15 : S.licht;
+          if(!def.leuchtet && y < sonne-1) licht *= 0.72;
+          const p = [];
+          for(let e=0; e<4; e++){
+            const E = S.ecken[e];
+            p.push([x+E[0], y+E[1], z+E[2], ku + UVE[e][0]*UVW + 0.0008, kv + UVE[e][1]*UVW + 0.0008, licht]);
+          }
+          const reihen = [p[0],p[1],p[2], p[0],p[2],p[3]];
+          for(const v of reihen) for(let i=0; i<6; i++) ziel.push(v[i]);
+        }
+      }
+    }
+  }
+  if(!c.vbo) c.vbo = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, c.vbo);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(fest2), gl.STATIC_DRAW);
+  c.anz = fest2.length/6;
+  if(!c.vboF) c.vboF = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, c.vboF);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(fluss), gl.STATIC_DRAW);
+  c.anzF = fluss.length/6;
+  c.schmutzig = false;
+}
+
+/* =====================================================================
+   SPIELER
+   ===================================================================== */
+let pos = {x:64, y:30, z:64}, geschw = {x:0, y:0, z:0};
+let gier = 0, nick = 0, amBoden = false;
+const AUGE = 1.62, BREITE = 0.3, HOCH = 1.8;
+const tasten = {};
+let gewaehlt = 0, modus = "start";
+
+function vorne(){
+  const cp = Math.cos(nick);
+  return {x:-cp*Math.sin(gier), y:Math.sin(nick), z:-cp*Math.cos(gier)};
+}
+function stecktFest(x,y,z){
+  const x0 = Math.floor(x-BREITE), x1 = Math.floor(x+BREITE);
+  const z0 = Math.floor(z-BREITE), z1 = Math.floor(z+BREITE);
+  const y0 = Math.floor(y), y1 = Math.floor(y+HOCH-0.01);
+  for(let yy=y0; yy<=y1; yy++) for(let zz=z0; zz<=z1; zz++) for(let xx=x0; xx<=x1; xx++)
+    if(fest(block(xx,yy,zz))) return true;
+  return false;
+}
+function bewegen(dt){
+  const w = WELTEN[s.welt];
+  let vor = 0, seit = 0;
+  if(tasten["w"]) vor += 1;
+  if(tasten["s"]) vor -= 1;
+  if(tasten["a"]) seit -= 1;
+  if(tasten["d"]) seit += 1;
+  if(tasten["pfeilL"]) gier += 2.2*dt;
+  if(tasten["pfeilR"]) gier -= 2.2*dt;
+  if(tasten["ArrowLeft"]) gier += 2.2*dt;
+  if(tasten["ArrowRight"]) gier -= 2.2*dt;
+  if(tasten["ArrowUp"]) nick = klemm(nick + 1.6*dt, -1.5, 1.5);
+  if(tasten["ArrowDown"]) nick = klemm(nick - 1.6*dt, -1.5, 1.5);
+
+  const tempo = tasten["Shift"] ? 9.5 : 5.2;
+  const sinG = Math.sin(gier), cosG = Math.cos(gier);
+  let wx = 0, wz = 0;
+  if(vor || seit){
+    const l = Math.hypot(vor, seit);
+    wx = (-sinG*vor + cosG*seit)/l;
+    wz = (-cosG*vor - sinG*seit)/l;
+  }
+  const imWasser = BLOECKE[block(Math.floor(pos.x), Math.floor(pos.y+0.5), Math.floor(pos.z))]
+                 && BLOECKE[block(Math.floor(pos.x), Math.floor(pos.y+0.5), Math.floor(pos.z))].fluessig;
+  const zaeh = imWasser ? 0.55 : 1;
+
+  geschw.x = wx*tempo*zaeh;
+  geschw.z = wz*tempo*zaeh;
+
+  geschw.y -= (imWasser ? 9 : 29) * dt;
+  if(imWasser) geschw.y = Math.max(geschw.y, -3.2);
+  if(tasten[" "]){
+    if(amBoden) geschw.y = 8.6;
+    else if(imWasser) geschw.y = 4.2;          // im Wasser paddelst du nach oben
+  }
+  geschw.y = Math.max(geschw.y, -55);
+
+  // Achsenweise auflösen
+  let nx = pos.x + geschw.x*dt;
+  if(!stecktFest(nx, pos.y, pos.z)) pos.x = nx;
+  else if(!stecktFest(nx, pos.y+1, pos.z) && amBoden && geschw.y >= 0){ pos.x = nx; pos.y += 1; }
+
+  let nz = pos.z + geschw.z*dt;
+  if(!stecktFest(pos.x, pos.y, nz)) pos.z = nz;
+  else if(!stecktFest(pos.x, pos.y+1, nz) && amBoden && geschw.y >= 0){ pos.z = nz; pos.y += 1; }
+
+  const ny = pos.y + geschw.y*dt;
+  amBoden = false;
+  if(!stecktFest(pos.x, ny, pos.z)) pos.y = ny;
+  else {
+    if(geschw.y < 0){ amBoden = true; pos.y = Math.floor(pos.y) + 0.0001; }
+    geschw.y = 0;
+  }
+  pos.x = klemm(pos.x, 0.4, WX-0.4);
+  pos.z = klemm(pos.z, 0.4, WZ-0.4);
+  if(pos.y < -8){ pos.y = WY-2; geschw.y = 0; }
+
+  // Kakteen stechen, wenn man sich an sie drückt
+  const fy = Math.floor(pos.y + 0.5);
+  for(const d of [[0.42,0],[-0.42,0],[0,0.42],[0,-0.42]]){
+    const nb = block(Math.floor(pos.x+d[0]), fy, Math.floor(pos.z+d[1]));
+    if(nb > 0 && BLOECKE[nb].stachlig){
+      s.hp -= 9*dt;
+      if(Math.random() < dt*1.5) meldung("🌵 Autsch – die Stacheln!", "c-bad");
+      if(s.hp <= 0){ sterben("an einem Kaktus"); return; }
+      hudZeichnen();
+      break;
+    }
+  }
+  // Lava tut weh
+  const bIn = block(Math.floor(pos.x), Math.floor(pos.y+0.4), Math.floor(pos.z));
+  if(bIn > 0 && BLOECKE[bIn].heiss){
+    s.hp -= 14*dt;
+    if(Math.random() < dt*2) meldung(BLOECKE[bIn].schadenText || "🔥 Die Lava verbrennt dich!", "c-bad");
+    if(s.hp <= 0) sterben("in der Lava");
+    hudZeichnen();
+  }
+}
+
+/* ---- Blockstrahl ---- */
+function strahl(reichweite){
+  const v = vorne();
+  let x = Math.floor(pos.x), y = Math.floor(pos.y+AUGE), z = Math.floor(pos.z);
+  const sx = Math.sign(v.x), sy = Math.sign(v.y), sz = Math.sign(v.z);
+  const dx = Math.abs(1/v.x), dy = Math.abs(1/v.y), dz = Math.abs(1/v.z);
+  const ox = pos.x, oy = pos.y+AUGE, oz = pos.z;
+  let tx = sx > 0 ? (x+1-ox)*dx : (ox-x)*dx;
+  let ty = sy > 0 ? (y+1-oy)*dy : (oy-y)*dy;
+  let tz = sz > 0 ? (z+1-oz)*dz : (oz-z)*dz;
+  let normale = [0,0,0], t = 0;
+  for(let i=0; i<80 && t < reichweite; i++){
+    const b = block(x,y,z);
+    if(b !== B_LUFT && !BLOECKE[b].fluessig) return {x:x, y:y, z:z, n:normale, block:b};
+    if(tx < ty && tx < tz){ x += sx; t = tx; tx += dx; normale = [-sx,0,0]; }
+    else if(ty < tz){ y += sy; t = ty; ty += dy; normale = [0,-sy,0]; }
+    else { z += sz; t = tz; tz += dz; normale = [0,0,-sz]; }
+  }
+  return null;
+}
+// Je besser die Waffe, desto schneller gräbst du
+function grabTempo(def){
+  if(!def) return 1;
+  if(def.werkzeug === "hacke") return 1 + HACKEN[s.hacke].bonus;
+  if(def.werkzeug === "axt")   return 1 + AEXTE[s.axt].bonus;
+  return 1 + 0.25*Math.max(s.hacke, s.axt);      // Erde, Sand, Laub gehen auch so schnell
+}
+let abbauZiel = null, abbauFortschritt = 0, letzteWarnung = 0;
+
+function abbauSchritt(dt){
+  const z = strahl(6);
+  if(!z){ abbauZiel = null; abbauFortschritt = 0; return; }
+  const def = BLOECKE[z.block];
+  const geschuetzt = (z.block === B_OBSIDIAN && naheOrt(portalOrt, 7));
+  if(def.unzerstoerbar || geschuetzt){
+    abbauZiel = null; abbauFortschritt = 0;
+    if(performance.now() - letzteWarnung > 2000){
+      letzteWarnung = performance.now();
+      meldung(geschuetzt ? "Der Portalrahmen ist unzerstörbar." : (def.name + " lässt sich nicht abbauen."), "c-dim");
+    }
+    return;
+  }
+  if(!abbauZiel || abbauZiel.x !== z.x || abbauZiel.y !== z.y || abbauZiel.z !== z.z){
+    abbauZiel = {x:z.x, y:z.y, z:z.z};
+    abbauFortschritt = 0;
+  }
+  abbauFortschritt += dt * grabTempo(def) / def.haerte;
+  $("abbaubalken").style.width = klemm(abbauFortschritt*100, 0, 100) + "%";
+  $("abbaubox").classList.remove("hidden");
+  if(abbauFortschritt < 1) return;
+
+  // geschafft
+  setzeBlock(z.x, z.y, z.z, B_LUFT, true);
+  blockUmgebungNeu(z.x, z.z);
+  gibMaterial(def.gibt, 1);
+  meldung("+1 " + BLOECKE[def.gibt].name + " (" + habe(def.gibt) + ")", "c-good");
+  abbauZiel = null; abbauFortschritt = 0;
+  $("abbaubox").classList.add("hidden");
+  speichern();
+}
+function abbauEnde(){
+  abbauZiel = null; abbauFortschritt = 0;
+  $("abbaubox").classList.add("hidden");
+}
+function blockUmgebungNeu(x, z){
+  hoeheNeu(x, z);
+  chunkSchmutzig(x, z);
+  chunkSchmutzig(x+1, z); chunkSchmutzig(x-1, z);
+  chunkSchmutzig(x, z+1); chunkSchmutzig(x, z-1);
+}
+function setzen(){
+  const liste = besitz();
+  if(!liste.length){ meldung("Du hast keine Blöcke. Bau erst welche ab! ⛏️", "c-bad"); return; }
+  const id = liste[klemm(gewaehlt, 0, liste.length-1)];
+  const z = strahl(6);
+  if(!z) return;
+  const x = z.x + z.n[0], y = z.y + z.n[1], zz = z.z + z.n[2];
+  const alt = block(x,y,zz);
+  if(alt !== B_LUFT && !BLOECKE[alt].fluessig) return;
+  const dx = Math.abs(x + 0.5 - pos.x), dz = Math.abs(zz + 0.5 - pos.z);
+  if(dx < 0.85 && dz < 0.85 && y >= Math.floor(pos.y) - 0.2 && y <= pos.y + HOCH) return;
+  if(!nimmMaterial(id, 1)) return;
+  setzeBlock(x, y, zz, id, true);
+  blockUmgebungNeu(x, zz);
+  speichern();
+}
+function hoeheNeu(x,z){
+  let h = 0;
+  for(let y=WY-1; y>=0; y--) if(block(x,y,z) !== B_LUFT){ h = y+1; break; }
+  hoehen[z*WX+x] = h;
+}
+const naheOrt = (o, r) => o && Math.hypot(pos.x-o.x, pos.z-o.z) < r;
+
+/* =====================================================================
+   MONSTER, GEGENSTÄNDE, ORTE
+   ===================================================================== */
+let wesen = [];
+function gegnerSetzen(){
+  const w = WELTEN[s.welt];
+  const v = w.gegner[rnd(0, w.gegner.length-1)];
+  for(let i=0; i<60; i++){
+    const x = rnd(6, WX-7), z = rnd(6, WZ-7);
+    if(Math.hypot(x-pos.x, z-pos.z) < 18) continue;
+    const y = bodenHoehe(x,z);
+    if(y <= WELTEN[s.welt].seehoehe) continue;
+    const f = 0.9 + Math.random()*0.25;
+    wesen.push({art:"gegner", id:v.id, name:v.name, emoji:v.emoji, x:x+0.5, y:y, z:z+0.5,
+                hp:Math.round(v.hp*f), maxHp:Math.round(v.hp*f), atk:v.atk, def:v.def,
+                xp:v.xp, gold:v.gold, tempo:v.tempo, gross:1.5, ruhe:0});
+    return;
+  }
+}
+function itemSetzen(){
+  const it = WELTEN[s.welt].item;
+  for(let i=0; i<60; i++){
+    const x = rnd(4, WX-5), z = rnd(4, WZ-5);
+    const y = bodenHoehe(x,z);
+    if(y <= WELTEN[s.welt].seehoehe) continue;
+    wesen.push({art:"item", id:it.id, name:it.name, emoji:it.emoji, x:x+0.5, y:y+0.4, z:z+0.5, gross:0.7});
+    return;
+  }
+}
+function bossSetzen(melden){
+  const w = WELTEN[s.welt];
+  const bq = w.quests.find(q => q.typ === "boss");
+  if(s.fertig[bq.id] || wesen.some(o => o.boss)) return;
+  const b = w.boss;
+  wesen.push({art:"gegner", boss:true, id:b.id, name:b.name, emoji:b.emoji,
+              x:bossOrt.x+0.5, y:bodenHoehe(bossOrt.x, bossOrt.z), z:bossOrt.z+0.5,
+              hp:b.hp, maxHp:b.hp, atk:b.atk, def:b.def, xp:b.xp, gold:b.gold, tempo:1.9, gross:3.2, ruhe:0});
+  meldung(b.emoji + " " + b.name + " ist in der Arena erschienen – der große orange Punkt auf der Karte!", "c-bad");
+  if(melden)
+    infoZeigen(b.emoji, b.name + " erwacht!", "Die anderen Quests sind erledigt – jetzt zeigt sich der Boss.<br>"
+      + "Er wartet in der <b>Arena</b>, dem Steinring auf der Karte (großer oranger Punkt).<br><br>"
+      + "<b>" + b.hp + " Leben · " + b.atk + " Angriff.</b> Rüste dich vorher aus!");
+}
+function wesenAktualisieren(dt){
+  for(let i = wesen.length-1; i >= 0; i--){
+    const o = wesen[i];
+    const dx = pos.x - o.x, dz = pos.z - o.z;
+    const ab = Math.hypot(dx, dz);
+    if(o.art === "item"){
+      o.y = bodenHoehe(o.x, o.z) + 0.45 + Math.sin(performance.now()/400 + o.x)*0.12;
+      if(ab < 1.3 && Math.abs(pos.y - o.y) < 2.5){
+        s.sachen[o.id] = (s.sachen[o.id] || 0) + 1;
+        s.gesammelt[o.id] = (s.gesammelt[o.id] || 0) + 1;   // zählt für die Quest, auch wenn du es verbrauchst
+        meldung("Aufgesammelt: " + o.name + " (" + s.sachen[o.id] + ")", "c-gold");
+        wesen.splice(i,1);
+        setTimeout(() => { if(modus !== "start") itemSetzen(); }, 6000);
+        questsPruefen();
+      }
+      continue;
+    }
+    if(o.ruhe > 0){ o.ruhe -= dt; continue; }
+    if(ab < 26){                                  // jagt dich
+      const v = o.tempo*dt;
+      const nx = o.x + dx/ab*v, nz = o.z + dz/ab*v;
+      const hn = bodenHoehe(nx, nz);
+      if(hn - o.y <= 1.2){ o.x = nx; o.z = nz; }
+      else { o.x += (Math.random()-0.5)*v; o.z += (Math.random()-0.5)*v; }
+    } else if(Math.random() < dt*0.7){
+      o.wx = Math.random()*2-1; o.wz = Math.random()*2-1;
+    } else if(o.wx){
+      const v = o.tempo*dt*0.3;
+      const nx = o.x + o.wx*v, nz = o.z + o.wz*v;
+      if(nx > 2 && nz > 2 && nx < WX-2 && nz < WZ-2 && bodenHoehe(nx,nz) - o.y <= 1.2){ o.x = nx; o.z = nz; }
+    }
+    o.x = klemm(o.x, 2, WX-2); o.z = klemm(o.z, 2, WZ-2);
+    o.y += (bodenHoehe(o.x, o.z) - o.y) * Math.min(1, dt*8);
+    if(ab < (o.boss ? 2.4 : 1.3) && Math.abs(pos.y - o.y) < 3) kampfStarten(o);
+  }
+}
+
+/* =====================================================================
+   ZEICHNEN
+   ===================================================================== */
+let sichtWeite = 92;
+function groesseAnpassen(){
+  const dpr = Math.min(devicePixelRatio || 1, 1.5);
+  const b = Math.floor(innerWidth*dpr), h = Math.floor(innerHeight*dpr);
+  if(leinwand.width !== b || leinwand.height !== h){ leinwand.width = b; leinwand.height = h; }
+}
+function farbe(hex){
+  return [parseInt(hex.substr(1,2),16)/255, parseInt(hex.substr(3,2),16)/255, parseInt(hex.substr(5,2),16)/255];
+}
+function zeichnen(){
+  const w = WELTEN[s.welt];
+  groesseAnpassen();
+  gl.viewport(0,0,leinwand.width,leinwand.height);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+  // Himmel
+  gl.useProgram(progHimmel);
+  gl.disable(gl.DEPTH_TEST);
+  // Zeiger der Welt-Attribute lösen – sie können auf gelöschte Puffer zeigen
+  gl.disableVertexAttribArray(A.pos);
+  gl.disableVertexAttribArray(A.uv);
+  gl.disableVertexAttribArray(A.licht);
+  const aP = gl.getAttribLocation(progHimmel,"aP");
+  gl.bindBuffer(gl.ARRAY_BUFFER, himmelBuf);
+  gl.enableVertexAttribArray(aP);
+  gl.vertexAttribPointer(aP, 2, gl.FLOAT, false, 0, 0);
+  gl.uniform3fv(gl.getUniformLocation(progHimmel,"uOben"), farbe(w.himmelOben));
+  gl.uniform3fv(gl.getUniformLocation(progHimmel,"uUnten"), farbe(w.himmelUnten));
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+  gl.enable(gl.DEPTH_TEST);
+  gl.disableVertexAttribArray(aP);
+
+  // Kamera
+  const v = vorne();
+  const ax = pos.x, ay = pos.y+AUGE, az = pos.z;
+  const proj = perspektive(1.25, leinwand.width/leinwand.height, 0.1, 260);
+  const sicht = blickAuf(ax, ay, az, ax+v.x, ay+v.y, az+v.z);
+  const mvp = malMat(proj, sicht);
+
+  gl.useProgram(prog);
+  gl.uniformMatrix4fv(U.uMVP, false, mvp);
+  gl.uniform3f(U.uAuge, ax, ay, az);
+  gl.uniform3fv(U.uNebel, w.nebel);
+  gl.uniform1f(U.uSicht, sichtWeite);
+  gl.uniform1f(U.uFlach, 0);
+  gl.uniform1i(U.uTex, 0);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, atlasTex);
+  gl.enableVertexAttribArray(A.pos); gl.enableVertexAttribArray(A.uv); gl.enableVertexAttribArray(A.licht);
+
+  // nur zeichnen, was vor der Kamera liegt und nah genug ist
+  let fx = v.x, fz = v.z;
+  const fl = Math.hypot(fx, fz) || 1; fx /= fl; fz /= fl;
+  const sichtbar = [];
+  for(const c of chunks){
+    const mx = c.cx*CH+CH/2, mz = c.cz*CH+CH/2;
+    const dx = mx-pos.x, dz = mz-pos.z;
+    const d = Math.hypot(dx, dz);
+    if(d > sichtWeite + 24) continue;
+    if(d > 20 && (dx*fx + dz*fz)/d < 0.15) continue;      // liegt hinter uns
+    sichtbar.push({c:c, d:d});
+  }
+  sichtbar.sort((a,b) => a.d - b.d);
+
+  for(const e of sichtbar){
+    if(!e.c.anz) continue;
+    gl.bindBuffer(gl.ARRAY_BUFFER, e.c.vbo);
+    gl.vertexAttribPointer(A.pos, 3, gl.FLOAT, false, 24, 0);
+    gl.vertexAttribPointer(A.uv, 2, gl.FLOAT, false, 24, 12);
+    gl.vertexAttribPointer(A.licht, 1, gl.FLOAT, false, 24, 20);
+    gl.drawArrays(gl.TRIANGLES, 0, e.c.anz);
+  }
+
+  zeichneWesen(mvp);
+
+  // Zielblock
+  const ziel = strahl(6);
+  if(ziel) zeichneRahmen(ziel);
+  if(abbauZiel && abbauFortschritt > 0) zeichneRisse(abbauZiel, abbauFortschritt);
+
+  // Flüssigkeiten zuletzt
+  gl.enable(gl.BLEND);
+  gl.depthMask(false);
+  gl.uniform1f(U.uFlach, 0);
+  gl.bindTexture(gl.TEXTURE_2D, atlasTex);
+  for(let i = sichtbar.length-1; i >= 0; i--){
+    const c = sichtbar[i].c;
+    if(!c.anzF) continue;
+    gl.bindBuffer(gl.ARRAY_BUFFER, c.vboF);
+    gl.vertexAttribPointer(A.pos, 3, gl.FLOAT, false, 24, 0);
+    gl.vertexAttribPointer(A.uv, 2, gl.FLOAT, false, 24, 12);
+    gl.vertexAttribPointer(A.licht, 1, gl.FLOAT, false, 24, 20);
+    gl.drawArrays(gl.TRIANGLES, 0, c.anzF);
+  }
+  gl.depthMask(true);
+  gl.disable(gl.BLEND);
+}
+
+function zeichneWesen(mvp){
+  const v = vorne();
+  let rx = -v.z, rz = v.x;                       // Rechtsvektor (waagerecht)
+  const l = Math.hypot(rx, rz) || 1; rx /= l; rz /= l;
+  gl.enable(gl.BLEND);
+  for(const o of wesen){
+    const d = Math.hypot(o.x-pos.x, o.z-pos.z);
+    if(d > sichtWeite) continue;
+    const g = o.gross, hg = g*1.1;
+    const daten = [];
+    const ecken = [[-1,0],[1,0],[1,1],[-1,1]];
+    const uv = [[0,1],[1,1],[1,0],[0,0]];
+    const p = [];
+    for(let i=0; i<4; i++){
+      p.push([o.x + rx*ecken[i][0]*g/2, o.y + ecken[i][1]*hg, o.z + rz*ecken[i][0]*g/2, uv[i][0], uv[i][1], 1.05]);
+    }
+    for(const q of [p[0],p[1],p[2], p[0],p[2],p[3]]) for(let i=0; i<6; i++) daten.push(q[i]);
+    gl.bindBuffer(gl.ARRAY_BUFFER, bbBuf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(daten), gl.DYNAMIC_DRAW);
+    gl.vertexAttribPointer(A.pos, 3, gl.FLOAT, false, 24, 0);
+    gl.vertexAttribPointer(A.uv, 2, gl.FLOAT, false, 24, 12);
+    gl.vertexAttribPointer(A.licht, 1, gl.FLOAT, false, 24, 20);
+    gl.bindTexture(gl.TEXTURE_2D, emojiTextur(gl, o.emoji));
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+  }
+  gl.disable(gl.BLEND);
+  gl.bindTexture(gl.TEXTURE_2D, atlasTex);
+}
+// Der Block wird beim Abbauen immer dunkler – wie Risse in Minecraft
+function zeichneRisse(z, p){
+  const e = 0.008, daten = [];
+  const x0 = z.x-e, y0 = z.y-e, z0 = z.z-e, x1 = z.x+1+e, y1 = z.y+1+e, z1 = z.z+1+e;
+  const flaechen = [
+    [[x0,y1,z0],[x0,y1,z1],[x1,y1,z1],[x1,y1,z0]], [[x0,y0,z0],[x1,y0,z0],[x1,y0,z1],[x0,y0,z1]],
+    [[x0,y0,z1],[x1,y0,z1],[x1,y1,z1],[x0,y1,z1]], [[x1,y0,z0],[x0,y0,z0],[x0,y1,z0],[x1,y1,z0]],
+    [[x1,y0,z1],[x1,y0,z0],[x1,y1,z0],[x1,y1,z1]], [[x0,y0,z0],[x0,y0,z1],[x0,y1,z1],[x0,y1,z0]]
+  ];
+  for(const f of flaechen)
+    for(const v of [f[0],f[1],f[2], f[0],f[2],f[3]])
+      daten.push(v[0], v[1], v[2], 0, 0, 1);
+  gl.bindBuffer(gl.ARRAY_BUFFER, linienBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(daten), gl.DYNAMIC_DRAW);
+  gl.vertexAttribPointer(A.pos, 3, gl.FLOAT, false, 24, 0);
+  gl.vertexAttribPointer(A.uv, 2, gl.FLOAT, false, 24, 12);
+  gl.vertexAttribPointer(A.licht, 1, gl.FLOAT, false, 24, 20);
+  gl.enable(gl.BLEND);
+  gl.depthMask(false);
+  gl.uniform1f(U.uFlach, 1);
+  gl.uniform4f(U.uFarbe, 0.02, 0.02, 0.03, 0.15 + 0.6*klemm(p,0,1));
+  gl.drawArrays(gl.TRIANGLES, 0, 36);
+  gl.uniform1f(U.uFlach, 0);
+  gl.depthMask(true);
+  gl.disable(gl.BLEND);
+}
+function zeichneRahmen(z){
+  const e = 0.003, x0 = z.x-e, y0 = z.y-e, z0 = z.z-e, x1 = z.x+1+e, y1 = z.y+1+e, z1 = z.z+1+e;
+  const p = [[x0,y0,z0],[x1,y0,z0],[x1,y0,z1],[x0,y0,z1],[x0,y1,z0],[x1,y1,z0],[x1,y1,z1],[x0,y1,z1]];
+  const kanten = [0,1,1,2,2,3,3,0, 4,5,5,6,6,7,7,4, 0,4,1,5,2,6,3,7];
+  const daten = [];
+  for(const i of kanten){ daten.push(p[i][0], p[i][1], p[i][2], 0, 0, 1); }
+  gl.bindBuffer(gl.ARRAY_BUFFER, linienBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(daten), gl.DYNAMIC_DRAW);
+  gl.vertexAttribPointer(A.pos, 3, gl.FLOAT, false, 24, 0);
+  gl.vertexAttribPointer(A.uv, 2, gl.FLOAT, false, 24, 12);
+  gl.vertexAttribPointer(A.licht, 1, gl.FLOAT, false, 24, 20);
+  gl.uniform1f(U.uFlach, 1);
+  gl.uniform4f(U.uFarbe, 0.05, 0.05, 0.08, 1);
+  gl.drawArrays(gl.LINES, 0, 24);
+  gl.uniform1f(U.uFlach, 0);
+}
+
+
+/* =====================================================================
+   BAUWERKE – große Landmarken, die man in jeder Welt findet
+   ===================================================================== */
+function kugel(cx, cy, cz, r, id, flach){
+  const ry = flach ? r*0.66 : r;
+  for(let dy=-Math.ceil(ry); dy<=Math.ceil(ry); dy++)
+    for(let dz=-r; dz<=r; dz++)
+      for(let dx=-r; dx<=r; dx++){
+        const d = dx*dx/(r*r) + dy*dy/(ry*ry) + dz*dz/(r*r);
+        if(d > 1) continue;
+        if(d > 0.72 && (hashZ(cx+dx, cz+dz+dy*7, 77)+1)/2 > 0.62) continue;   // ausgefranster Rand
+        if(block(cx+dx, cy+dy, cz+dz) === B_LUFT) setzeBlock(cx+dx, cy+dy, cz+dz, id);
+      }
+}
+// Der große Baum: dicker Stamm, ausladende Äste, hängende Blüten
+function prachtbaum(o, holz, laub, wuerfel){
+  const hoehe = 11 + Math.floor(wuerfel()*5);
+  const neigeX = wuerfel() < 0.5 ? 1 : -1, neigeZ = wuerfel() < 0.5 ? 1 : -1;
+  let sx = o.x, sz = o.z;
+  for(let y=0; y<hoehe; y++){
+    const dicke = y < 3 ? 2 : 1;                                  // unten breiter Fuß
+    for(let dz=-dicke; dz<=dicke; dz++)
+      for(let dx=-dicke; dx<=dicke; dx++){
+        if(dicke === 2 && Math.abs(dx) === 2 && Math.abs(dz) === 2) continue;
+        setzeBlock(sx+dx, o.y+y, sz+dz, holz);
+      }
+    if(y > 2 && y % 4 === 0){ sx += neigeX; if(y % 8 === 0) sz += neigeZ; }   // leichte Krümmung
+  }
+  const kx = sx, ky = o.y + hoehe, kz = sz;
+  const aeste = 4 + Math.floor(wuerfel()*3);
+  for(let a=0; a<aeste; a++){
+    const winkel = (a/aeste)*Math.PI*2 + wuerfel()*0.6;
+    const laenge = 4 + Math.floor(wuerfel()*4);
+    let ax = kx, ay = ky - 2 - Math.floor(wuerfel()*3), az = kz;
+    for(let i=0; i<laenge; i++){
+      ax += Math.round(Math.cos(winkel));
+      az += Math.round(Math.sin(winkel));
+      if(i % 2 === 0) ay += 1;
+      setzeBlock(ax, ay, az, holz);
+      setzeBlock(ax, ay-1, az, holz);
+    }
+    kugel(ax, ay+1, az, 3 + Math.floor(wuerfel()*2), laub, true);
+    const haenge = 2 + Math.floor(wuerfel()*3);
+    for(let h=1; h<=haenge; h++)
+      if(block(ax, ay-1-h, az) === B_LUFT) setzeBlock(ax, ay-1-h, az, laub);
+  }
+  kugel(kx, ky+2, kz, 5 + Math.floor(wuerfel()*2), laub, true);
+  for(let i=0; i<16; i++){                                       // einzelne Blütenstränge nach unten
+    const winkel = wuerfel()*Math.PI*2, r = 3 + wuerfel()*4;
+    const hx = kx + Math.round(Math.cos(winkel)*r), hz = kz + Math.round(Math.sin(winkel)*r);
+    for(let y=ky+2; y>ky-5; y--)
+      if(block(hx, y, hz) === B_LUFT && block(hx, y+1, hz) === laub) setzeBlock(hx, y, hz, laub);
+  }
+}
+function turm(o, stein, hoehe){
+  const r = 3;
+  for(let y=0; y<hoehe; y++)
+    for(let dz=-r; dz<=r; dz++)
+      for(let dx=-r; dx<=r; dx++){
+        const d = Math.sqrt(dx*dx + dz*dz);
+        if(d > r + 0.4 || d < r - 0.8) continue;
+        if(y === 1 && dz === r && Math.abs(dx) < 1) continue;      // Tür
+        if(y === hoehe-1 && (dx+dz) % 2 === 0) continue;           // Zinnen
+        setzeBlock(o.x+dx, o.y+y, o.z+dz, stein);
+      }
+  for(let dz=-r; dz<=r; dz++)
+    for(let dx=-r; dx<=r; dx++)
+      if(dx*dx + dz*dz <= r*r) setzeBlock(o.x+dx, o.y+hoehe-3, o.z+dz, stein);   // Plattform
+}
+function ruine(o, stein, wuerfel){
+  const b = 5 + Math.floor(wuerfel()*3);
+  for(let dz=-b; dz<=b; dz++)
+    for(let dx=-b; dx<=b; dx++){
+      if(Math.abs(dx) !== b && Math.abs(dz) !== b) continue;
+      const h = Math.floor(wuerfel()*4);
+      for(let y=0; y<h; y++) setzeBlock(o.x+dx, o.y+y, o.z+dz, stein);
+    }
+  for(const e of [[-b,-b],[b,-b],[-b,b],[b,b]])                    // Ecksäulen
+    for(let y=0; y<5; y++) setzeBlock(o.x+e[0], o.y+y, o.z+e[1], stein);
+}
+function pyramide(o, stein){
+  const b = 9;
+  for(let stufe=0; stufe<=b; stufe++){
+    const r = b - stufe;
+    for(let dz=-r; dz<=r; dz++)
+      for(let dx=-r; dx<=r; dx++) setzeBlock(o.x+dx, o.y+stufe, o.z+dz, stein);
+  }
+  for(let y=1; y<5; y++)                                            // Eingang
+    for(let dx=-1; dx<=1; dx++) setzeBlock(o.x+dx, o.y+y, o.z+b-y, B_LUFT);
+}
+function huette(o){
+  const b = 3;
+  for(let y=0; y<4; y++)
+    for(let dz=-b; dz<=b; dz++)
+      for(let dx=-b; dx<=b; dx++){
+        if(Math.abs(dx) !== b && Math.abs(dz) !== b) continue;
+        if(y < 3 && dz === b && Math.abs(dx) < 1) continue;         // Türöffnung
+        setzeBlock(o.x+dx, o.y+y, o.z+dz, y === 0 ? B_STEIN : B_BRETTER);
+      }
+  for(let dz=-b-1; dz<=b+1; dz++)
+    for(let dx=-b-1; dx<=b+1; dx++) setzeBlock(o.x+dx, o.y+4, o.z+dz, B_HOLZ);   // Dach
+  setzeBlock(o.x, o.y+1, o.z, B_GLUT);                              // Licht drinnen
+}
+function iglu(o){
+  kugel(o.x, o.y+1, o.z, 5, B_SCHNEE, false);
+  for(let dz=-3; dz<=3; dz++)
+    for(let dx=-3; dx<=3; dx++)
+      for(let y=1; y<=4; y++)
+        if(dx*dx + dz*dz <= 9) setzeBlock(o.x+dx, o.y+y, o.z+dz, B_LUFT);
+  for(let y=1; y<=2; y++) setzeBlock(o.x, o.y+y, o.z+5, B_LUFT);    // Eingang
+  setzeBlock(o.x, o.y, o.z, B_GLUT);
+}
+function spitzen(o, id, wuerfel){
+  for(let i=0; i<7; i++){
+    const dx = Math.floor(wuerfel()*11) - 5, dz = Math.floor(wuerfel()*11) - 5;
+    const h = 4 + Math.floor(wuerfel()*9);
+    for(let y=0; y<h; y++){
+      const r = y < h*0.4 ? 1 : 0;
+      for(let ez=-r; ez<=r; ez++)
+        for(let ex=-r; ex<=r; ex++) setzeBlock(o.x+dx+ex, o.y+y, o.z+dz+ez, id);
+    }
+  }
+}
+// Das Wahrzeichen der Pilzwelt: ein einzelner, gewaltiger Pilz
+function pilzkoloss(o, wuerfel){
+  const hoch = 16 + Math.floor(wuerfel()*5);
+  for(let y=0; y<hoch; y++){
+    const r = y < 3 ? 3 : (y < hoch*0.5 ? 2 : 2);          // unten breiterer Fuß
+    for(let dz=-r; dz<=r; dz++)
+      for(let dx=-r; dx<=r; dx++){
+        if(dx*dx + dz*dz > r*r + 1) continue;
+        setzeBlock(o.x+dx, o.y+y, o.z+dz, B_PILZSTIEL);
+      }
+  }
+  const r = 11, ky = o.y + hoch;
+  for(let dz=-r; dz<=r; dz++)
+    for(let dx=-r; dx<=r; dx++){
+      const d = Math.sqrt(dx*dx + dz*dz);
+      if(d > r) continue;
+      const woelbung = Math.round(Math.cos(d/r * 1.35) * 4);   // Kuppelform
+      for(let y=0; y<=woelbung; y++) setzeBlock(o.x+dx, ky+y, o.z+dz, B_PILZHUT);
+      if(d > r-2.2){                                            // herabgezogener Rand
+        setzeBlock(o.x+dx, ky-1, o.z+dz, B_PILZHUT);
+        if(d > r-1.2) setzeBlock(o.x+dx, ky-2, o.z+dz, B_PILZHUT);
+      }
+      if(d < r-3 && d > 2 && (hashZ(o.x+dx, o.z+dz, 91)+1)/2 > 0.88)
+        setzeBlock(o.x+dx, ky-1, o.z+dz, B_SPORE);              // leuchtende Sporen unter dem Hut
+    }
+}
+function pilzriese(o, wuerfel){
+  const hoch = 7 + Math.floor(wuerfel()*5);
+  for(let y=0; y<hoch; y++)
+    for(let dz=-1; dz<=1; dz++)
+      for(let dx=-1; dx<=1; dx++) setzeBlock(o.x+dx, o.y+y, o.z+dz, B_PILZSTIEL);
+  const r = 5 + Math.floor(wuerfel()*2);
+  for(let dz=-r; dz<=r; dz++)
+    for(let dx=-r; dx<=r; dx++){
+      const d = dx*dx + dz*dz;
+      if(d > r*r) continue;
+      setzeBlock(o.x+dx, o.y+hoch, o.z+dz, B_PILZHUT);
+      if(d < r*r*0.55) setzeBlock(o.x+dx, o.y+hoch+1, o.z+dz, B_PILZHUT);
+      if(d > r*r*0.7) setzeBlock(o.x+dx, o.y+hoch-1, o.z+dz, B_PILZHUT);   // herabgezogener Rand
+    }
+}
+
+// Welche Welt bekommt welche Bauwerke (nach Namen, damit nichts durcheinandergerät)
+const BAUPLAN_WELT = {
+  "Grünwald":         [["prachtbaum",6],["huette",4],["turm",2]],
+  "Kirschblütenhain": [["prachtbaum",9],["huette",3],["turm",1]],
+  "Feuerwüste":       [["ruine",5],["turm",3]],
+  "Schattenreich":    [["spitzen",6],["turm",3],["ruine",3]],
+  "Dornenwüste":      [["pyramide",3],["ruine",4]],
+  "Dschungeltiefe":   [["prachtbaum",8],["ruine",5]],
+  "Seuchensumpf":     [["huette",5],["ruine",4],["prachtbaum",4]],
+  "Ewiges Eis":       [["iglu",5],["spitzen",6],["turm",2]],
+  "Pilzland":         [["pilzkoloss",1]],
+  "Schwefelhöhle":    [["spitzen",8],["ruine",4]],
+  "Seelengarten":     [["prachtbaum",7],["ruine",5],["spitzen",4]]
+};
+function bauplatz(wuerfel, w, radius, schonBelegt){
+  for(let versuch=0; versuch<400; versuch++){
+    const x = 10 + Math.floor(wuerfel()*(WX-20)), z = 10 + Math.floor(wuerfel()*(WZ-20));
+    const boden = gelaendeHoehen || hoehen;
+    const h = boden[z*WX+x];
+    if(h <= w.seehoehe+1 || h > WY-22) continue;
+    let min = 99, max = 0;
+    for(let dz=-radius; dz<=radius; dz+=2)
+      for(let dx=-radius; dx<=radius; dx+=2){
+        const hh = boden[klemm(z+dz,0,WZ-1)*WX + klemm(x+dx,0,WX-1)];
+        if(hh < min) min = hh;
+        if(hh > max) max = hh;
+      }
+    if(max - min > 6) continue;                       // zu steil (der Platz wird eh geebnet)
+    let zuNah = false;                                // nicht auf Lager, Portal, Arena, Start
+    for(const ort of [lagerOrt, portalOrt, bossOrt, startOrt])
+      if(ort && Math.hypot(ort.x-x, ort.z-z) < 16) zuNah = true;
+    for(const ort of schonBelegt)                     // und nicht auf ein anderes Bauwerk
+      if(Math.hypot(ort.x-x, ort.z-z) < 22) zuNah = true;
+    if(zuNah) continue;
+    return {x:x, y:h, z:z};
+  }
+  return null;
+}
+// Bewuchs wegräumen und den Untergrund glattziehen
+function platzRaeumen(o, r, hoehe, boden){
+  for(let dz=-r; dz<=r; dz++)
+    for(let dx=-r; dx<=r; dx++){
+      const x = o.x+dx, z = o.z+dz;
+      if(x < 1 || z < 1 || x >= WX-1 || z >= WZ-1) continue;
+      for(let y=o.y; y<o.y+hoehe; y++) setzeBlock(x, y, z, B_LUFT);
+      for(let y=o.y-1; y>o.y-4; y--)
+        if(block(x, y, z) === B_LUFT) setzeBlock(x, y, z, boden);
+    }
+}
+function bauwerkeSetzen(w, wuerfel){
+  const plan = BAUPLAN_WELT[w.name];
+  if(!plan) return;
+  const holz = w.baumArt === "kirsch" ? B_KIRSCHHOLZ
+             : (w.name === "Dschungeltiefe" ? B_DSCHUNGELHOLZ
+             : (w.name === "Seelengarten" ? B_SCHATTENHOLZ : B_HOLZ));
+  const laub = w.baumArt === "kirsch" ? B_KIRSCHLAUB
+             : (w.name === "Dschungeltiefe" ? B_DSCHUNGELLAUB
+             : (w.name === "Seelengarten" ? B_SCHATTENLAUB : B_LAUB));
+  const stein = (w.name === "Schattenreich" || w.name === "Feuerwüste") ? B_OBSIDIAN
+              : (w.name === "Dornenwüste" ? B_SAND
+              : (w.name === "Seelengarten" ? B_MOOSBODEN
+              : (w.name === "Schwefelhöhle" ? B_SCHWEFELSTEIN : B_STEIN)));
+  const gesetzt = [];
+  for(const eintrag of plan){
+    const art = eintrag[0], anzahl = eintrag[1];
+    for(let i=0; i<anzahl; i++){
+      const koloss = art === "pilzkoloss";
+      const gross = (art === "prachtbaum" || art === "pilzriese");
+      const o = bauplatz(wuerfel, w, koloss ? 7 : (gross ? 4 : 7), gesetzt);
+      if(!o) continue;
+      gesetzt.push(o);
+      platzRaeumen(o, koloss ? 13 : (gross ? 3 : 8), koloss ? 26 : (gross ? 22 : 14), w.oben);
+      if(art === "prachtbaum") prachtbaum(o, holz, laub, wuerfel);
+      else if(art === "turm") turm(o, stein, 9 + Math.floor(wuerfel()*6));
+      else if(art === "ruine") ruine(o, stein, wuerfel);
+      else if(art === "pyramide") pyramide(o, stein);
+      else if(art === "huette") huette(o);
+      else if(art === "iglu") iglu(o);
+      else if(art === "spitzen") spitzen(o, w.name === "Ewiges Eis" ? B_EIS
+                                    : (w.name === "Schwefelhöhle" ? B_SCHWEFEL
+                                    : (w.name === "Seelengarten" ? B_SEELENKRISTALL : B_KRISTALL)), wuerfel);
+      else if(art === "pilzriese") pilzriese(o, wuerfel);
+      else if(art === "pilzkoloss") pilzkoloss(o, wuerfel);
+    }
+  }
+}
+
+/* =====================================================================
+   KARTE
+   ===================================================================== */
+const kartenBild = document.createElement("canvas");
+kartenBild.width = WX; kartenBild.height = WZ;
+function kartenbildErzeugen(){
+  const g = kartenBild.getContext("2d");
+  const bild = g.createImageData(WX, WZ);
+  const farben = {};
+  farben[B_GRAS]=[90,160,60]; farben[B_ERDE]=[138,107,69]; farben[B_STEIN]=[138,143,150];
+  farben[B_SAND]=[216,196,137]; farben[B_WASSER]=[47,110,203]; farben[B_HOLZ]=[107,77,44];
+  farben[B_LAUB]=[47,111,44]; farben[B_BRETTER]=[165,121,63]; farben[B_GLUT]=[224,118,31];
+  farben[B_OBSIDIAN]=[28,24,48]; farben[B_PORTAL]=[122,63,214]; farben[B_LAVA]=[224,74,16];
+  farben[B_DUNKEL]=[43,39,56]; farben[B_KRISTALL]=[143,110,224];
+  farben[B_WERKBANK]=[165,121,63]; farben[B_KIRSCHHOLZ]=[92,59,63];
+  farben[B_KIRSCHLAUB]=[242,168,200]; farben[B_BLUETENBODEN]=[111,174,74];
+  farben[B_KAKTUS]=[63,125,58]; farben[B_SMARAGD]=[47,214,127]; farben[B_PECH]=[36,29,22];
+  farben[B_EIS]=[168,216,240]; farben[B_SPORE]=[196,127,214]; farben[B_SCHNEE]=[238,244,250];
+  farben[B_DSCHUNGELHOLZ]=[74,58,31]; farben[B_DSCHUNGELLAUB]=[30,92,26];
+  farben[B_SUMPFERDE]=[74,74,44]; farben[B_PILZHUT]=[194,46,46];
+  farben[B_PILZSTIEL]=[232,221,200]; farben[B_MYZEL]=[107,90,114];
+  farben[B_SCHWEFEL]=[232,214,74]; farben[B_SCHWEFELSTEIN]=[74,66,48];
+  farben[B_SEELENSAND]=[90,70,56]; farben[B_SEELENFEUER]=[58,138,214];
+  farben[B_KNOCHEN]=[221,214,194]; farben[B_SEELENKRISTALL]=[122,196,240];
+  farben[B_SCHATTENHOLZ]=[74,58,51]; farben[B_SCHATTENLAUB]=[90,107,86];
+  farben[B_MOOSBODEN]=[73,84,63]; farben[B_ROTFELS]=[110,42,36]; farben[B_HOEHLENWASSER]=[47,184,154];
+  const quelle = deckenHoehe ? gelaendeHoehen : hoehen;
+  for(let z=0; z<WZ; z++) for(let x=0; x<WX; x++){
+    const h = quelle[z*WX+x];
+    const b = block(x, h-1, z);
+    const f = farben[b] || [80,80,80];
+    const s2 = klemm(0.55 + h/40, 0.4, 1.3);
+    const i = (z*WX+x)*4;
+    bild.data[i] = klemm(f[0]*s2,0,255); bild.data[i+1] = klemm(f[1]*s2,0,255);
+    bild.data[i+2] = klemm(f[2]*s2,0,255); bild.data[i+3] = 255;
+  }
+  g.putImageData(bild, 0, 0);
+}
+const mk = $("karte").getContext("2d");
+function karteZeichnen(){
+  const S = 150;
+  mk.imageSmoothingEnabled = false;
+  mk.clearRect(0,0,S,S);
+  mk.drawImage(kartenBild, 0, 0, S, S);
+  const p = (v) => v/WX*S;
+  const punkt = (x, z, f, r) => { mk.fillStyle = f; mk.beginPath(); mk.arc(p(x), p(z), r, 0, 6.3); mk.fill(); };
+  if(lagerOrt)  punkt(lagerOrt.x, lagerOrt.z, "#f5c451", 3);
+  if(portalOrt) punkt(portalOrt.x, portalOrt.z, "#c08bff", 3.5);
+  if(bossOrt){                                   // Arena: gefüllt = Boss da, hohl = noch verschlossen
+    const bossDa = wesen.some(o => o.boss);
+    const bq = WELTEN[s.welt].quests.find(q => q.typ === "boss");
+    if(!s.fertig[bq.id]){
+      mk.strokeStyle = "#ffb03a"; mk.lineWidth = 1.5;
+      mk.beginPath(); mk.arc(p(bossOrt.x), p(bossOrt.z), bossDa ? 6 : 4.5, 0, 6.3); mk.stroke();
+      if(bossDa) punkt(bossOrt.x, bossOrt.z, "#ffb03a", 3.5);
+    }
+  }
+  for(const o of wesen){
+    if(o.art === "item") punkt(o.x, o.z, "#7ee787", 1.6);
+    else punkt(o.x, o.z, o.boss ? "#ffb03a" : "#e8484f", o.boss ? 3.5 : 1.8);
+  }
+  mk.save();
+  mk.translate(p(pos.x), p(pos.z));
+  mk.rotate(-gier + Math.PI);
+  mk.fillStyle = "#fff"; mk.strokeStyle = "#000"; mk.lineWidth = 1;
+  mk.beginPath(); mk.moveTo(0,-6); mk.lineTo(4.5,5); mk.lineTo(-4.5,5); mk.closePath(); mk.fill(); mk.stroke();
+  mk.restore();
+}
+
+/* =====================================================================
+   HUD
+   ===================================================================== */
+function balken(li, ti, wert, max, text){
+  $(li).style.width = klemm(wert/max*100, 0, 100) + "%";
+  $(ti).textContent = text + " " + Math.max(0, Math.round(wert)) + "/" + max;
+}
+function hudZeichnen(){
+  balken("lhp","thp", s.hp, s.maxHp, "❤️");
+  balken("lmp","tmp", s.mp, s.maxMp, "💧");
+  balken("lxp","txp", s.xp, s.xpNext, "⭐");
+  $("alevel").textContent = s.level; $("aatk").textContent = gesAtk();
+  $("adef").textContent = gesDef(); $("amag").textContent = s.mag;
+  $("agold").textContent = s.gold; $("atrank").textContent = s.traenke;
+  $("ktrank").textContent = s.traenke;
+  const w = WELTEN[s.welt];
+  let h = "<b>" + w.emoji + " " + w.name.toUpperCase() + "</b>";
+  // Nur die normalen Quests als Liste – der Boss ist keine Aufgabe, sondern das Ziel danach
+  const normal = w.quests.filter(q => q.typ !== "boss");
+  normal.forEach(q => {
+    const p = fortschritt(q), ok = !!s.fertig[q.id];
+    h += '<div class="qz ' + (ok?"ok":"") + '">' + (ok?"✅":"▫️") + " " + q.text + " (" + p + "/" + q.anz + ")</div>";
+  });
+  const bq = w.quests.find(q => q.typ === "boss");
+  const offen = normal.filter(q => !s.fertig[q.id]).length;
+  h += '<div class="bosszeile">';
+  if(s.fertig[bq.id]) h += '<span class="c-good">👑 ' + w.boss.name + " besiegt</span>";
+  else if(!offen) h += '<span style="color:#ffb03a">👹 ' + w.boss.name
+    + " wartet in der Arena<br><span style=\'font-size:10.5px\'>oranger Kreis auf der Karte</span></span>";
+  else h += '<span class="c-dim">🔒 ' + w.boss.name + "<br><span style='font-size:10.5px'>kommt erst, wenn die "
+    + (offen === 1 ? "Aufgabe" : offen + " Aufgaben") + " darüber erledigt " + (offen === 1 ? "ist" : "sind")
+    + "</span></span>";
+  h += "</div>";
+  $("questbox").innerHTML = h;
+}
+function gurtBauen(){
+  const g = $("gurt");
+  const liste = besitz();
+  gewaehlt = klemm(gewaehlt, 0, Math.max(0, liste.length-1));
+  g.innerHTML = "";
+  if(!liste.length){
+    g.innerHTML = '<div class="leer">Leeres Inventar – halte die linke Maustaste auf einen Block, um ihn abzubauen</div>';
+    return;
+  }
+  liste.forEach((id, i) => {
+    const d = document.createElement("div");
+    d.className = "fach" + (i === gewaehlt ? " an" : "");
+    d.title = BLOECKE[id].name;
+    d.appendChild(kachelBild(BLOECKE[id].kacheln[0], 30));
+    const nr = document.createElement("small"); nr.textContent = i < 9 ? i+1 : "";
+    d.appendChild(nr);
+    const anz = document.createElement("b"); anz.textContent = habe(id);
+    d.appendChild(anz);
+    d.onclick = () => { gewaehlt = i; gurtBauen(); };
+    g.appendChild(d);
+  });
+}
+const meldungsListe = [];
+function meldung(text, cls){
+  meldungsListe.push({text:text, cls:cls||"", zeit:performance.now()});
+  while(meldungsListe.length > 5) meldungsListe.shift();
+  $("meldungen").innerHTML = meldungsListe.map(m => '<div class="' + m.cls + '">' + m.text + "</div>").join("");
+}
+function meldungenAufraeumen(){
+  if(meldungsListe.length && performance.now() - meldungsListe[0].zeit > 7000){
+    meldungsListe.shift();
+    $("meldungen").innerHTML = meldungsListe.map(m => '<div class="' + m.cls + '">' + m.text + "</div>").join("");
+  }
+}
+function hinweisPruefen(){
+  let t = "";
+  if(werkbankNah()) t = "[E] Werkbank – 3×3 herstellen";
+  else if(naheOrt(lagerOrt, 4.5)) t = "[E] Lagerfeuer – rasten & handeln";
+  else if(naheOrt(portalOrt, 4.5)){
+    if(!WELTEN[s.welt].quests.every(q => s.fertig[q.id])) t = "🔒 Portal verschlossen – erst alle Quests";
+    else if(s.welt + 1 < WELTEN.length && s.welt + 1 > s.freigeschaltet) t = "[E] Portal nach " + WELTEN[s.welt+1].name;
+    else t = "[E] Portal – Welt wechseln";
+  }
+  $("hinweis").classList.toggle("hidden", !t);
+  $("hinweis").textContent = t;
+}
+
+/* =====================================================================
+   OVERLAYS / LADEN / QUESTS  (wie gehabt)
+   ===================================================================== */
+function oeffne(id){
+  $(id).classList.remove("hidden");
+  if(modus === "welt") modus = "menue";
+  if(document.pointerLockElement) document.exitPointerLock();
+  for(const k in tasten) tasten[k] = false;
+}
+function schliesse(id){
+  $(id).classList.add("hidden");
+  const offen = ["kampf","tafel","lager","stufe","info","reise","start"].some(x => !$(x).classList.contains("hidden"));
+  if(!offen) modus = "welt";
+}
+function infoZeigen(icon, titel, text){
+  $("infoIcon").textContent = icon; $("infoTitel").textContent = titel; $("infoText").innerHTML = text;
+  oeffne("info");
+}
+function benutzen(){
+  if(modus !== "welt") return;
+  if(werkbankNah()){ tafelZeigen("tasche"); return; }
+  if(naheOrt(lagerOrt, 4.5)){ ladenZeichnen(); oeffne("lager"); return; }
+  if(naheOrt(portalOrt, 4.5)){
+    if(WELTEN[s.welt].quests.every(q => s.fertig[q.id])) portalNehmen();
+    else meldung("Das Portal ist verschlossen. Erledige zuerst alle Quests.", "c-bad");
+    return;
+  }
+  meldung("Hier gibt es nichts zu benutzen.", "c-dim");
+}
+function tafelZeigen(art){
+  const w = WELTEN[s.welt];
+  let h = "";
+  if(art === "quests"){
+    $("tafelTitel").textContent = "📜 Quests – " + w.name;
+    const offenVor = w.quests.filter(q => q.typ !== "boss" && !s.fertig[q.id]).length;
+    w.quests.forEach(q => {
+      const p = fortschritt(q), ok = !!s.fertig[q.id];
+      const gesperrt = q.typ === "boss" && offenVor > 0 && !ok;
+      h += '<div class="karte2 ' + (ok?"ok":"") + '"><div style="flex:1">' + (ok?"✅ ":(gesperrt?"🔒 ":"🔸 ")) + q.text
+        + (gesperrt ? '<br><span class="c-dim" style="font-size:12px">Der Boss erscheint erst in der Arena, '
+            + 'wenn die ' + (offenVor === 1 ? "andere Aufgabe" : "anderen " + offenVor + " Aufgaben")
+            + ' erledigt ' + (offenVor === 1 ? "ist" : "sind") + '.</span>' : "")
+        + ' <span class="c-dim">(' + p + "/" + q.anz + ')</span><div class="balkenmini"><i style="width:'
+        + (p/q.anz*100) + '%"></i></div></div><span class="c-gold">+' + q.xp + " XP<br>+" + q.gold + " 💰</span></div>";
+    });
+    const offen = w.quests.filter(q => !s.fertig[q.id]).length;
+    h += offen ? '<p class="c-dim">Noch ' + offen + " Quest(s), dann öffnet sich das Portal.</p>"
+               : '<p class="c-good">Alle Quests erledigt – ab zum Portal! 🌀</p>';
+  } else {
+    $("tafelInhalt").innerHTML = "";
+    oeffne("tafel");
+    bastelZeichnen();
+    return;
+  }
+  $("tafelInhalt").innerHTML = h;
+  oeffne("tafel");
+}
+
+/* ---------- Inventar mit Handwerksgitter ---------- */
+// Symbole für Ergebnisse, die keine Blöcke sind
+const SONDER = {
+  hacke:(g,T)=>{
+    g.strokeStyle = "#8a6331"; g.lineWidth = 4; g.lineCap = "round";
+    g.beginPath(); g.moveTo(T*0.5, T*0.9); g.lineTo(T*0.5, T*0.35); g.stroke();
+    g.strokeStyle = "#b9c2cc"; g.lineWidth = 5;
+    g.beginPath(); g.arc(T*0.5, T*0.62, T*0.34, Math.PI*1.18, Math.PI*1.82); g.stroke();
+  },
+  axt:(g,T)=>{
+    g.strokeStyle = "#8a6331"; g.lineWidth = 4; g.lineCap = "round";
+    g.beginPath(); g.moveTo(T*0.62, T*0.94); g.lineTo(T*0.62, T*0.14); g.stroke();
+    g.fillStyle = "#b9c2cc";                       // Klinge mit runder Schneide
+    g.beginPath();
+    g.moveTo(T*0.62, T*0.12);
+    g.quadraticCurveTo(T*0.10, T*0.20, T*0.14, T*0.42);
+    g.quadraticCurveTo(T*0.20, T*0.58, T*0.62, T*0.52);
+    g.closePath(); g.fill();
+    g.fillStyle = "rgba(255,255,255,.45)";
+    g.beginPath(); g.moveTo(T*0.58,T*0.16); g.lineTo(T*0.3,T*0.24); g.lineTo(T*0.34,T*0.34);
+    g.lineTo(T*0.58,T*0.28); g.closePath(); g.fill();
+  },
+  schwert:(g,T)=>{
+    g.fillStyle = "#cfd8e6";
+    g.beginPath(); g.moveTo(T*0.5,T*0.06); g.lineTo(T*0.63,T*0.24);
+    g.lineTo(T*0.57,T*0.66); g.lineTo(T*0.43,T*0.66); g.lineTo(T*0.37,T*0.24); g.closePath(); g.fill();
+    g.fillStyle = "#8a6331"; g.fillRect(T*0.28, T*0.66, T*0.44, T*0.08);
+    g.fillRect(T*0.45, T*0.72, T*0.1, T*0.22);
+  },
+  trank:(g,T)=>{
+    g.fillStyle = "#cfd8e6"; g.fillRect(T*0.42, T*0.12, T*0.16, T*0.2);
+    g.fillStyle = "#e8484f";
+    g.beginPath(); g.moveTo(T*0.34,T*0.42); g.lineTo(T*0.66,T*0.42);
+    g.lineTo(T*0.74,T*0.86); g.lineTo(T*0.26,T*0.86); g.closePath(); g.fill();
+    g.fillStyle = "rgba(255,255,255,.45)"; g.fillRect(T*0.34, T*0.42, T*0.08, T*0.4);
+  }
+};
+const symbolCache = {};
+function symbolBild(id){
+  if(symbolCache[id]) return symbolCache[id];
+  let url;
+  if(typeof id === "string"){
+    const c = document.createElement("canvas");
+    c.width = c.height = 32;
+    SONDER[id](c.getContext("2d"), 32);
+    url = c.toDataURL();
+  } else if(id >= 100){
+    const c = document.createElement("canvas");
+    c.width = c.height = 32;
+    ITEMS[id].mal(c.getContext("2d"), 32);
+    url = c.toDataURL();
+  } else url = kachelBild(BLOECKE[id].kacheln[0], 32).toDataURL();
+  symbolCache[id] = url;
+  return url;
+}
+function ergebnisSymbol(plan){
+  const e = plan.ergebnis;
+  if(e.b !== undefined) return e.b;
+  if(e.i !== undefined) return e.i;
+  if(e.hacke !== undefined) return "hacke";
+  if(e.axt !== undefined) return "axt";
+  if(e.waffe !== undefined) return "schwert";
+  return "trank";
+}
+function bastelZeichnen(){
+  const gross = werkbankNah();
+  $("tafelTitel").textContent = gross ? "🔨 Werkbank (3×3)" : "🎒 Inventar (2×2)";
+  const felder = gitterFelder(gross);
+  const plan = findePlan(gross);
+  const machbar = plan && vorratReicht();
+
+  let h = '<div class="bastel">';
+  h += '<div class="gitterfeld' + (gross ? " g3" : " g2") + '">';
+  felder.forEach(f => {
+    const id = gitter[f];
+    h += '<div class="slot' + (id ? " voll" : "") + '" onclick="gitterKlick(' + f + ',' + gross + ')" title="'
+      + (id ? dingName(id) + " – klicken zum Zurücklegen" : "hier ein Material ablegen") + '">'
+      + (id ? '<img src="' + symbolBild(id) + '">' : "") + "</div>";
+  });
+  h += "</div>";
+  h += '<div class="pfeil">➜</div>';
+  h += '<div class="slot ergebnis' + (machbar ? " bereit" : "") + '"'
+    + (machbar ? ' onclick="bauen(' + gross + ')"' : "") + ' title="Ergebnis">'
+    + (plan ? '<img src="' + symbolBild(ergebnisSymbol(plan)) + '">'
+              + '<u>' + (plan.ergebnis.n || 1) + "</u>" : "") + "</div>";
+  h += '<div class="ergebnistext">' + (plan
+        ? "<b>" + plan.name + "</b>" + (machbar ? '<br><span class="c-good">anklicken zum Herstellen</span>'
+                                               : '<br><span class="c-bad">zu wenig Material</span>')
+        : '<span class="c-dim">Leg ein Muster ins Gitter<br>oder wähle unten einen Bauplan</span>') + "</div>";
+  h += "</div>";
+
+  if(!gross) h += '<p class="c-dim" style="margin:6px 0 0">Für 3×3-Baupläne brauchst du eine <b>Werkbank</b>: '
+    + 'stell sie hin und geh nah ran.</p>';
+  if(handMaterial) h += '<p class="c-gold" style="margin:6px 0 0">In der Hand: <b>' + dingName(handMaterial)
+    + "</b> – klick ein Gitterfeld an.</p>";
+
+  h += '<h3 style="margin-top:16px">Dein Vorrat – zum Auswählen anklicken</h3>';
+  const mats = alleSachen();
+  if(!mats.length) h += '<p class="c-dim">Noch nichts gesammelt. Halte draußen die linke Maustaste auf einen Block.</p>';
+  else {
+    h += '<div class="gitter">';
+    mats.forEach(id => {
+      const uebrig = habe(id) - imGitter(id);
+      h += '<div class="zelle' + (handMaterial === id ? " gewaehlt" : "") + (uebrig <= 0 ? " leerbestand" : "")
+        + '" onclick="materialWaehlen(' + id + ')"><img src="' + symbolBild(id) + '">'
+        + "<span>" + dingName(id) + "</span><b>" + habe(id) + "</b></div>";
+    });
+    h += "</div>";
+  }
+
+  h += '<h3 style="margin-top:16px">Baupläne</h3>';
+  BAUPLAENE.forEach((p, i) => {
+    const gesperrt = p.gross && !gross;
+    h += '<div class="karte2"><span>' + (gesperrt ? "🔒 " : "") + p.name
+      + ' <span class="c-dim">' + planText(p) + "</span></span>"
+      + '<button ' + (gesperrt ? "disabled" : "") + ' onclick="planLegen(' + i + ',' + gross + ')">ins Gitter legen</button></div>';
+  });
+
+  h += '<h3 style="margin-top:16px">Brauen</h3>';
+  BRAUEN.forEach((r, i) => {
+    const geht = (s.sachen[r.ein.s] || 0) >= r.ein.n;
+    h += '<div class="karte2"><span>' + r.text + "</span>"
+      + '<button class="goldbtn" ' + (geht ? "" : "disabled") + ' onclick="brauen(' + i + ')">Brauen</button></div>';
+  });
+
+  h += '<h3 style="margin-top:16px">Ausrüstung & Vorrat</h3>';
+  h += '<div class="karte2"><span>🧪 Heiltränke</span><b>' + s.traenke + "</b></div>";
+  WELTEN.forEach(wl => {
+    const n = s.sachen[wl.item.id] || 0;
+    if(n > 0) h += '<div class="karte2"><span>' + wl.item.name + "</span><b>" + n + "</b></div>";
+  });
+  h += '<div class="karte2"><span>⛏️ ' + HACKEN[s.hacke].name + "</span><b>Stein ×"
+    + grabTempo(BLOECKE[B_STEIN]).toFixed(1) + " · " + (BLOECKE[B_STEIN].haerte/grabTempo(BLOECKE[B_STEIN])).toFixed(1) + " s</b></div>";
+  h += '<div class="karte2"><span>🪓 ' + AEXTE[s.axt].name + "</span><b>Holz ×"
+    + grabTempo(BLOECKE[B_HOLZ]).toFixed(1) + " · " + (BLOECKE[B_HOLZ].haerte/grabTempo(BLOECKE[B_HOLZ])).toFixed(1) + " s</b></div>";
+  h += '<div class="karte2"><span>🗡️ ' + WAFFEN[s.waffe].name + "</span><b>+" + WAFFEN[s.waffe].atk + " Angriff</b></div>";
+  h += '<div class="karte2"><span>🛡️ ' + RUESTUNGEN[s.ruestung].name + "</span><b>+" + RUESTUNGEN[s.ruestung].def + " Rüstung</b></div>";
+  $("tafelInhalt").innerHTML = h;
+}
+function planText(p){
+  if(p.formlos) return "(" + p.formlos.map(dingName).join(" + ") + ")";
+  const teile = {};
+  p.form.forEach(r => r.forEach(k => { if(k !== "") teile[k] = (teile[k]||0) + 1; }));
+  return "(" + Object.keys(teile).map(k => teile[k] + "× " + dingName(p.schluessel[k])).join(" + ") + ")";
+}
+function materialWaehlen(id){
+  handMaterial = handMaterial === id ? 0 : id;
+  bastelZeichnen();
+}
+function gitterKlick(feld, gross){
+  if(gitter[feld]){ gitter[feld] = 0; bastelZeichnen(); return; }   // zurücklegen
+  if(!handMaterial){ meldung("Wähle erst unten ein Material aus.", "c-dim"); return; }
+  if(habe(handMaterial) - imGitter(handMaterial) <= 0){ meldung("Davon hast du nicht mehr.", "c-bad"); return; }
+  gitter[feld] = handMaterial;
+  bastelZeichnen();
+}
+function brauen(nr){
+  const r = BRAUEN[nr];
+  if((s.sachen[r.ein.s] || 0) < r.ein.n) return;
+  s.sachen[r.ein.s] -= r.ein.n;
+  if(r.aus.trank) s.traenke += r.aus.trank;
+  if(r.aus.mp) s.mp = Math.min(s.maxMp, s.mp + r.aus.mp);
+  meldung("🧪 Gebraut: " + r.text.split("→")[1].trim(), "c-gold");
+  speichern(); hudZeichnen(); bastelZeichnen();
+}
+function ladenZeichnen(){
+  let h = '<p class="c-dim" style="margin-top:0">Du hast <b class="c-gold">' + s.gold + " 💰</b></p>";
+  h += ladenZeile("🧪 Heiltrank <span class='c-dim'>heilt " + Math.max(60, Math.round(s.maxHp*0.25)) + " Leben</span>", 30, "trank");
+  h += ladenZeile("💧 Manatrank <span class='c-dim'>+30 MP sofort</span>", 25, "mana");
+  const nw = WAFFEN[s.waffe+1];
+  h += nw ? ladenZeile("🗡️ " + nw.name + " <span class='c-dim'>+" + nw.atk + " Angriff</span>", nw.preis, "waffe")
+          : '<div class="karte2"><span>🗡️ Beste Waffe getragen</span></div>';
+  const nr = RUESTUNGEN[s.ruestung+1];
+  h += nr ? ladenZeile("🛡️ " + nr.name + " <span class='c-dim'>+" + nr.def + " Rüstung</span>", nr.preis, "ruestung")
+          : '<div class="karte2"><span>🛡️ Beste Rüstung getragen</span></div>';
+  $("ladenInhalt").innerHTML = h;
+  $("rastknopf").disabled = s.gold < 10;
+}
+function ladenZeile(text, preis, was){
+  return '<div class="karte2"><span>' + text + '</span><button class="goldbtn" '
+    + (s.gold < preis ? "disabled" : "") + " onclick=\"kaufe('" + was + "'," + preis + ')">' + preis + " 💰</button></div>";
+}
+function kaufe(was, preis){
+  if(s.gold < preis) return;
+  s.gold -= preis;
+  if(was === "trank"){ s.traenke++; meldung("Heiltrank gekauft.", "c-gold"); }
+  if(was === "mana"){ s.mp = Math.min(s.maxMp, s.mp+30); meldung("Manatrank getrunken. +30 MP", "c-mag"); }
+  if(was === "waffe"){ s.waffe++; meldung("Neue Waffe: " + WAFFEN[s.waffe].name + "!", "c-gold"); }
+  if(was === "ruestung"){ s.ruestung++; meldung("Neue Rüstung: " + RUESTUNGEN[s.ruestung].name + "!", "c-gold"); }
+  speichern(); ladenZeichnen(); hudZeichnen();
+}
+function rasten(){
+  if(s.gold < 10) return;
+  s.gold -= 10; s.hp = s.maxHp; s.mp = s.maxMp;
+  meldung("Am Feuer gerastet. Leben und Magie voll. 🔥", "c-good");
+  speichern(); ladenZeichnen(); hudZeichnen();
+}
+
+/* =====================================================================
+   KAMPF
+   ===================================================================== */
+let gegner = null, spielerDran = true;
+function kampflog(text, cls){
+  const l = $("kampflog");
+  const d = document.createElement("div");
+  d.className = cls || ""; d.innerHTML = text;
+  l.appendChild(d); l.scrollTop = l.scrollHeight;
+}
+function kampfStarten(o){
+  if(modus !== "welt") return;
+  gegner = o; spielerDran = true;
+  $("kampflog").innerHTML = "";
+  $("kampfort").textContent = WELTEN[s.welt].name + " · Kampf";
+  $("figurG").textContent = o.emoji;
+  $("figurG").style.fontSize = o.boss ? "84px" : "58px";
+  $("nameG").textContent = o.name + (o.boss ? " 👑" : "");
+  $("nameP").textContent = "Held (Stufe " + s.level + ")";
+  kampflog((o.boss ? "⚠️ " : "⚔️ ") + o.name + " stellt sich dir!", o.boss ? "c-bad" : "");
+  knoepfe(false);
+  oeffne("kampf");
+  modus = "kampf";
+  kampfZeichnen();
+}
+function kampfZeichnen(){
+  balken("klhp","kthp", s.hp, s.maxHp, "❤️");
+  balken("klmp","ktmp", s.mp, s.maxMp, "💧");
+  balken("glhp","gthp", gegner.hp, gegner.maxHp, "❤️");
+  hudZeichnen();
+}
+function knoepfe(sperren){ document.querySelectorAll("#kampfknoepfe button").forEach(b => b.disabled = sperren); }
+function animiere(id, cls){ const el = $(id); el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
+
+function aktion(art){
+  if(modus !== "kampf" || !spielerDran || !gegner) return;
+  if(art === "feuer" && s.mp < 8){ kampflog("Nicht genug Magie!", "c-bad"); return; }
+  if(art === "heil" && s.mp < 10){ kampflog("Nicht genug Magie!", "c-bad"); return; }
+  if(art === "trank" && s.traenke <= 0){ kampflog("Keine Tränke mehr!", "c-bad"); return; }
+  spielerDran = false; knoepfe(true);
+
+  if(art === "angriff"){
+    animiere("figurP","schlagA");
+    const krit = Math.random() < 0.15;
+    let dmg = Math.max(1, gesAtk() + rnd(0,4) - Math.floor(gegner.def/2));
+    if(krit) dmg = Math.round(dmg*1.9);
+    gegner.hp -= dmg;
+    setTimeout(() => animiere("figurG","treffer"), 110);
+    kampflog("Du triffst für <b>" + dmg + "</b> Schaden." + (krit?" 💥 KRITISCH!":""), krit?"c-gold":"");
+  } else if(art === "feuer"){
+    s.mp -= 8; animiere("figurP","schlagA");
+    const dmg = Math.max(1, Math.round(s.mag*2.1) + rnd(0,6) - Math.floor(gegner.def/4));
+    gegner.hp -= dmg;
+    setTimeout(() => animiere("figurG","treffer"), 110);
+    kampflog("🔥 Feuerball für <b>" + dmg + "</b> Schaden.", "c-mag");
+  } else if(art === "heil"){
+    s.mp -= 10;
+    const h = 25 + s.mag*2;
+    s.hp = Math.min(s.maxHp, s.hp+h);
+    kampflog("💚 Heilung: +" + h + " Leben.", "c-good");
+  } else if(art === "trank"){
+    s.traenke--;
+    const heil = Math.max(60, Math.round(s.maxHp*0.25));      // wächst mit dir mit
+    s.hp = Math.min(s.maxHp, s.hp + heil);
+    kampflog("🧪 Trank getrunken: +" + heil + " Leben.", "c-good");
+  } else if(art === "flucht"){
+    if(gegner.boss) kampflog("Vor einem Boss gibt es kein Entkommen!", "c-bad");
+    else if(Math.random() < 0.55){
+      kampflog("🏃 Du entkommst!", "c-dim");
+      gegner.ruhe = 5;
+      const wx = pos.x - gegner.x, wz = pos.z - gegner.z, l = Math.hypot(wx,wz) || 1;
+      gegner.x -= wx/l*3; gegner.z -= wz/l*3;
+      setTimeout(kampfEnde, 500);
+      return;
+    } else kampflog("Flucht misslungen!", "c-bad");
+  }
+  kampfZeichnen();
+  if(gegner.hp <= 0){ setTimeout(sieg, 450); return; }
+  setTimeout(gegnerZug, 700);
+}
+function gegnerZug(){
+  if(modus !== "kampf" || !gegner) return;
+  animiere("figurG","schlagB");
+  let dmg = Math.max(1, gegner.atk + rnd(0,4) - Math.floor(gesDef()*0.8));
+  const wucht = gegner.boss && Math.random() < 0.28;
+  if(wucht) dmg = Math.round(dmg*1.8);
+  // Unter einem Drittel Leben dreht ein Boss durch
+  if(gegner.boss && gegner.hp < gegner.maxHp*0.34){
+    dmg = Math.round(dmg*1.4);
+    if(!gegner.rasend){
+      gegner.rasend = true;
+      kampflog("🔥 " + gegner.name + " wird <b>rasend</b> und schlägt härter zu!", "c-bad");
+    }
+  }
+  s.hp -= dmg;
+  setTimeout(() => animiere("figurP","treffer"), 110);
+  kampflog(gegner.name + " trifft dich für <b>" + dmg + "</b> Schaden." + (wucht?" 💢 WUCHTSCHLAG!":""), "c-bad");
+  kampfZeichnen();
+  if(s.hp <= 0){ setTimeout(() => sterben("im Kampf"), 500); return; }
+  spielerDran = true; knoepfe(false);
+}
+function sieg(){
+  if(!gegner) return;
+  const g = gegner;
+  kampflog("🎉 " + g.name + " besiegt! +" + g.xp + " XP, +" + g.gold + " 💰", "c-good");
+  meldung("🎉 " + g.name + " besiegt (+" + g.xp + " XP, +" + g.gold + " 💰)", "c-good");
+  s.gold += g.gold;
+  s.kills[g.id] = (s.kills[g.id] || 0) + 1;
+  if(g.boss) s.fertig[WELTEN[s.welt].quests.find(q => q.typ === "boss").id] = "besiegt";
+  const i = wesen.indexOf(g);
+  if(i >= 0) wesen.splice(i,1);
+  if(!g.boss) setTimeout(() => { if(modus !== "start") gegnerSetzen(); }, 10000);
+  gegner = null;
+  setTimeout(() => { kampfEnde(); xpGeben(g.xp); questsPruefen(); speichern(); }, 700);
+}
+function sterben(wo){
+  const verlust = Math.floor(s.gold*0.25);
+  s.gold -= verlust;
+  s.hp = Math.round(s.maxHp*0.4); s.mp = Math.round(s.maxMp*0.5);
+  if(gegner) gegner.ruhe = 8;
+  gegner = null;
+  pos.x = startOrt.x + 0.5; pos.z = startOrt.z + 0.5; pos.y = bodenHoehe(startOrt.x, startOrt.z) + 1;
+  geschw.y = 0;
+  kampfEnde();
+  infoZeigen("💀","Besiegt!","Du bist " + wo + " gestorben und erwachst am Startpunkt.<br>"
+    + verlust + " Gold sind weg. Rüste dich am Lagerfeuer aus!");
+  meldung("💀 Du bist gestorben. −" + verlust + " Gold.", "c-bad");
+  speichern();
+}
+function kampfEnde(){ gegner = null; schliesse("kampf"); hudZeichnen(); }
+
+/* =====================================================================
+   STUFEN & QUESTS
+   ===================================================================== */
+let offeneStufen = 0;
+function xpGeben(x){
+  s.xp += x;
+  while(s.xp >= s.xpNext){
+    s.xp -= s.xpNext; s.level++;
+    s.xpNext = Math.round(30 + s.level*s.level*6);
+    s.maxHp += 10; s.hp = s.maxHp;
+    s.maxMp += 4;  s.mp = s.maxMp;
+    s.atk += 2; s.def += 1; s.mag += 2;
+    offeneStufen++;
+    meldung("🌟 Stufe " + s.level + " erreicht!", "c-gold");
+  }
+  hudZeichnen();
+  if(offeneStufen > 0) stufeZeigen();
+}
+function stufeZeigen(){ $("neueStufe").textContent = s.level; oeffne("stufe"); }
+function talent(t){
+  if(t === "hp"){ s.maxHp += 20; s.hp += 20; }
+  if(t === "atk") s.atk += 4;
+  if(t === "mag"){ s.mag += 4; s.maxMp += 10; s.mp += 10; }
+  if(t === "def") s.def += 3;
+  offeneStufen--;
+  if(offeneStufen > 0) stufeZeigen(); else schliesse("stufe");
+  speichern(); hudZeichnen();
+}
+function fortschritt(q){
+  if(q.typ === "kill")    return Math.min(s.kills[q.ziel] || 0, q.anz);
+  if(q.typ === "sammeln") return Math.min(s.gesammelt[q.ziel] || 0, q.anz);
+  return s.fertig[q.id] ? 1 : 0;
+}
+function questsPruefen(){
+  const w = WELTEN[s.welt];
+  w.quests.forEach(q => {
+    if(s.fertig[q.id] === true) return;
+    if(fortschritt(q) >= q.anz){
+      s.fertig[q.id] = true; s.gold += q.gold;
+      meldung('📜 Quest erledigt: "' + q.text + '" (+' + q.xp + " XP, +" + q.gold + " 💰)", "c-good");
+      xpGeben(q.xp);
+    }
+  });
+  const vor = w.quests.filter(q => q.typ !== "boss").every(q => s.fertig[q.id]);
+  if(vor) bossSetzen(true);
+  if(w.quests.every(q => s.fertig[q.id])){
+    if(s.welt === WELTEN.length-1 && !s.gewonnen){
+      s.gewonnen = true;
+      infoZeigen("🏆","Du hast gewonnen!","Der Schattenfürst ist gefallen, alle drei Welten sind frei.<br>"
+        + "Endstand: Stufe <b>" + s.level + "</b> · " + s.gold + " 💰<br>Durch das Portal kommst du jetzt in <b>jede</b> Welt zurück – deine Bauten stehen dort noch.");
+    } else if(s.welt < WELTEN.length-1 && !s.fertig["portal"+s.welt]){
+      s.fertig["portal"+s.welt] = true;
+      infoZeigen("🌀","Portal offen!","Alle Quests in " + w.name + " sind erledigt.<br>"
+        + "Der violette Punkt auf der Karte ist das Portal – geh hin und drück <b>E</b>.");
+    }
+  }
+  speichern(); hudZeichnen();
+}
+function portalNehmen(){
+  const naechste = s.welt + 1;
+  // Beim ersten Mal geht es geradeaus in die neue Welt
+  if(naechste < WELTEN.length && naechste > s.freigeschaltet){
+    s.freigeschaltet = naechste;
+    reiseNach(naechste, true);
+    return;
+  }
+  reiseFenster();          // sonst darfst du dir aussuchen, wohin
+}
+function reiseNach(nr, zumErstenMal){
+  if(nr === s.welt){ schliesse("reise"); return; }
+  s.welt = nr;
+  s.hp = s.maxHp; s.mp = s.maxMp;
+  schliesse("reise");
+  weltLaden();
+  const w = WELTEN[nr];
+  if(zumErstenMal)
+    infoZeigen(w.emoji, "Neue Welt: " + w.name, w.beschreibung
+      + "<br><br>Die Gegner hier sind viel stärker – schmiede dir am besten erst bessere Werkzeuge!");
+  else
+    meldung("🌀 Angekommen in " + w.name + ". Deine Bauten stehen noch.", "c-mag");
+  speichern();
+}
+function reiseFenster(){
+  let h = "";
+  for(let i = 0; i <= s.freigeschaltet && i < WELTEN.length; i++){
+    const w = WELTEN[i];
+    const hier = i === s.welt;
+    const fertig = w.quests.every(q => s.fertig[q.id]);
+    h += '<div class="karte2"><span>' + w.emoji + " <b>" + w.name + "</b>"
+      + (hier ? ' <span class="c-dim">– du bist hier</span>'
+              : (fertig ? ' <span class="c-good">– befreit</span>' : ' <span class="c-gold">– Quests offen</span>')) + "</span>"
+      + '<button class="primary" ' + (hier ? "disabled" : "") + ' onclick="reiseNach(' + i + ',false)">Reisen</button></div>';
+  }
+  $("reiseZiele").innerHTML = h;
+  oeffne("reise");
+}
+
+/* =====================================================================
+   WELT LADEN
+   ===================================================================== */
+function weltLaden(){
+  $("ladebalken").style.width = "10%";
+  weltErzeugen();
+  chunksAnlegen();
+  wesen = [];
+  pos.x = startOrt.x + 0.5; pos.z = startOrt.z + 0.5;
+  pos.y = bodenHoehe(startOrt.x, startOrt.z) + 1;
+  geschw = {x:0,y:0,z:0};
+  for(let i=0; i<10; i++) gegnerSetzen();
+  for(let i=0; i<8; i++) itemSetzen();
+  const w = WELTEN[s.welt];
+  if(w.quests.filter(q => q.typ !== "boss").every(q => s.fertig[q.id])) bossSetzen();
+  meldung("Willkommen in " + w.name + ".", "c-mag");
+  meldung(w.beschreibung, "c-dim");
+  if(!besitz().length)
+    meldung("⛏️ Linke Maustaste <b>gedrückt halten</b>, bis der Block zerbricht · <b>I</b> = Inventar & Herstellen", "c-gold");
+  hudZeichnen();
+}
+
+/* =====================================================================
+   EINGABE
+   ===================================================================== */
+addEventListener("keydown", e => {
+  const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+  tasten[k] = true;
+  if(modus === "menue"){                       // offene Fenster mit Esc / I / Q schliessen
+    if(k === "Escape" || k === "i" || k === "q"){
+      if(!$("tafel").classList.contains("hidden")) tafelSchliessen();
+      else if(!$("lager").classList.contains("hidden")) schliesse("lager");
+    }
+    return;
+  }
+  if(modus !== "welt") return;
+  if(k >= "1" && k <= "9" && +k <= besitz().length){ gewaehlt = +k - 1; gurtBauen(); }
+  if(k === "e") benutzen();
+  if(k === "q") tafelZeigen("quests");
+  if(k === "i") tafelZeigen("tasche");
+  if(k === " " || k.indexOf("Arrow") === 0) e.preventDefault();
+});
+addEventListener("keyup", e => { tasten[e.key.length === 1 ? e.key.toLowerCase() : e.key] = false; });
+addEventListener("blur", () => { for(const k in tasten) tasten[k] = false; });
+addEventListener("resize", groesseAnpassen);
+
+function mausFangen(){
+  try{ const p = leinwand.requestPointerLock(); if(p && p.catch) p.catch(()=>{}); }catch(e){}
+}
+let grabend = false;
+leinwand.addEventListener("mousedown", e => {
+  if(modus !== "welt") return;
+  // Erster Klick fängt die Maus – soll aber trotzdem schon graben
+  if(document.pointerLockElement !== leinwand && !document.body.classList.contains("touch")) mausFangen();
+  if(e.button === 0) grabend = true;
+  if(e.button === 2) setzen();
+});
+addEventListener("mouseup", e => { if(e.button === 0){ grabend = false; abbauEnde(); } });
+leinwand.addEventListener("contextmenu", e => e.preventDefault());
+addEventListener("mousemove", e => {
+  if(document.pointerLockElement === leinwand && modus === "welt"){
+    gier -= e.movementX*0.0024;
+    nick = klemm(nick - e.movementY*0.0024, -1.5, 1.5);
+  }
+});
+addEventListener("wheel", e => {
+  if(modus !== "welt") return;
+  const n = besitz().length;
+  if(!n) return;
+  gewaehlt = (gewaehlt + (e.deltaY > 0 ? 1 : n-1)) % n;
+  gurtBauen();
+}, {passive:true});
+
+if(matchMedia("(pointer:coarse)").matches) document.body.classList.add("touch");
+document.querySelectorAll("#touch button").forEach(b => {
+  const k = b.dataset.k;
+  const an = e => {
+    e.preventDefault();
+    if(k === "e") benutzen();
+    else if(k === "abbau") tasten["abbau"] = true;
+    else tasten[k] = true;
+  };
+  const aus = e => { e.preventDefault(); tasten[k] = false; };
+  b.addEventListener("touchstart", an, {passive:false});
+  b.addEventListener("touchend", aus, {passive:false});
+  b.addEventListener("mousedown", an);
+  b.addEventListener("mouseup", aus);
+});
+// Wischen zum Umsehen (rechte Bildhälfte)
+let wischId = null, wischX = 0, wischY = 0;
+leinwand.addEventListener("touchstart", e => {
+  const t = e.changedTouches[0];
+  if(t.clientX > innerWidth/2){ wischId = t.identifier; wischX = t.clientX; wischY = t.clientY; }
+}, {passive:true});
+leinwand.addEventListener("touchmove", e => {
+  for(const t of e.changedTouches){
+    if(t.identifier !== wischId) continue;
+    gier -= (t.clientX - wischX)*0.006;
+    nick = klemm(nick - (t.clientY - wischY)*0.006, -1.5, 1.5);
+    wischX = t.clientX; wischY = t.clientY;
+  }
+}, {passive:true});
+leinwand.addEventListener("touchend", () => { wischId = null; });
+
+/* =====================================================================
+   HAUPTSCHLEIFE
+   ===================================================================== */
+let zeitAlt = 0, bildZaehler = 0, fpsZeit = 0;
+function schleife(zeit){
+  requestAnimationFrame(schleife);
+  const dt = Math.min(0.05, (zeit - zeitAlt)/1000) || 0;
+  zeitAlt = zeit;
+
+  // Netze nachbauen
+  if(bauliste.length){
+    bauliste.sort((a,b) => {
+      const ca = chunks[a], cb = chunks[b];
+      return Math.hypot(ca.cx*CH-pos.x, ca.cz*CH-pos.z) - Math.hypot(cb.cx*CH-pos.x, cb.cz*CH-pos.z);
+    });
+    for(let i=0; i<3 && bauliste.length; i++){
+      const c = chunks[bauliste.shift()];
+      if(c) netzBauen(c);
+    }
+    $("ladebalken").style.width = (100 - bauliste.length/chunks.length*100) + "%";
+    if(!bauliste.length) setTimeout(() => $("ladebalken").style.width = "0%", 400);
+  }
+
+  if(modus === "welt"){
+    bewegen(dt);
+    wesenAktualisieren(dt);
+    if(grabend || tasten["abbau"]) abbauSchritt(dt);
+    else if(abbauZiel) abbauEnde();
+    hinweisPruefen();
+  }
+  if(modus !== "start"){
+    zeichnen();
+    karteZeichnen();
+    meldungenAufraeumen();
+    bildZaehler++;
+    if(zeit - fpsZeit > 500){
+      $("fps").textContent = Math.round(bildZaehler*1000/(zeit-fpsZeit)) + " fps";
+      $("koord").textContent = "x " + Math.floor(pos.x) + " · y " + Math.floor(pos.y) + " · z " + Math.floor(pos.z);
+      bildZaehler = 0; fpsZeit = zeit;
+    }
+  }
+}
+
+/* ---------- Weltliste auf dem Startbildschirm ---------- */
+/* Die Liste wird Stück für Stück aufgebaut statt als Text zusammengeklebt –
+   sonst zerlegt ein Anführungszeichen im Weltnamen die Knöpfe.               */
+function weltlisteZeichnen(){
+  const l = weltListe().sort((a,b) => (b.zuletzt||0) - (a.zuletzt||0));
+  const ziel = $("weltliste");
+  ziel.innerHTML = "";
+  if(!l.length){
+    const leer = document.createElement("p");
+    leer.className = "c-dim";
+    leer.textContent = "Noch keine Welt. Leg unten deine erste an!";
+    ziel.appendChild(leer);
+    return;
+  }
+  l.forEach(e => {
+    const wname = WELTEN[e.welt] ? WELTEN[e.welt].emoji + " " + WELTEN[e.welt].name : "–";
+    const wann = e.zuletzt ? new Date(e.zuletzt).toLocaleDateString("de-CH",
+                   {day:"2-digit", month:"2-digit", year:"2-digit"}) : "";
+    const karte = document.createElement("div");
+    karte.className = "karte2";
+
+    const links = document.createElement("span");
+    const name = document.createElement("b");
+    name.textContent = e.name;                       // textContent: jedes Zeichen ist sicher
+    const zeile = document.createElement("span");
+    zeile.className = "c-dim";
+    zeile.style.fontSize = "12px";
+    zeile.textContent = "Stufe " + (e.stufe||1) + " · " + wname
+                      + " · Startwert " + (e.saat||0) + (wann ? " · " + wann : "");
+    links.appendChild(name);
+    links.appendChild(document.createElement("br"));
+    links.appendChild(zeile);
+
+    const rechts = document.createElement("span");
+    rechts.style.display = "flex";
+    rechts.style.gap = "6px";
+    const spielen = document.createElement("button");
+    spielen.className = "primary";
+    spielen.textContent = "▶ Spielen";
+    spielen.onclick = () => weltSpielen(e.id);
+    const loeschen = document.createElement("button");
+    loeschen.className = "danger";
+    loeschen.textContent = "🗑️";
+    loeschen.title = "Welt löschen";
+    loeschen.onclick = () => weltFragenLoeschen(e.id, e.name);
+    rechts.appendChild(spielen);
+    rechts.appendChild(loeschen);
+
+    karte.appendChild(links);
+    karte.appendChild(rechts);
+    ziel.appendChild(karte);
+  });
+}
+function neueWelt(){
+  const name = $("neuName").value;
+  const saat = $("neuSaat").value;
+  weltAnlegen(name, saat);
+  $("neuName").value = ""; $("neuSaat").value = "";
+  starteAktuelleWelt();
+}
+function weltSpielen(id){
+  if(!standLaden(id)){ alert("Diese Welt lässt sich nicht laden."); return; }
+  starteAktuelleWelt();
+}
+function weltFragenLoeschen(id, name){
+  if(!confirm('Welt "' + name + '" wirklich löschen? Alles darin ist dann weg.')) return;
+  weltLoeschen(id);
+}
+function starteAktuelleWelt(){
+  schliesse("start");
+  modus = "welt";
+  weltLaden();
+  gurtBauen();
+  speichern();
+  if(!document.body.classList.contains("touch")) mausFangen();
+}
+// Zurück zur Weltliste (Knopf im Spiel)
+function zurueckZurListe(){
+  if(s && s.id) speichern();
+  modus = "start";
+  for(const k in tasten) tasten[k] = false;
+  if(document.pointerLockElement) document.exitPointerLock();
+  ["kampf","tafel","lager","stufe","info","reise"].forEach(x => $(x).classList.add("hidden"));
+  weltlisteZeichnen();
+  $("start").classList.remove("hidden");
+}
+
+altenStandUebernehmen();
+glStarten();
+weltlisteZeichnen();
+requestAnimationFrame(schleife);
+</script>
+</body>
+</html>

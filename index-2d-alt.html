@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weltenkämpfer</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b26; --panel2:#1e2533; --line:#2b3446;
+    --txt:#e6ecf5; --dim:#93a1b8; --gold:#f5c451; --hp:#e8484f; --mp:#4aa3ff;
+    --xp:#7ee787; --accent:#a877ff;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:16px; font-family:"Trebuchet MS",Verdana,sans-serif;
+    background:radial-gradient(1200px 700px at 50% -10%,#1b2440,#0d1117 60%);
+    color:var(--txt); min-height:100vh;
+  }
+  .wrap{max-width:900px;margin:0 auto}
+  h1{
+    text-align:center;margin:0 0 4px;font-size:32px;letter-spacing:2px;
+    background:linear-gradient(90deg,#f5c451,#a877ff,#4aa3ff);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .sub{text-align:center;color:var(--dim);margin-bottom:14px;font-size:13px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+
+  .stats{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+  .badge{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:14px}
+  .bar{height:16px;background:#0a0e15;border:1px solid var(--line);border-radius:9px;overflow:hidden;position:relative;margin:5px 0}
+  .bar > i{display:block;height:100%;width:0;transition:width .35s ease}
+  .bar > span{position:absolute;inset:0;text-align:center;font-size:11px;line-height:14px;text-shadow:0 1px 2px #000}
+  .hpf{background:linear-gradient(90deg,#ff7a7a,var(--hp))}
+  .mpf{background:linear-gradient(90deg,#8ccbff,var(--mp))}
+  .xpf{background:linear-gradient(90deg,#b6f5c2,var(--xp))}
+
+  button{
+    background:linear-gradient(180deg,#303b52,#232c3e);
+    color:var(--txt);border:1px solid var(--line);border-radius:10px;
+    padding:10px 14px;font-size:14px;cursor:pointer;font-family:inherit;
+    transition:transform .08s, filter .15s;
+  }
+  button:hover:not(:disabled){filter:brightness(1.25)}
+  button:active:not(:disabled){transform:translateY(2px)}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  .primary{background:linear-gradient(180deg,#7a4ddb,#5b32b0);border-color:#8f6bff}
+  .danger{background:linear-gradient(180deg,#c0393f,#8f272c);border-color:#e8484f}
+  .goldbtn{background:linear-gradient(180deg,#c9a13a,#8f6f1e);border-color:var(--gold);color:#1a1405}
+
+  .worldcard{text-align:center;padding:18px;border-radius:14px;border:1px solid var(--line)}
+  .wemoji{font-size:56px;display:block;margin-bottom:6px}
+  h2{margin:0 0 8px;font-size:20px}
+  h3{margin:0 0 8px;font-size:16px;color:var(--dim);letter-spacing:1px;text-transform:uppercase}
+
+  .arena{display:flex;align-items:center;justify-content:space-around;gap:10px;padding:10px 0}
+  .fighter{text-align:center;flex:1}
+  .sprite{font-size:64px;display:block;transition:transform .18s}
+  .hit{animation:hit .3s}
+  @keyframes hit{0%{transform:translateX(0) scale(1)}30%{transform:translateX(-12px) scale(.9);filter:brightness(2)}100%{transform:translateX(0) scale(1)}}
+  .attackA{animation:atkA .3s}
+  @keyframes atkA{50%{transform:translateX(26px) scale(1.1)}}
+  .attackB{animation:atkB .3s}
+  @keyframes atkB{50%{transform:translateX(-26px) scale(1.1)}}
+  .vs{font-size:22px;color:var(--dim)}
+
+  #log{height:150px;overflow-y:auto;background:#0a0e15;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:13px;line-height:1.55}
+  #log div{margin-bottom:3px}
+  .c-good{color:var(--xp)} .c-bad{color:#ff8b8b} .c-gold{color:var(--gold)} .c-mag{color:#c6a6ff} .c-dim{color:var(--dim)}
+
+  .quest{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin-bottom:8px;font-size:14px}
+  .quest.done{border-color:var(--xp);opacity:.75}
+  .qbar{height:7px;background:#0a0e15;border-radius:4px;overflow:hidden;margin-top:6px}
+  .qbar > i{display:block;height:100%;background:linear-gradient(90deg,#f5c451,#7ee787)}
+
+  .shopitem{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 11px;margin-bottom:8px;font-size:14px}
+
+  .modal{position:fixed;inset:0;background:rgba(5,8,14,.8);display:flex;align-items:center;justify-content:center;z-index:10;padding:16px}
+  .modal .box{background:var(--panel);border:2px solid var(--accent);border-radius:16px;padding:22px;max-width:440px;text-align:center}
+  .hidden{display:none !important}
+  .tabs{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+  .tabs button.active{border-color:var(--accent);background:linear-gradient(180deg,#4a3a7a,#2f2450)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>⚔️ WELTENKÄMPFER ⚔️</h1>
+  <div class="sub">Kämpfe · Erledige Quests · Steige auf · Erreiche neue Welten</div>
+
+  <div class="panel">
+    <div class="stats">
+      <div class="badge">🧙 <b>Held</b> · Level <b id="plevel">1</b></div>
+      <div class="badge">⚔️ Angriff <b id="patk">9</b></div>
+      <div class="badge">🛡️ Rüstung <b id="pdef">3</b></div>
+      <div class="badge">✨ Magie <b id="pmag">7</b></div>
+      <div class="badge">💰 <b id="pgold">30</b> Gold</div>
+    </div>
+    <div class="bar"><i class="hpf" id="hpbar"></i><span id="hptxt"></span></div>
+    <div class="bar"><i class="mpf" id="mpbar"></i><span id="mptxt"></span></div>
+    <div class="bar"><i class="xpf" id="xpbar"></i><span id="xptxt"></span></div>
+  </div>
+
+  <div class="panel" id="worldview">
+    <div class="worldcard">
+      <span class="wemoji" id="wemoji">🌲</span>
+      <h2 id="wname">Grünwald</h2>
+      <div class="c-dim" id="wdesc"></div>
+    </div>
+    <div class="row" style="margin-top:14px;justify-content:center">
+      <button class="primary" onclick="sucheGegner()">🗡️ Gegner suchen</button>
+      <button class="danger" id="bossbtn" onclick="bossKampf()">👹 Boss herausfordern</button>
+      <button onclick="rasten()">🔥 Rasten (10 Gold)</button>
+      <button class="goldbtn" onclick="zeigeTab('shop')">🏪 Laden</button>
+      <button class="primary hidden" id="portalbtn" onclick="portal()">🌀 Portal zur nächsten Welt</button>
+    </div>
+  </div>
+
+  <div class="panel hidden" id="fightview">
+    <div class="arena">
+      <div class="fighter">
+        <span class="sprite" id="psprite">🧙</span>
+        <div><b id="fpname">Held</b></div>
+        <div class="bar"><i class="hpf" id="fhpbar"></i><span id="fhptxt"></span></div>
+      </div>
+      <div class="vs">⚡VS⚡</div>
+      <div class="fighter">
+        <span class="sprite" id="esprite">🐺</span>
+        <div><b id="ename">Wolf</b></div>
+        <div class="bar"><i class="hpf" id="ehpbar"></i><span id="ehptxt"></span></div>
+      </div>
+    </div>
+    <div class="row" style="justify-content:center;margin-top:8px" id="fightbtns">
+      <button onclick="aktion('angriff')">🗡️ Angriff</button>
+      <button onclick="aktion('feuer')">🔥 Feuerball (8 MP)</button>
+      <button onclick="aktion('heil')">💚 Heilzauber (10 MP)</button>
+      <button onclick="aktion('trank')">🧪 Trank (<span id="ptrank">0</span>)</button>
+      <button onclick="aktion('flucht')">🏃 Fliehen</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="tabs">
+      <button id="tab-quests" class="active" onclick="zeigeTab('quests')">📜 Quests</button>
+      <button id="tab-shop" onclick="zeigeTab('shop')">🏪 Laden</button>
+      <button id="tab-bag" onclick="zeigeTab('bag')">🎒 Tasche</button>
+      <button onclick="neuesSpiel()" style="margin-left:auto">🔄 Neu starten</button>
+    </div>
+    <div id="tabbody"></div>
+  </div>
+
+  <div class="panel">
+    <h3>Abenteuer-Log</h3>
+    <div id="log"></div>
+  </div>
+</div>
+
+<div class="modal hidden" id="levelmodal">
+  <div class="box">
+    <div style="font-size:48px">🌟</div>
+    <h2>LEVEL UP!</h2>
+    <p>Du bist jetzt Level <b id="newlevel">2</b>. Wähle dein Talent:</p>
+    <div class="row" style="justify-content:center">
+      <button onclick="talent('hp')">❤️ +20 Max-HP</button>
+      <button onclick="talent('atk')">⚔️ +4 Angriff</button>
+      <button onclick="talent('mag')">✨ +4 Magie, +10 MP</button>
+      <button onclick="talent('def')">🛡️ +3 Rüstung</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal hidden" id="infomodal">
+  <div class="box">
+    <div style="font-size:48px" id="imemoji">🎉</div>
+    <h2 id="imtitle"></h2>
+    <p id="imtext"></p>
+    <button class="primary" onclick="schliesseInfo()">Weiter</button>
+  </div>
+</div>
+
+<script>
+/* ============ WELTEN & DATEN ============ */
+const WELTEN = [
+  {
+    name:"Grünwald", emoji:"🌲",
+    desc:"Ein friedlicher Wald - doch etwas Dunkles nistet in seinem Herzen.",
+    gegner:[
+      {id:"wolf",   name:"Wolf",       emoji:"🐺", hp:30, atk:7,  def:2, xp:12, gold:8,  drop:"kraut", chance:.5},
+      {id:"goblin", name:"Goblin",     emoji:"👺", hp:38, atk:9,  def:3, xp:16, gold:12, drop:"kraut", chance:.35},
+      {id:"spinne", name:"Waldspinne", emoji:"🕷️", hp:26, atk:11, def:1, xp:14, gold:10, drop:"kraut", chance:.3}
+    ],
+    boss:{id:"troll", name:"Waldtroll", emoji:"👹", hp:150, atk:16, def:6, xp:120, gold:150},
+    quests:[
+      {id:"w0q1", typ:"kill",    ziel:"wolf",   anz:4, text:"Vertreibe 4 Wölfe",      xp:40,  gold:40},
+      {id:"w0q2", typ:"sammeln", ziel:"kraut",  anz:5, text:"Sammle 5 Heilkräuter",   xp:50,  gold:50},
+      {id:"w0q3", typ:"boss",    ziel:"troll",  anz:1, text:"Besiege den Waldtroll",  xp:100, gold:120}
+    ]
+  },
+  {
+    name:"Feuerwüste", emoji:"🌋",
+    desc:"Glühender Sand, Lavaströme und Kreaturen aus purer Hitze.",
+    gegner:[
+      {id:"skorpion",name:"Glutskorpion",emoji:"🦂", hp:70,  atk:18, def:7,  xp:40, gold:28, drop:"glut", chance:.45},
+      {id:"geist",   name:"Feuergeist",  emoji:"🔥", hp:60,  atk:24, def:4,  xp:46, gold:32, drop:"glut", chance:.4},
+      {id:"golem",   name:"Magmagolem",  emoji:"🗿", hp:110, atk:15, def:12, xp:55, gold:40, drop:"glut", chance:.3}
+    ],
+    boss:{id:"drache", name:"Lavadrache", emoji:"🐉", hp:420, atk:34, def:14, xp:400, gold:500},
+    quests:[
+      {id:"w1q1", typ:"kill",    ziel:"geist",  anz:5, text:"Lösche 5 Feuergeister aus", xp:120, gold:120},
+      {id:"w1q2", typ:"sammeln", ziel:"glut",   anz:6, text:"Sammle 6 Glutsteine",       xp:140, gold:140},
+      {id:"w1q3", typ:"boss",    ziel:"drache", anz:1, text:"Erlege den Lavadrachen",    xp:300, gold:350}
+    ]
+  },
+  {
+    name:"Schattenreich", emoji:"🌑",
+    desc:"Die letzte Welt. Hier endet das Licht - und deine Legende beginnt.",
+    gegner:[
+      {id:"schatten",name:"Schattenwesen",emoji:"👤", hp:150, atk:40, def:16, xp:110, gold:70, drop:"seele", chance:.45},
+      {id:"ritter",  name:"Todesritter",  emoji:"🗡️", hp:200, atk:46, def:22, xp:140, gold:95, drop:"seele", chance:.4},
+      {id:"hexe",    name:"Nachthexe",    emoji:"🧟", hp:130, atk:55, def:10, xp:130, gold:88, drop:"seele", chance:.4}
+    ],
+    boss:{id:"fuerst", name:"Schattenfürst", emoji:"💀", hp:900, atk:70, def:28, xp:1500, gold:2000},
+    quests:[
+      {id:"w2q1", typ:"kill",    ziel:"ritter", anz:6, text:"Zerschlage 6 Todesritter",     xp:400,  gold:300},
+      {id:"w2q2", typ:"sammeln", ziel:"seele",  anz:8, text:"Sammle 8 Seelensteine",        xp:450,  gold:350},
+      {id:"w2q3", typ:"boss",    ziel:"fuerst", anz:1, text:"Bezwinge den Schattenfürsten", xp:1000, gold:1500}
+    ]
+  }
+];
+
+const ITEMNAMEN = {kraut:"🌿 Heilkraut", glut:"🔴 Glutstein", seele:"🔮 Seelenstein"};
+
+const WAFFEN = [
+  {name:"Holzstock",      atk:0,  preis:0},
+  {name:"Eisenschwert",   atk:5,  preis:80},
+  {name:"Stahlklinge",    atk:12, preis:260},
+  {name:"Flammenschwert", atk:24, preis:800},
+  {name:"Drachentöter",   atk:40, preis:2200},
+  {name:"Schattenklinge", atk:65, preis:6000}
+];
+const RUESTUNGEN = [
+  {name:"Stofffetzen",    def:0,  preis:0},
+  {name:"Lederrüstung",   def:4,  preis:70},
+  {name:"Kettenhemd",     def:9,  preis:240},
+  {name:"Plattenpanzer",  def:17, preis:700},
+  {name:"Drachenschuppe", def:28, preis:2000},
+  {name:"Schattenmantel", def:45, preis:5500}
+];
+
+/* ============ SPIELSTAND ============ */
+let s = null;
+function frischerStand(){
+  return {
+    level:1, xp:0, xpNext:30, hp:70, maxHp:70, mp:25, maxMp:25,
+    atk:9, def:3, mag:7, gold:30, traenke:3, welt:0,
+    waffe:0, ruestung:0, kills:{}, items:{}, fertig:{}, gewonnen:false
+  };
+}
+function speichern(){
+  try{ localStorage.setItem("weltenkaempfer", JSON.stringify(s)); }catch(e){}
+}
+function laden(){
+  try{
+    const d = JSON.parse(localStorage.getItem("weltenkaempfer"));
+    if(d && d.level) s = d;
+  }catch(e){}
+  if(!s) s = frischerStand();
+}
+function neuesSpiel(){
+  if(!confirm("Wirklich neu starten? Dein Fortschritt geht verloren!")) return;
+  s = frischerStand();
+  $("log").innerHTML = "";
+  log("Ein neues Abenteuer beginnt!","c-mag");
+  speichern(); zeichne(); zeigeTab("quests");
+}
+
+/* ============ HILFSFUNKTIONEN ============ */
+const $ = id => document.getElementById(id);
+const rnd = (a,b) => Math.floor(Math.random()*(b-a+1))+a;
+const gesAtk = () => s.atk + WAFFEN[s.waffe].atk;
+const gesDef = () => s.def + RUESTUNGEN[s.ruestung].def;
+
+function log(text, cls){
+  const l = $("log");
+  const d = document.createElement("div");
+  d.className = cls || ""; d.innerHTML = text;
+  l.appendChild(d); l.scrollTop = l.scrollHeight;
+  while(l.children.length > 120) l.removeChild(l.firstChild);
+}
+function balken(bar, txt, wert, max, label){
+  $(bar).style.width = Math.max(0, wert/max*100) + "%";
+  $(txt).textContent = label + " " + Math.max(0, Math.round(wert)) + " / " + max;
+}
+function info(emoji, titel, text){
+  $("imemoji").textContent = emoji;
+  $("imtitle").textContent = titel;
+  $("imtext").innerHTML = text;
+  $("infomodal").classList.remove("hidden");
+}
+function schliesseInfo(){ $("infomodal").classList.add("hidden"); }
+
+/* ============ ANZEIGE ============ */
+function zeichne(){
+  $("plevel").textContent = s.level;
+  $("patk").textContent   = gesAtk();
+  $("pdef").textContent   = gesDef();
+  $("pmag").textContent   = s.mag;
+  $("pgold").textContent  = s.gold;
+  $("ptrank").textContent = s.traenke;
+  balken("hpbar","hptxt", s.hp, s.maxHp, "❤️ HP");
+  balken("mpbar","mptxt", s.mp, s.maxMp, "💧 MP");
+  balken("xpbar","xptxt", s.xp, s.xpNext, "⭐ XP");
+
+  const w = WELTEN[s.welt];
+  $("wemoji").textContent = w.emoji;
+  $("wname").textContent  = w.name;
+  $("wdesc").textContent  = w.desc;
+
+  const bossQuest = w.quests.find(q => q.typ === "boss");
+  const vorFertig = w.quests.filter(q => q.typ !== "boss").every(q => s.fertig[q.id]);
+  const bossFertig = !!s.fertig[bossQuest.id];
+  const bb = $("bossbtn");
+  bb.disabled = !vorFertig || bossFertig;
+  bb.textContent = bossFertig ? "👹 Boss besiegt"
+                 : vorFertig  ? "👹 " + w.boss.name + " herausfordern"
+                              : "🔒 Erst die anderen Quests";
+
+  const alle = w.quests.every(q => s.fertig[q.id]);
+  $("portalbtn").classList.toggle("hidden", !(alle && s.welt < WELTEN.length-1));
+
+  zeigeTab(aktiverTab);
+}
+
+/* ============ TABS ============ */
+let aktiverTab = "quests";
+function zeigeTab(t){
+  aktiverTab = t;
+  ["quests","shop","bag"].forEach(x => {
+    const b = $("tab-"+x);
+    if(b) b.classList.toggle("active", x === t);
+  });
+  const body = $("tabbody");
+  if(t === "quests")    body.innerHTML = questHtml();
+  else if(t === "shop") body.innerHTML = shopHtml();
+  else                  body.innerHTML = tascheHtml();
+}
+
+function fortschritt(q){
+  if(q.typ === "kill")    return Math.min(s.kills[q.ziel] || 0, q.anz);
+  if(q.typ === "sammeln") return Math.min(s.items[q.ziel] || 0, q.anz);
+  return s.fertig[q.id] ? 1 : 0;
+}
+function questHtml(){
+  const w = WELTEN[s.welt];
+  let h = "<h3>Quests in " + w.name + "</h3>";
+  w.quests.forEach(q => {
+    const p = fortschritt(q), fertig = !!s.fertig[q.id];
+    h += '<div class="quest ' + (fertig ? "done" : "") + '">'
+       + (fertig ? "✅ " : "🔸 ") + q.text
+       + ' <span class="c-dim">(' + p + "/" + q.anz + ')</span>'
+       + ' <span class="c-gold" style="float:right">+' + q.xp + " XP, +" + q.gold + ' 💰</span>'
+       + '<div class="qbar"><i style="width:' + (p / q.anz * 100) + '%"></i></div></div>';
+  });
+  const offen = w.quests.filter(q => !s.fertig[q.id]).length;
+  h += offen === 0
+    ? '<div class="c-good">Alle Quests erledigt! Das Portal steht offen. 🌀</div>'
+    : '<div class="c-dim">Noch ' + offen + " Quest(s) bis zum Portal in die nächste Welt.</div>";
+  return h;
+}
+function shopHtml(){
+  let h = "<h3>Laden · Du hast " + s.gold + " 💰</h3>";
+  h += ladenZeile("🧪 Heiltrank (heilt 60 HP)", 30, "trank");
+  h += ladenZeile("💧 Manatrank (+30 MP sofort)", 25, "mana");
+  const nw = WAFFEN[s.waffe+1];
+  h += nw ? ladenZeile("🗡️ " + nw.name + " (+" + nw.atk + " Angriff)", nw.preis, "waffe")
+          : '<div class="shopitem">🗡️ Beste Waffe ausgerüstet!</div>';
+  const nr = RUESTUNGEN[s.ruestung+1];
+  h += nr ? ladenZeile("🛡️ " + nr.name + " (+" + nr.def + " Rüstung)", nr.preis, "ruestung")
+          : '<div class="shopitem">🛡️ Beste Rüstung ausgerüstet!</div>';
+  h += '<div class="c-dim">Ausgerüstet: ' + WAFFEN[s.waffe].name + " · " + RUESTUNGEN[s.ruestung].name + "</div>";
+  return h;
+}
+function ladenZeile(text, preis, was){
+  return '<div class="shopitem"><span>' + text + "</span>"
+    + '<button class="goldbtn" ' + (s.gold < preis ? "disabled" : "")
+    + ' onclick="kaufe(\'' + was + "'," + preis + ')">' + preis + " 💰</button></div>";
+}
+function tascheHtml(){
+  let h = "<h3>Tasche</h3><div class=\"shopitem\"><span>🧪 Heiltränke</span><b>" + s.traenke + "</b></div>";
+  let leer = true;
+  for(const k in ITEMNAMEN){
+    const n = s.items[k] || 0;
+    if(n > 0){ leer = false; h += '<div class="shopitem"><span>' + ITEMNAMEN[k] + "</span><b>" + n + "</b></div>"; }
+  }
+  if(leer) h += '<div class="c-dim">Keine Questgegenstände. Besiege Gegner, um welche zu finden!</div>';
+  const kills = Object.keys(s.kills).length
+    ? Object.keys(s.kills).map(k => k + " ×" + s.kills[k]).join(", ")
+    : "noch keine";
+  h += '<div class="c-dim" style="margin-top:8px">Besiegte Gegner: ' + kills + "</div>";
+  return h;
+}
+
+function kaufe(was, preis){
+  if(s.gold < preis) return;
+  s.gold -= preis;
+  if(was === "trank"){ s.traenke++; log("Heiltrank gekauft.","c-gold"); }
+  if(was === "mana"){ s.mp = Math.min(s.maxMp, s.mp + 30); log("Manatrank getrunken. +30 MP","c-mag"); }
+  if(was === "waffe"){ s.waffe++; log("Neue Waffe: " + WAFFEN[s.waffe].name + "!","c-gold"); }
+  if(was === "ruestung"){ s.ruestung++; log("Neue Rüstung: " + RUESTUNGEN[s.ruestung].name + "!","c-gold"); }
+  speichern(); zeichne();
+}
+
+function rasten(){
+  if(imKampf) return;
+  if(s.gold < 10){ log("Zu wenig Gold zum Rasten.","c-bad"); return; }
+  s.gold -= 10; s.hp = s.maxHp; s.mp = s.maxMp;
+  log("Du rastest am Lagerfeuer. HP und MP voll aufgeladen. 🔥","c-good");
+  speichern(); zeichne();
+}
+
+/* ============ KAMPF ============ */
+let gegner = null, imKampf = false, spielerDran = true;
+
+function sucheGegner(){
+  if(imKampf) return;
+  const liste = WELTEN[s.welt].gegner;
+  const v = liste[rnd(0, liste.length-1)];
+  const f = 0.9 + Math.random() * 0.25;
+  const hp = Math.round(v.hp * f);
+  starteKampf(Object.assign({}, v, {hp:hp, maxHp:hp, istBoss:false}));
+}
+function bossKampf(){
+  if(imKampf) return;
+  const b = WELTEN[s.welt].boss;
+  starteKampf(Object.assign({}, b, {maxHp:b.hp, istBoss:true, drop:null}));
+  log("⚠️ " + b.name + " erhebt sich vor dir!","c-bad");
+}
+function starteKampf(g){
+  gegner = g; imKampf = true; spielerDran = true;
+  $("worldview").classList.add("hidden");
+  $("fightview").classList.remove("hidden");
+  $("esprite").textContent = g.emoji;
+  $("ename").textContent = g.name + (g.istBoss ? " 👑" : "");
+  $("fpname").textContent = "Held (Lv " + s.level + ")";
+  knopfSperre(false);
+  log("⚔️ Ein " + g.name + " greift an!");
+  kampfZeichnen();
+}
+function kampfZeichnen(){
+  balken("fhpbar","fhptxt", s.hp, s.maxHp, "❤️");
+  balken("ehpbar","ehptxt", gegner.hp, gegner.maxHp, "❤️");
+  zeichne();
+}
+function knopfSperre(an){
+  const btns = document.querySelectorAll("#fightbtns button");
+  for(let i = 0; i < btns.length; i++) btns[i].disabled = an;
+}
+function anim(id, cls){
+  const el = $(id);
+  el.classList.remove(cls);
+  void el.offsetWidth;
+  el.classList.add(cls);
+}
+
+function aktion(art){
+  if(!imKampf || !spielerDran) return;
+
+  if(art === "feuer" && s.mp < 8){ log("Nicht genug MP!","c-bad"); return; }
+  if(art === "heil"  && s.mp < 10){ log("Nicht genug MP!","c-bad"); return; }
+  if(art === "trank" && s.traenke <= 0){ log("Du hast keine Tränke mehr!","c-bad"); return; }
+
+  spielerDran = false; knopfSperre(true);
+
+  if(art === "angriff"){
+    anim("psprite","attackA");
+    const krit = Math.random() < 0.15;
+    let dmg = Math.max(1, gesAtk() + rnd(0,4) - Math.floor(gegner.def/2));
+    if(krit) dmg = Math.round(dmg * 1.9);
+    gegner.hp -= dmg;
+    setTimeout(function(){ anim("esprite","hit"); }, 120);
+    log("Du triffst " + gegner.name + " für <b>" + dmg + "</b> Schaden." + (krit ? " 💥 KRITISCH!" : ""), krit ? "c-gold" : "");
+  }
+  else if(art === "feuer"){
+    s.mp -= 8; anim("psprite","attackA");
+    const dmg = Math.max(1, Math.round(s.mag * 2.1) + rnd(0,6) - Math.floor(gegner.def/4));
+    gegner.hp -= dmg;
+    setTimeout(function(){ anim("esprite","hit"); }, 120);
+    log("🔥 Dein Feuerball verbrennt " + gegner.name + " für <b>" + dmg + "</b> Schaden.","c-mag");
+  }
+  else if(art === "heil"){
+    s.mp -= 10;
+    const h = 25 + s.mag * 2;
+    s.hp = Math.min(s.maxHp, s.hp + h);
+    log("💚 Heilzauber! Du erhältst " + h + " HP zurück.","c-good");
+  }
+  else if(art === "trank"){
+    s.traenke--;
+    s.hp = Math.min(s.maxHp, s.hp + 60);
+    log("🧪 Trank getrunken. +60 HP","c-good");
+  }
+  else if(art === "flucht"){
+    if(gegner.istBoss){
+      log("Vor einem Boss kann man nicht fliehen!","c-bad");
+    } else if(Math.random() < 0.55){
+      log("🏃 Du entkommst knapp!","c-dim");
+      kampfEnde();
+      return;
+    } else {
+      log("Flucht misslungen!","c-bad");
+    }
+  }
+
+  kampfZeichnen();
+  if(gegner.hp <= 0){ setTimeout(sieg, 400); return; }
+  setTimeout(gegnerZug, 650);
+}
+
+function gegnerZug(){
+  if(!imKampf) return;
+  anim("esprite","attackB");
+  let dmg = Math.max(1, gegner.atk + rnd(0,4) - Math.floor(gesDef() * 0.8));
+  const stark = gegner.istBoss && Math.random() < 0.25;
+  if(stark) dmg = Math.round(dmg * 1.8);
+  s.hp -= dmg;
+  setTimeout(function(){ anim("psprite","hit"); }, 120);
+  log(gegner.name + " trifft dich für <b>" + dmg + "</b> Schaden." + (stark ? " 💢 WUCHTSCHLAG!" : ""), "c-bad");
+  kampfZeichnen();
+  if(s.hp <= 0){ setTimeout(niederlage, 400); return; }
+  spielerDran = true;
+  knopfSperre(false);
+}
+
+function sieg(){
+  if(!gegner) return;
+  const g = gegner;
+  log("🎉 " + g.name + " besiegt! +" + g.xp + " XP, +" + g.gold + " 💰","c-good");
+  s.gold += g.gold;
+  s.kills[g.id] = (s.kills[g.id] || 0) + 1;
+  if(g.drop && Math.random() < g.chance){
+    s.items[g.drop] = (s.items[g.drop] || 0) + 1;
+    log("Du findest " + ITEMNAMEN[g.drop] + "! (" + s.items[g.drop] + ")","c-gold");
+  }
+  if(g.istBoss){
+    const bq = WELTEN[s.welt].quests.find(q => q.typ === "boss");
+    s.fertig[bq.id] = "besiegt";
+  }
+  kampfEnde();
+  xpGeben(g.xp);
+  questsPruefen();
+  speichern();
+}
+function niederlage(){
+  const verlust = Math.floor(s.gold * 0.25);
+  s.gold -= verlust;
+  s.hp = Math.round(s.maxHp * 0.4);
+  s.mp = Math.round(s.maxMp * 0.5);
+  log("💀 Du wurdest besiegt! Du verlierst " + verlust + " Gold und erwachst im Lager.","c-bad");
+  kampfEnde();
+  info("💀","Besiegt!","Du wachst geschwächt im Lager auf und verlierst " + verlust + " Gold.<br>Kaufe bessere Ausrüstung und versuche es erneut!");
+  speichern();
+}
+function kampfEnde(){
+  imKampf = false; gegner = null;
+  knopfSperre(false);
+  $("fightview").classList.add("hidden");
+  $("worldview").classList.remove("hidden");
+  zeichne();
+}
+
+/* ============ XP / LEVEL ============ */
+let offeneLevel = 0;
+function xpGeben(x){
+  s.xp += x;
+  while(s.xp >= s.xpNext){
+    s.xp -= s.xpNext;
+    s.level++;
+    s.xpNext = Math.round(30 + s.level * s.level * 6);
+    s.maxHp += 10; s.hp = s.maxHp;
+    s.maxMp += 4;  s.mp = s.maxMp;
+    s.atk += 2; s.def += 1; s.mag += 2;
+    offeneLevel++;
+    log("🌟 LEVEL UP! Du bist jetzt Level " + s.level + "!","c-gold");
+  }
+  zeichne();
+  if(offeneLevel > 0) zeigeLevelModal();
+}
+function zeigeLevelModal(){
+  $("newlevel").textContent = s.level;
+  $("levelmodal").classList.remove("hidden");
+}
+function talent(t){
+  if(t === "hp"){ s.maxHp += 20; s.hp += 20; }
+  if(t === "atk"){ s.atk += 4; }
+  if(t === "mag"){ s.mag += 4; s.maxMp += 10; s.mp += 10; }
+  if(t === "def"){ s.def += 3; }
+  offeneLevel--;
+  log("Talent gewählt: " + t.toUpperCase(),"c-mag");
+  if(offeneLevel > 0) zeigeLevelModal();
+  else $("levelmodal").classList.add("hidden");
+  speichern(); zeichne();
+}
+
+/* ============ QUESTS ============ */
+function questsPruefen(){
+  const w = WELTEN[s.welt];
+  w.quests.forEach(function(q){
+    if(s.fertig[q.id] === true) return;
+    if(fortschritt(q) >= q.anz){
+      s.fertig[q.id] = true;
+      s.gold += q.gold;
+      log('📜 Quest erledigt: "' + q.text + '" · +' + q.xp + " XP, +" + q.gold + " 💰","c-good");
+      xpGeben(q.xp);
+    }
+  });
+  const alle = w.quests.every(q => s.fertig[q.id]);
+  if(alle){
+    if(s.welt === WELTEN.length - 1 && !s.gewonnen){
+      s.gewonnen = true;
+      info("🏆","DU HAST GEWONNEN!","Der Schattenfürst ist gefallen, alle Welten sind befreit!<br>Endstand: Level <b>" + s.level + "</b> · " + s.gold + " 💰<br>Du kannst weiter kämpfen und leveln.");
+    } else if(s.welt < WELTEN.length - 1){
+      info("🌀","Portal geöffnet!","Alle Quests in " + w.name + " sind erledigt.<br>Das Portal nach <b>" + WELTEN[s.welt+1].name + "</b> steht offen!");
+    }
+  }
+  speichern(); zeichne();
+}
+
+function portal(){
+  if(s.welt >= WELTEN.length - 1) return;
+  s.welt++;
+  s.hp = s.maxHp; s.mp = s.maxMp;
+  const w = WELTEN[s.welt];
+  log("🌀 Du trittst durch das Portal nach " + w.name + "!","c-mag");
+  info(w.emoji, "Neue Welt: " + w.name, w.desc + "<br><br>Die Gegner hier sind viel stärker - rüste dich auf!");
+  speichern(); zeichne(); zeigeTab("quests");
+}
+
+/* ============ START ============ */
+laden();
+zeichne();
+zeigeTab("quests");
+log("Willkommen, Held! Suche Gegner, erledige Quests und öffne das Portal zur nächsten Welt.","c-mag");
+</script>
+</body>
+</html>
