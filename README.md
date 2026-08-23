@@ -58,3 +58,13 @@ Auf dem Handy erscheinen Knöpfe zum Laufen, Wischen auf der rechten Bildhälfte
 - `index.html` — das ganze Spiel
 - `weltenkaempfer-web.html` — dieselbe Fassung ohne Rahmen-Tags, zum Einbetten
 - `index-2d-alt.html` — die allererste 2D-Fassung, aus Nostalgie aufgehoben
+
+## Skins
+
+Im Spiel kannst du unter **✏️ Name & Skin** aus mitgelieferten Skins wählen
+oder ein eigenes Skin-Bild laden (64 × 64 PNG, ganz alte 64 × 32 gehen auch).
+Das Bild bleibt auf deinem Gerät und wird nirgendwohin geschickt.
+
+Die mitgelieferten Skins liegen als PNG im Ordner `skins/` und sind selbst
+entworfen. Wer eigene beisteuern will: PNG in den Ordner legen und im Spiel
+in `SKIN_SAMMLUNG` eintragen.

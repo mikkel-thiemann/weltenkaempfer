@@ -139,6 +139,14 @@
   .skinknopf{background:linear-gradient(180deg,#7d50e0,#5a31b2); border:1px solid #9b78ff;
              border-radius:10px; padding:10px 15px; font-size:14px; cursor:pointer; color:var(--txt)}
   .skinknopf:hover{filter:brightness(1.25)}
+  #skingalerie{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px}
+  .skinfeld{background:rgba(255,255,255,.05); border:2px solid var(--rahmen); border-radius:10px;
+            padding:7px 6px 5px; cursor:pointer; text-align:center; width:74px; transition:border-color .12s}
+  .skinfeld:hover{border-color:#8fa6c8; background:rgba(255,255,255,.09)}
+  .skinfeld.gewaehlt{border-color:var(--gold); background:rgba(245,196,81,.14)}
+  .skinfeld span{display:block; font-size:10.5px; color:#c9d5e6; margin-top:4px}
+  .skinkopf{width:48px; height:48px; margin:0 auto; image-rendering:pixelated; border-radius:4px;
+            background-size:384px 384px; background-position:-48px -48px; background-repeat:no-repeat}
   .neuwelt input::placeholder{color:#7d8ba1}
   #listeKnopf{color:var(--gold); text-decoration:none; border-bottom:1px dotted var(--gold); cursor:pointer}
   #listeKnopf:hover{filter:brightness(1.3)}
@@ -201,9 +209,10 @@
 
     <h3 style="text-align:left; margin-top:6px">Dein Aussehen</h3>
     <p class="c-dim" style="font-size:12px; margin-top:0; text-align:left">
-      Du kannst dein Minecraft-Skin-Bild nehmen (64×64 PNG). Es bleibt auf deinem Gerät.</p>
-    <div class="neuwelt">
-      <label class="skinknopf">🖼️ Skin wählen
+      Such dir einen aus - oder lade dein eigenes Skin-Bild (64×64 PNG). Es bleibt auf deinem Gerät.</p>
+    <div id="skingalerie"></div>
+    <div class="neuwelt" style="margin-top:8px">
+      <label class="skinknopf">🖼️ Eigenen Skin laden
         <input type="file" id="skinFeld" accept="image/png,image/jpeg" hidden></label>
       <button id="skinWeg" onclick="skinSetzen(null)">Gezeichnete Figur</button>
     </div>
@@ -2531,6 +2540,14 @@ function tafelZeigen(art){
 }
 
 /* ---------- Inventar mit Handwerksgitter ---------- */
+// Mitgelieferte Skins - stehen jedem zur Verfügung, der das Spiel öffnet
+const SKIN_SAMMLUNG = [
+  {name:"Blauer Held", bild:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAC4UlEQVR42u1av2vUUBz/3MuvSwQRT6RQOFCEE5cO0sXi4uig4CSCixRxusmpUyfdC4oW/wXBQRykOgpWQepSBVEpCLcoR3uX5JKXPIcj6ktrzkte0qv3/Uz3kntfcp98f737fmoYgXOnZkTW/faNS5n7ry6t1jDBYJhyEAFEABFABBAB04zaqDpfNl596tTIA4iA/YP+L196cv82TNOUrl1cvDM9HnBooY25lSYAYG6lCWP+FoXAVIUAf/sQG+1hsdhobyF882C6PECI4Y9fW9/E2vomAODZo6X/ow9IXzh2/IzUF3DuS/e7Pz5n1u0TNz9k9hXB94+ZD/Tt8eWx7KftjdpPOYAIIALkHHDk6EkhJzwNhmH8ZkgzpA1xFEpr6/xdaW02WmCMIY5jvFyeAQBcWO78NWbNRgvj5Ayz0YJlWRgMBsMydrgpV6ztLWn9ZfV0bSwPYKy4U6RtpLvIouj3++WFgKZphY16nie/xSBQ27zo+uTmAM45DMOA67qlxm7Sm5RCQBiGsG07l8HE3R3HkZNNTe2xX5W9PQkwDCN3nMVxDACIoqicN8ZYNWUwjuNCsRaGYSkPnRCsKq+wrETDOc9tuF6v73poFUhCU1VlKa0RSntPOifkRa/XgxACQgglnrXLxx3Hgeu6EEJA13WIHG+o2+3uuu66rhJPeH/9hbSef7qoloDt7tdfn6MQMO3ZsQx2Xt8DAPgAzl7Zg6DZBToLEAgEAoFAIBAIBAKBQCBgkvQBRaFaX1B0/g/6R4gIIAJKzQFpfYGu16XBSh59gaYNNQq+7xee/1fuAclIrMjQQtd1+L5/MEMgUZcUmd0l6o+pzAF/ziOrIKIUAhhjsCwr197EczjnuW0ol8qOiyiKcs8BkyGqShlM5R5gWZZyXdCBIiAIgtzze5Vagn1NgnklMYwx5TKYSnOA53mwbRtCiFxCpnfXnkPl/L9yAgxtBzzYGbozxtcX0FmgYvwEtuP/Yl9A8HoAAAAASUVORK5CYII="},
+  {name:"Ritter", bild:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAADIklEQVR42u1aPWgUQRT+ZjOXnTs8NSII4pnYiCAKEUEsJRAQIaaSEFLodaZIJ3YKFvamCFiYSkSsYkSQkFQWmsKIxEJEC9FGTfTUsD+XuaxF2GMn95Pc7Nxdkn1fczOzu493376fmX2PYRP09w8E9a5f7eup+/zwzXGGbQwLCQcRQAQQAUQAEZBksM3yfLMxMzPNyALaCL6Vmx7fGiyPU6kUVldXAQBDd6aSEQPs3hEMTEyiWCzi4r37sHtHkhkEM5lMMrPA39cP8PT6NUgpMT2ah//2YbIIyGazYIxhbn4Rc/OLEEIkKwgWi0UAQN+5U+Ccw/O83bMP2Lgwkh9T9gW/fy0p159PPaqbtycmn9TdV3z7+qWuQndv32hI/kZ5mz1P+wAigAhQY8ClwWHFp7oOHCznfMdxsCe7T3lg5d8fZX60O6fMj+S6y+Mzk+MAgIX8GIQQCIIAnz99rHn/VmJGeH8mk4GUEnv3dynXl358V+aj+SusIQsIgkD51UE6nYbv+8qa53kVa7qyAcBxnHJ2MuoCjK0T5rquttDl5WXYtq2sSSmNmKzruvA8z9iutGoMiJPnGWNVleOco1QqGVFaCAHHcZpDgO/7sG0bnPOyuTX6hmqho6PDaAAz4VJWrbcopdRyAyFExR81Zf4VyluWeQKivtvZ2akltFQqKQFqbW1t5xBQ7QzQKKSUCnkhAbqEVgvSplyqrgVon7A4r3CLuKk1Kiv8ItWU06CpXF0oFCrWTSh+Ofcz1BQAMFs4ZJaAD+8XlPnZ8xcaEjj74ll5/PLwsfVBZO3EydN0FiAQCAQCgUAgEAgEAoFAwHbqD4gL0/0Fcev/oC9CRAAR0NQYUKu/QAgBz/O0+gvS6TRc14Xrush19yBO/b9tFhCnwhzWJHWKs20nIFRetx4YrSqlUqmdR0D41izL0qrhRwueJktgLXcBzrlWF0fUAkwUU9tGgG5PQDR2mOgBajkB0ZK1TktMNHbsyBgQ/dM69ftdEwN0EVqAqSYoI93ijcC2bQRBAN/3lW6OrWLo+Ep02xS7/t9yAt69eYU4/QV0Fmgx/gP42SOa8LZ+fgAAAABJRU5ErkJggg=="},
+  {name:"Waldläufer", bild:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAACzklEQVR42u2bsYvTUBzHv0nzXtJYsVidBHVyERwcHKsHzid4zuUQORydOomCt/kXyE0Krm4uB4fI4eQgeLi5qMsdiPZaNOlL2tRBGvIuubRNXtoL/X2nvCZ9TT7v9/sm7e9XDRO03rw4StvfvNlMff/9zdcaTrB0LLkIAAEgAASAACyztEn3+aL1cveHRhFAAAjAwmRMc9Cz9ka4zTmH53l48nxreSKgsdLGgw+7AIDWux00VtqUAkt1G3z8aB2c83AshIBpmkrSYNG3wdiH32tekYAc/hHS/tadW2g9fXXsSV/buJEK1P3lpJ7Q1zdfUoEcnf/ofJPenzsF0i6ePIAAlNAEb1+/JOVUvWZKB5yymDT+2/el8efzXBpXG3Zokg/P1gEAL34fAgAYY+gddGPHz+IZ0eMty0LAZcvxerJn7W191GaKAMZYbqqmacZe830frusqWznGGPr9vvonQd/3Cwm1MVgfnpL5fN+HYRjFeUBWuq7rJkLUdfV2MxgMigMwGmX7maBarYIxBtu2JZhBEChb+aznNjUAIQTq9XqmCT3PA2MMjhN/4FERsowxaJqG4XBYHADTNNHpdDIZIuc8lgKWZSn3ElVRcGwK2LadyxCTIkBFzo4vXEU0JQKoVCpKJo56gGrjUxlRMYyqcqsovV1dlcZ332+rBfDtoCeNr15uzDThz739cHsT+7H9tQtn6LsAiUQikUgkEolEIpFIJBJOUn9AXk3qL9j59H2u9X/QL0IEgAAU6gFJ/QVBEITF0Cz9BcD/wophGKidO4089f+FRICu67BtG5qm5SqsRDvTSpcCjuNkqt8lldRKBSDvqs1r5QsD4Hle7qaIeUZBISkwhpClKUIIEVZ+ozBLBYBzntkAo40ZpTTBcU9B1gaGKDghRDkjIKlNblp1u10l80DlHyYwYwtLnpXbXluDyvr/3AHk7S+g7wJz1j8kAPoKYe4RSAAAAABJRU5ErkJggg=="},
+  {name:"Magier", bild:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAADAklEQVR42u2av2/TQBTHv+cf53NEW1EKqlKQCkslEGJBDCwMVGKCoQNzxcBKVyakqhNdQWJCzIyVECxIDEzdkPoHICEKAilDKi52zpdjAKdxEpLYvjYpeZ8lPvt8sb/33jud32MYwv7+TzPo+sfXTwfef39jm2GCcTDlkAAkAAlAApAA0wwbts4fNdXqWUYWMEa8UTrNfn/fc66+eHt6YgBbWcPW5jIAYGtzGWxljYLgVAXB1AU451BKQSkFef7OfxEEvVE7GmPw5sMuAODW9cvTZwGu60JrDc/zkCSJtUA4bgvo+fObl9YzgvyKa5nrn77uDHzg9RsvBwpak18GPtDO3pNc43ePN+x+CoIkAAmQjQHXlu5lfOr0zCKazWa7LbyZzA1RcpBpL1QuZtrzlQsAAN/3sf38LQBg4+HqP3027T9qzEj7c87RbDYxE5zLXD+If2Tar3YfsFwWwBiD1rq0sq1W63Ct9TzrM9c5SVZdII5juK5balApZUbEdNm0je/7kxcDGGOoVCp9Z8u2EPV63b4AnaZbBGMMjDEIgqB9jnMOY4w1V0gFDsPQvgCO44AxVsrPtNaI47hnXFtEUXR0y6DWGlprhGEIznnuAdMNUz/LsEWr1bImaF8LcBwHjUajcHTuNs1uayi1e/vrRp0uZlUAxhiEEIUH7Df7QRD0BMaiJEkCIUThCRppOxxFUdv/hZd/afJ9v0cIKWVfcfLy7EUq5J/fx48sC1CTn7NbYZzJNeDet3ft49W76dHhuercFdoLEARBEARBEARBEARBYJLqA8piu76gbP4f9EWIBCABjjQGdNcXCG8uk14rUl+QflZXSmH+1BLK5P+P3QJc122/PEokV6IospL+HpsLhGFYKLnKOUej0YAQ4mQLIKUslFyN47idW7SRSRqbAIyxQrUGZd1nIgRIX8JmTcCJEsBGLYCN6g/YLJY+LoQQ0FpbS3+PxQKUUoUjeBRFUEpBCAEp5cm0gH71Acid/weAhdL5/2MXoLu+oDp7lfYCk8xvnLMhtTSIlrgAAAAASUVORK5CYII="}
+];
+
 /* ---------- Eigener Minecraft-Skin ----------
    Ein Skin ist ein flaches Bild (64×64, ältere sind 64×32). Wir schneiden die
    Vorderseiten von Kopf, Körper, Armen und Beinen heraus und setzen daraus die
@@ -2617,12 +2634,34 @@ function skinFigurBauen(){
   bild.onerror = () => { skinFigurCache = null; figurenAuffrischen(); };
   bild.src = skinDaten;
 }
+// Die mitgelieferten Skins als anklickbare Köpfe zeigen
+function galerieZeichnen(){
+  const g = $("skingalerie");
+  if(!g) return;
+  g.innerHTML = "";
+  SKIN_SAMMLUNG.forEach((eintrag, i) => {
+    const feld = document.createElement("div");
+    feld.className = "skinfeld" + (skinDaten === eintrag.bild ? " gewaehlt" : "");
+    feld.title = eintrag.name;
+    const kopf = document.createElement("div");
+    kopf.className = "skinkopf";
+    kopf.style.backgroundImage = "url(" + eintrag.bild + ")";
+    const name = document.createElement("span");
+    name.textContent = eintrag.name;
+    feld.appendChild(kopf);
+    feld.appendChild(name);
+    feld.onclick = () => { skinSetzen(eintrag.bild); galerieZeichnen(); };
+    g.appendChild(feld);
+  });
+}
+
 // Alle sichtbaren Heldenbilder neu setzen
 function figurenAuffrischen(){
   const url = heldBild();
   const v = $("heldVorschau"); if(v) v.src = url;
   const k = $("figurP");       if(k) k.src = url;
   const knopf = $("skinWeg");  if(knopf) knopf.disabled = !skinDaten;
+  galerieZeichnen();
 }
 
 /* ---------- Heldenfigur ----------
@@ -3425,6 +3464,7 @@ $("skinFeld").addEventListener("change", e => {
   e.target.value = "";                      // dieselbe Datei erneut wählbar lassen
 });
 skinLaden();
+galerieZeichnen();
 if(nameLaden()){
   nameAnzeigen();
   weltlisteZeichnen();
