@@ -242,7 +242,7 @@
     <div style="text-align:left; font-size:13.5px; line-height:2; margin:14px 0">
       <span class="taste">W A S D</span> laufen &nbsp; <span class="taste">Leertaste</span> springen &nbsp; <span class="taste">Shift</span> rennen<br>
       <span class="taste">Maus</span> umsehen &nbsp; <span class="taste">Linke Maustaste halten</span> Block abbauen<br>
-      <span class="taste">Rechtsklick</span> Block setzen &nbsp; <span class="taste">1–9</span> Material wählen &nbsp; <span class="taste">K</span> Kamera<br>
+      <span class="taste">Rechtsklick</span> Block setzen &nbsp; <span class="taste">1–9</span> Material wählen &nbsp; <span class="taste">R</span> Kamera<br>
       <span class="taste">E</span> benutzen &nbsp; <span class="taste">Q</span> Quests &nbsp; <span class="taste">I</span> Inventar &amp; Herstellen &nbsp; <span class="taste">Esc</span> Maus frei
       <div class="c-dim" style="line-height:1.6; margin-top:8px">
         Du fängst mit leeren Händen an. Halte die linke Maustaste auf einen Block, bis er zerbricht –
@@ -3308,7 +3308,7 @@ addEventListener("keydown", e => {
   if(modus !== "welt") return;
   if(k >= "1" && k <= "9" && +k <= besitz().length){ gewaehlt = +k - 1; gurtBauen(); }
   if(k === "e") benutzen();
-  if(k === "k"){
+  if(k === "r"){
     kameraModus = (kameraModus + 1) % 3;
     meldung("🎥 Kamera: " + KAMERA_NAMEN[kameraModus], "c-mag");
   }
