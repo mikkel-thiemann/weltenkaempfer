@@ -1693,6 +1693,7 @@ function stecktFest(x,y,z){
 }
 function bewegen(dt){
   const w = WELTEN[s.welt];
+  const startX = pos.x, startZ = pos.z;      // fürs Schwingen der Beine
   let vor = 0, seit = 0;
   if(tasten["w"]) vor += 1;
   if(tasten["s"]) vor -= 1;
@@ -1747,6 +1748,12 @@ function bewegen(dt){
   pos.x = klemm(pos.x, 0.4, WX-0.4);
   pos.z = klemm(pos.z, 0.4, WZ-0.4);
   if(pos.y < -8){ pos.y = WY-2; geschw.y = 0; }
+
+  // Nur die wirklich zurückgelegte Strecke zählt: an einer Wand strampelt niemand
+  const gelaufen = Math.hypot(pos.x - startX, pos.z - startZ);
+  schrittPhase = (schrittPhase + gelaufen*2.7) % (Math.PI*2);
+  const laeuft = (dt > 0 && gelaufen/dt > 0.6) ? 1 : 0;
+  schrittStaerke += (laeuft - schrittStaerke) * Math.min(1, dt*11);
 
   // Kakteen stechen, wenn man sich an sie drückt
   const fy = Math.floor(pos.y + 0.5);
@@ -2097,6 +2104,11 @@ const SKIN_EINHEIT = 1.8 / 32;          // ein Skin-Pixel in Blöcken
 let skinRohLeinwand = null;             // das Skin-Bild selbst, 64×64
 let skinRohTextur = null;
 let heldNetz = null;                    // Eckpunkte im Modellraum
+let schrittPhase = 0;                   // wie weit im Schritt-Takt
+let schrittStaerke = 0;                 // wie stark Arme und Beine schwingen
+// Drehpunkt der beweglichen Teile, in Skin-Pixeln über den Füßen
+//              -   Arm r  Arm l  Bein r Bein l Kopf
+const DREH_Y = [0,  23,    23,    12,    12,    24];
 
 // Die sechs Seiten eines Kastens aus dem Skin schneiden.
 // (u,v) ist die Ecke der aufgeklappten Fläche, wie Minecraft sie anordnet.
@@ -2111,7 +2123,7 @@ function kastenSeiten(u, v, w, h, d){
   };
 }
 // Ein Kasten wird zu zwölf Dreiecken. x/y/z sind Skin-Pixel, Mitte zwischen den Füßen.
-function kastenBauen(aus, x0, y0, z0, w, h, d, u, v, wachsen){
+function kastenBauen(aus, x0, y0, z0, w, h, d, u, v, wachsen, teil){
   if(wachsen){                                   // zweite Schicht minimal größer
     const f = 0.55;
     x0 -= f; y0 -= f; z0 -= f; w += f*2; h += f*2; d += f*2;
@@ -2138,33 +2150,35 @@ function kastenBauen(aus, x0, y0, z0, w, h, d, u, v, wachsen){
     for(let i=0; i<4; i++)
       ecken.push([f.p[i][0]*SKIN_EINHEIT, f.p[i][1]*SKIN_EINHEIT, f.p[i][2]*SKIN_EINHEIT,
                   eckenUV[i][0]/T, eckenUV[i][1]/T, f.licht]);
-    for(const e of [ecken[0],ecken[1],ecken[2], ecken[0],ecken[2],ecken[3]])
+    for(const e of [ecken[0],ecken[1],ecken[2], ecken[0],ecken[2],ecken[3]]){
       for(let i=0; i<6; i++) aus.push(e[i]);
+      aus.push(teil || 0);                       // 1/2 Arme, 3/4 Beine, 5 Kopf
+    }
   }
 }
 // Das ganze Modell zusammensetzen
 function heldNetzBauen(){
   const neu = skinRohLeinwand && skinRohLeinwand.height === 64;
   const aus = [];
-  //          x0  y0  z0   w   h   d    u   v
-  kastenBauen(aus, -4, 24, -4,  8,  8,  8,   0,  0);   // Kopf
-  kastenBauen(aus, -4, 12, -2,  8, 12,  4,  16, 16);   // Rumpf
-  kastenBauen(aus,  4, 12, -2,  4, 12,  4,  40, 16);   // rechter Arm
-  kastenBauen(aus,  0,  0, -2,  4, 12,  4,   0, 16);   // rechtes Bein
+  //          x0  y0  z0   w   h   d    u   v  gross Teil
+  kastenBauen(aus, -4, 24, -4,  8,  8,  8,   0,  0, false, 5);   // Kopf
+  kastenBauen(aus, -4, 12, -2,  8, 12,  4,  16, 16, false, 0);   // Rumpf
+  kastenBauen(aus,  4, 12, -2,  4, 12,  4,  40, 16, false, 1);   // rechter Arm
+  kastenBauen(aus,  0,  0, -2,  4, 12,  4,   0, 16, false, 3);   // rechtes Bein
   if(neu){
-    kastenBauen(aus, -8, 12, -2,  4, 12,  4,  32, 48); // linker Arm
-    kastenBauen(aus, -4,  0, -2,  4, 12,  4,  16, 48); // linkes Bein
-  } else {                                             // alte Skins: gespiegelt
-    kastenBauen(aus, -8, 12, -2,  4, 12,  4,  40, 16);
-    kastenBauen(aus, -4,  0, -2,  4, 12,  4,   0, 16);
+    kastenBauen(aus, -8, 12, -2,  4, 12,  4,  32, 48, false, 2); // linker Arm
+    kastenBauen(aus, -4,  0, -2,  4, 12,  4,  16, 48, false, 4); // linkes Bein
+  } else {                                                       // alte Skins: gespiegelt
+    kastenBauen(aus, -8, 12, -2,  4, 12,  4,  40, 16, false, 2);
+    kastenBauen(aus, -4,  0, -2,  4, 12,  4,   0, 16, false, 4);
   }
-  kastenBauen(aus, -4, 24, -4,  8,  8,  8,  32,  0, true);   // Hut
+  kastenBauen(aus, -4, 24, -4,  8,  8,  8,  32,  0, true, 5);    // Hut
   if(neu){
-    kastenBauen(aus, -4, 12, -2,  8, 12,  4,  16, 32, true); // Jacke
-    kastenBauen(aus,  4, 12, -2,  4, 12,  4,  40, 32, true); // rechter Ärmel
-    kastenBauen(aus, -8, 12, -2,  4, 12,  4,  48, 48, true); // linker Ärmel
-    kastenBauen(aus,  0,  0, -2,  4, 12,  4,   0, 32, true); // rechtes Hosenbein
-    kastenBauen(aus, -4,  0, -2,  4, 12,  4,   0, 48, true); // linkes Hosenbein
+    kastenBauen(aus, -4, 12, -2,  8, 12,  4,  16, 32, true, 0);  // Jacke
+    kastenBauen(aus,  4, 12, -2,  4, 12,  4,  40, 32, true, 1);  // rechter Ärmel
+    kastenBauen(aus, -8, 12, -2,  4, 12,  4,  48, 48, true, 2);  // linker Ärmel
+    kastenBauen(aus,  0,  0, -2,  4, 12,  4,   0, 32, true, 3);  // rechtes Hosenbein
+    kastenBauen(aus, -4,  0, -2,  4, 12,  4,   0, 48, true, 4);  // linkes Hosenbein
   }
   heldNetz = new Float32Array(aus);
 }
@@ -2236,15 +2250,29 @@ function zeichneHeld(){
   if(!heldNetz) heldNetzBauen();
 
   const co = Math.cos(gier), si = Math.sin(gier);
-  const daten = new Float32Array(heldNetz.length);
-  for(let i=0; i<heldNetz.length; i+=6){
-    const x = heldNetz[i], y = heldNetz[i+1], z = heldNetz[i+2];
-    daten[i]   = pos.x + x*co + z*si;
-    daten[i+1] = pos.y + y;
-    daten[i+2] = pos.z - x*si + z*co;
-    daten[i+3] = heldNetz[i+3];
-    daten[i+4] = heldNetz[i+4];
-    daten[i+5] = heldNetz[i+5];
+
+  // Arme und Beine schwingen gegengleich, der Kopf schaut mit
+  const takt = Math.sin(schrittPhase) * 0.85 * schrittStaerke;
+  const winkel = [0, takt, -takt, -takt, takt, klemm(nick*0.6, -0.5, 0.5)];
+  const dreh = [];
+  for(let k=0; k<6; k++)
+    dreh.push([Math.cos(winkel[k]), Math.sin(winkel[k]), DREH_Y[k]*SKIN_EINHEIT]);
+
+  const daten = new Float32Array(heldNetz.length/7*6);
+  for(let i=0, j=0; i<heldNetz.length; i+=7, j+=6){
+    let x = heldNetz[i], y = heldNetz[i+1], z = heldNetz[i+2];
+    const teil = heldNetz[i+6];
+    if(teil){                                    // um den Drehpunkt nach vorn/hinten kippen
+      const d = dreh[teil], dy = y - d[2];
+      y = d[2] + dy*d[0] - z*d[1];
+      z =        dy*d[1] + z*d[0];
+    }
+    daten[j]   = pos.x + x*co + z*si;
+    daten[j+1] = pos.y + y;
+    daten[j+2] = pos.z - x*si + z*co;
+    daten[j+3] = heldNetz[i+3];
+    daten[j+4] = heldNetz[i+4];
+    daten[j+5] = heldNetz[i+5];
   }
   gl.bindBuffer(gl.ARRAY_BUFFER, bbBuf);
   gl.bufferData(gl.ARRAY_BUFFER, daten, gl.DYNAMIC_DRAW);
