@@ -1672,7 +1672,8 @@ function netzBauen(c){
    ===================================================================== */
 let pos = {x:64, y:30, z:64}, geschw = {x:0, y:0, z:0};
 let gier = 0, nick = 0, amBoden = false;
-let kameraModus = 0;        // 0 = Augen, 1 = hinter dir, 2 = von vorne
+let kameraModus = 0;     // 0 = Augen, 1 = hinter dir, 2 = von vorne
+let kameraAbstand = 0;   // wie weit die Kamera vom Helden weg ist
 const KAMERA_NAMEN = ["Augen des Helden", "Schulterblick", "von vorne"];
 const AUGE = 1.62, BREITE = 0.3, HOCH = 1.8;
 const tasten = {};
@@ -1993,6 +1994,7 @@ function zeichnen(){
       abstand = p;
     }
     abstand = Math.max(0, abstand - 0.2);
+    kameraAbstand = abstand;
     ax += v.x*richtung*abstand; ay += v.y*richtung*abstand; az += v.z*richtung*abstand;
   }
   const proj = perspektive(1.25, leinwand.width/leinwand.height, 0.1, 260);
@@ -2083,32 +2085,176 @@ function zeichneWesen(mvp){
     gl.bindTexture(gl.TEXTURE_2D, emojiTextur(gl, o.emoji));
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
-  if(kameraModus > 0) zeichneHeld(rx, rz);
+  if(kameraModus > 0) zeichneHeld();
   gl.disable(gl.BLEND);
   gl.bindTexture(gl.TEXTURE_2D, atlasTex);
 }
-// Der Held selbst als aufrechte Bildtafel, wenn die Kamera von außen schaut
-function zeichneHeld(rx, rz){
-  if(!heldLeinwand) heldBild();                 // baut die Leinwand, falls noch nicht da
-  if(!heldLeinwand) return;
-  if(!heldTextur) heldTextur = texturVon(gl, heldLeinwand);
-  const breite = 0.95, hoehe = 1.9;
-  const ecken = [[-1,0],[1,0],[1,1],[-1,1]];
-  const uv = [[0,1],[1,1],[1,0],[0,0]];
-  const p = [];
-  for(let i=0; i<4; i++)
-    p.push([pos.x + rx*ecken[i][0]*breite/2, pos.y + ecken[i][1]*hoehe,
-            pos.z + rz*ecken[i][0]*breite/2, uv[i][0], uv[i][1], 1.05]);
-  const daten = [];
-  for(const q of [p[0],p[1],p[2], p[0],p[2],p[3]]) for(let i=0; i<6; i++) daten.push(q[i]);
+/* ---------- Der Held als echtes 3D-Modell ----------
+   Wie in Minecraft: sechs Kästen (Kopf, Rumpf, zwei Arme, zwei Beine), jede
+   Seite mit ihrem Stück aus dem Skin-Bild. Bei 64×64-Skins kommt die zweite
+   Schicht (Hut, Jacke, Ärmel, Hosenbeine) als etwas größerer Kasten darüber. */
+const SKIN_EINHEIT = 1.8 / 32;          // ein Skin-Pixel in Blöcken
+let skinRohLeinwand = null;             // das Skin-Bild selbst, 64×64
+let skinRohTextur = null;
+let heldNetz = null;                    // Eckpunkte im Modellraum
+
+// Die sechs Seiten eines Kastens aus dem Skin schneiden.
+// (u,v) ist die Ecke der aufgeklappten Fläche, wie Minecraft sie anordnet.
+function kastenSeiten(u, v, w, h, d){
+  return {
+    oben:   [u+d,       v,     w, d],
+    unten:  [u+d+w,     v,     w, d],
+    rechts: [u,         v+d,   d, h],
+    vorne:  [u+d,       v+d,   w, h],
+    links:  [u+d+w,     v+d,   d, h],
+    hinten: [u+d+w+d,   v+d,   w, h]
+  };
+}
+// Ein Kasten wird zu zwölf Dreiecken. x/y/z sind Skin-Pixel, Mitte zwischen den Füßen.
+function kastenBauen(aus, x0, y0, z0, w, h, d, u, v, wachsen){
+  if(wachsen){                                   // zweite Schicht minimal größer
+    const f = 0.55;
+    x0 -= f; y0 -= f; z0 -= f; w += f*2; h += f*2; d += f*2;
+  }
+  const s = kastenSeiten(u, v, Math.round(w), Math.round(h), Math.round(d));
+  const x1 = x0+w, y1 = y0+h, z1 = z0+d;
+  const T = 64;
+  // Seite: vier Ecken gegen den Uhrzeigersinn + Bildausschnitt + Helligkeit
+  const flaechen = [
+    {p:[[x0,y1,z0],[x0,y1,z1],[x1,y1,z1],[x1,y1,z0]], uv:s.oben,   licht:1.00, drehen:true},
+    {p:[[x0,y0,z1],[x0,y0,z0],[x1,y0,z0],[x1,y0,z1]], uv:s.unten,  licht:0.45, drehen:true},
+    {p:[[x0,y0,z0],[x0,y0,z1],[x0,y1,z1],[x0,y1,z0]], uv:s.links,  licht:0.72},
+    {p:[[x1,y0,z1],[x1,y0,z0],[x1,y1,z0],[x1,y1,z1]], uv:s.rechts, licht:0.72},
+    {p:[[x1,y0,z0],[x0,y0,z0],[x0,y1,z0],[x1,y1,z0]], uv:s.vorne,  licht:0.92},
+    {p:[[x0,y0,z1],[x1,y0,z1],[x1,y1,z1],[x0,y1,z1]], uv:s.hinten, licht:0.62}
+  ];
+  for(const f of flaechen){
+    const [ux, uy, uw, uh] = f.uv;
+    const r = 0.002;                             // winziger Rand gegen Farbverlauf
+    const eckenUV = f.drehen
+      ? [[ux+r,uy+r],[ux+r,uy+uh-r],[ux+uw-r,uy+uh-r],[ux+uw-r,uy+r]]
+      : [[ux+r,uy+uh-r],[ux+uw-r,uy+uh-r],[ux+uw-r,uy+r],[ux+r,uy+r]];
+    const ecken = [];
+    for(let i=0; i<4; i++)
+      ecken.push([f.p[i][0]*SKIN_EINHEIT, f.p[i][1]*SKIN_EINHEIT, f.p[i][2]*SKIN_EINHEIT,
+                  eckenUV[i][0]/T, eckenUV[i][1]/T, f.licht]);
+    for(const e of [ecken[0],ecken[1],ecken[2], ecken[0],ecken[2],ecken[3]])
+      for(let i=0; i<6; i++) aus.push(e[i]);
+  }
+}
+// Das ganze Modell zusammensetzen
+function heldNetzBauen(){
+  const neu = skinRohLeinwand && skinRohLeinwand.height === 64;
+  const aus = [];
+  //          x0  y0  z0   w   h   d    u   v
+  kastenBauen(aus, -4, 24, -4,  8,  8,  8,   0,  0);   // Kopf
+  kastenBauen(aus, -4, 12, -2,  8, 12,  4,  16, 16);   // Rumpf
+  kastenBauen(aus,  4, 12, -2,  4, 12,  4,  40, 16);   // rechter Arm
+  kastenBauen(aus,  0,  0, -2,  4, 12,  4,   0, 16);   // rechtes Bein
+  if(neu){
+    kastenBauen(aus, -8, 12, -2,  4, 12,  4,  32, 48); // linker Arm
+    kastenBauen(aus, -4,  0, -2,  4, 12,  4,  16, 48); // linkes Bein
+  } else {                                             // alte Skins: gespiegelt
+    kastenBauen(aus, -8, 12, -2,  4, 12,  4,  40, 16);
+    kastenBauen(aus, -4,  0, -2,  4, 12,  4,   0, 16);
+  }
+  kastenBauen(aus, -4, 24, -4,  8,  8,  8,  32,  0, true);   // Hut
+  if(neu){
+    kastenBauen(aus, -4, 12, -2,  8, 12,  4,  16, 32, true); // Jacke
+    kastenBauen(aus,  4, 12, -2,  4, 12,  4,  40, 32, true); // rechter Ärmel
+    kastenBauen(aus, -8, 12, -2,  4, 12,  4,  48, 48, true); // linker Ärmel
+    kastenBauen(aus,  0,  0, -2,  4, 12,  4,   0, 32, true); // rechtes Hosenbein
+    kastenBauen(aus, -4,  0, -2,  4, 12,  4,   0, 48, true); // linkes Hosenbein
+  }
+  heldNetz = new Float32Array(aus);
+}
+// Das rohe Skin-Bild bereitstellen: entweder das gewählte oder die gezeichnete Figur
+function skinRohBereit(){
+  if(skinRohLeinwand) return true;
+  if(!skinDaten){ standardSkinBauen(); return !!skinRohLeinwand; }
+  return false;                                  // wird beim Laden des Skins gesetzt
+}
+function skinRohSetzen(bild){
+  const c = document.createElement("canvas");
+  c.width = 64; c.height = bild.height === 32 ? 32 : 64;
+  const g = c.getContext("2d");
+  g.imageSmoothingEnabled = false;
+  g.drawImage(bild, 0, 0);
+  skinRohLeinwand = c;
+  skinRohTextur = null;
+  heldNetz = null;
+}
+// Ohne gewählten Skin: aus den Farben der gezeichneten Figur einen Skin malen
+function standardSkinBauen(){
+  const F = HELD_FARBEN;
+  const c = document.createElement("canvas");
+  c.width = c.height = 64;
+  const g = c.getContext("2d");
+  const k = (x, y, w, h, farbe) => { g.fillStyle = farbe; g.fillRect(x, y, w, h); };
+  const dunkler = f => f;                        // schlicht halten, Seiten wie vorne
+
+  // Kopf: alle Seiten
+  k(8, 0, 8, 8, F.haarDunkel); k(16, 0, 8, 8, F.hautSchatten);
+  k(0, 8, 8, 8, F.haarDunkel); k(16, 8, 8, 8, F.haarDunkel); k(24, 8, 8, 8, F.haarDunkel);
+  k(8, 8, 8, 8, F.haut);
+  k(8, 8, 8, 3, F.haarDunkel);                   // Pony
+  k(8, 11, 1, 4, F.haarDunkel); k(14, 11, 2, 5, F.haarDunkel);
+  k(9, 12, 1, 2, F.augeWeiss); k(10, 12, 1, 2, F.augeBlau);
+  k(12, 12, 1, 2, F.augeBlau); k(13, 12, 1, 2, F.augeWeiss);
+
+  // Rumpf
+  k(20, 16, 8, 4, F.jackeDunkel); k(28, 16, 8, 4, F.jackeDunkel);
+  k(16, 20, 4, 12, F.jackeDunkel); k(28, 20, 4, 12, F.jackeDunkel);
+  k(32, 20, 8, 12, F.jacke); k(20, 20, 8, 12, F.jacke);
+  k(23, 20, 2, 10, F.streifen);
+  k(20, 30, 8, 2, F.schwarz); k(32, 30, 8, 2, F.schwarz);
+
+  // Arme
+  for(const [ax, ay] of [[40,16],[32,48]]){
+    k(ax+4, ay, 4, 4, F.jackeDunkel); k(ax+8, ay, 4, 4, F.jackeDunkel);
+    k(ax, ay+4, 4, 12, F.jackeDunkel); k(ax+8, ay+4, 4, 12, F.jackeDunkel);
+    k(ax+4, ay+4, 4, 12, F.jacke); k(ax+12, ay+4, 4, 12, F.jacke);
+    k(ax, ay+13, 16, 3, F.haut);                 // Hände rundum
+    k(ax, ay+12, 16, 1, F.schwarz);              // Bündchen
+  }
+  // Beine
+  for(const [lx, ly] of [[0,16],[16,48]]){
+    k(lx+4, ly, 4, 4, F.hose); k(lx+8, ly, 4, 4, F.hose);
+    k(lx, ly+4, 4, 12, F.hose); k(lx+8, ly+4, 4, 12, F.hose);
+    k(lx+4, ly+4, 4, 12, F.hose); k(lx+12, ly+4, 4, 12, F.hose);
+    k(lx, ly+14, 16, 2, F.stiefel);
+  }
+  skinRohLeinwand = c;
+  skinRohTextur = null;
+  heldNetz = null;
+}
+// Den Helden zeichnen: Modell um die Blickrichtung drehen und an seinen Platz setzen
+function zeichneHeld(){
+  if(kameraAbstand < 0.9) return;      // Kamera klebt an einer Wand - sonst säßen wir im Kopf
+  if(!skinRohBereit()) return;
+  if(!skinRohTextur) skinRohTextur = texturVon(gl, skinRohLeinwand);
+  if(!heldNetz) heldNetzBauen();
+
+  const co = Math.cos(gier), si = Math.sin(gier);
+  const daten = new Float32Array(heldNetz.length);
+  for(let i=0; i<heldNetz.length; i+=6){
+    const x = heldNetz[i], y = heldNetz[i+1], z = heldNetz[i+2];
+    daten[i]   = pos.x + x*co + z*si;
+    daten[i+1] = pos.y + y;
+    daten[i+2] = pos.z - x*si + z*co;
+    daten[i+3] = heldNetz[i+3];
+    daten[i+4] = heldNetz[i+4];
+    daten[i+5] = heldNetz[i+5];
+  }
   gl.bindBuffer(gl.ARRAY_BUFFER, bbBuf);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(daten), gl.DYNAMIC_DRAW);
+  gl.bufferData(gl.ARRAY_BUFFER, daten, gl.DYNAMIC_DRAW);
   gl.vertexAttribPointer(A.pos, 3, gl.FLOAT, false, 24, 0);
   gl.vertexAttribPointer(A.uv, 2, gl.FLOAT, false, 24, 12);
   gl.vertexAttribPointer(A.licht, 1, gl.FLOAT, false, 24, 20);
-  gl.bindTexture(gl.TEXTURE_2D, heldTextur);
-  gl.drawArrays(gl.TRIANGLES, 0, 6);
+  gl.bindTexture(gl.TEXTURE_2D, skinRohTextur);
+  gl.drawArrays(gl.TRIANGLES, 0, daten.length/6);
 }
+
 // Der Block wird beim Abbauen immer dunkler – wie Risse in Minecraft
 function zeichneRisse(z, p){
   const e = 0.008, daten = [];
@@ -2646,6 +2792,9 @@ function skinSetzen(url){
   skinFigurCache = null;
   heldLeinwand = null;
   heldTextur = null;
+  skinRohLeinwand = null;
+  skinRohTextur = null;
+  heldNetz = null;
   try{
     if(url) localStorage.setItem(SKIN_KEY, url);
     else localStorage.removeItem(SKIN_KEY);
@@ -2714,6 +2863,7 @@ function skinFigurBauen(){
     skinFigurCache = c.toDataURL();
     heldLeinwand = c;
     heldTextur = null;
+    skinRohSetzen(bild);                        // Rohbild fürs 3D-Modell merken
     figurenAuffrischen();
   };
   bild.onerror = () => { skinFigurCache = null; figurenAuffrischen(); };
