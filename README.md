@@ -5,6 +5,14 @@ Alles steckt in **einer einzigen HTML-Datei**: keine Installation, keine Bibliot
 
 **▶ [Hier spielen](https://mikkel-thiemann.github.io/weltenkaempfer/)**
 
+## Auf dem Handy spielen
+
+Kamera drauf halten:
+
+![QR-Code zum Spiel](qr-code.png)
+
+Oder direkt: **https://mikkel-thiemann.github.io/weltenkaempfer/**
+
 ## Was das Spiel kann
 
 - **Echte 3D-Blockwelt** mit selbstgeschriebener WebGL-Engine — 192 × 192 Blöcke, 56 hoch
