@@ -156,6 +156,10 @@
   .skinfeld span{display:block; font-size:10.5px; color:#c9d5e6; margin-top:4px}
   .skinkopf{width:48px; height:48px; margin:0 auto; image-rendering:pixelated; border-radius:4px;
             background-size:384px 384px; background-position:-48px -48px; background-repeat:no-repeat}
+  .sprachwahl{display:flex; gap:6px; justify-content:center; margin-bottom:10px}
+  .sprachwahl button{font-size:12.5px; padding:5px 12px; opacity:.6}
+  .sprachwahl button.gewaehlt{opacity:1; border-color:var(--gold); color:var(--gold);
+                              background:rgba(245,196,81,.14)}
   .neuwelt input::placeholder{color:#7d8ba1}
   #listeKnopf{color:var(--gold); text-decoration:none; border-bottom:1px dotted var(--gold); cursor:pointer}
   #listeKnopf:hover{filter:brightness(1.3)}
@@ -206,6 +210,10 @@
 
 <div class="overlay hidden" id="anmeldung">
   <div class="fenster" style="text-align:center">
+    <div class="sprachwahl">
+      <button id="sprde" onclick="spracheSetzen('de')">Deutsch</button>
+      <button id="spren" onclick="spracheSetzen('en')">English</button>
+    </div>
     <img class="held" id="heldVorschau" alt="Held" style="width:60px; height:120px">
     <h2>Wer bist du?</h2>
     <p class="c-dim" style="margin-top:0">Gib deinen Spielernamen ein – er steht dann über deinem Helden
@@ -233,6 +241,10 @@
 
 <div class="overlay hidden" id="start">
   <div class="fenster" style="text-align:center">
+    <div class="sprachwahl">
+      <button id="sprde2" onclick="spracheSetzen('de')">Deutsch</button>
+      <button id="spren2" onclick="spracheSetzen('en')">English</button>
+    </div>
     <div style="font-size:52px">⛏️</div>
     <h2>WELTENKÄMPFER · BLOCKWELT</h2>
     <p class="c-dim" style="margin-top:0">Elf offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.</p>
@@ -374,6 +386,551 @@
 
 <script>
 "use strict";
+
+/* ================= Sprache: Deutsch oder Englisch =================
+   Im Quelltext steht überall Deutsch. Für Englisch wird jeder Anzeigetext
+   durch ue() geschickt; was nicht im Wörterbuch steht, bleibt wie es ist. */
+let sprache = "de";
+try { if(localStorage.getItem("wkSprache") === "en") sprache = "en"; } catch(e){}
+const EN = {
+  " (Stufe ": " (Level ",
+  " Gold.": " gold.",
+  " Welt(en) übernommen": " world(s) taken over",
+  " besiegt (+": " defeated (+",
+  " erreicht!": " reached!",
+  " fps": " fps",
+  " groß. Ein Minecraft-Skin muss 64×64 sein (ganz alte 64×32).": " big. A Minecraft skin has to be 64×64 (very old ones 64×32).",
+  " hergestellt und angelegt!": " crafted and equipped!",
+  " ist in der Arena erschienen – der große orange Punkt auf der Karte!": " has appeared in the arena – the big orange dot on the map!",
+  " lässt sich nicht abbauen.": " cannot be mined.",
+  " · Kampf": " · Battle",
+  " · Startwert ": " · Seed ",
+  ", Spieler: ": ", player: ",
+  ", stell sie hin und geh mit": ", put it down and step up to it with",
+  ". Deine Bauten stehen noch.": ". Your buildings are still standing.",
+  ". Die Axt fällt Holz, die Spitzhacke bricht Stein, das Schwert schlägt im Kampf zu.": ". The axe fells wood, the pickaxe breaks stone, the sword strikes in battle.",
+  "1. Hier sichern": "1. Back up here",
+  "1× Seelenstein → 40 Magie sofort": "1× Soul Stone → 40 magic at once",
+  "2. Dort einfügen": "2. Paste there",
+  "3× Heilkraut → 1× Heiltrank": "3× Healing Herb → 1× Healing Potion",
+  "Am Feuer gerastet. Leben und Magie voll. 🔥": "Rested by the fire. Health and magic full. 🔥",
+  "Aufgesammelt: ": "Picked up: ",
+  "Bau dir aus Holz zuerst eine": "From wood, first build yourself a",
+  "Besiege den Waldtroll": "Defeat the Forest Troll",
+  "Besiege die Sporenmutter": "Defeat the Spore Mother",
+  "Bezwinge 10 Sumpfhexer": "Overcome 10 swamp warlocks",
+  "Bezwinge den Blütenwächter": "Overcome the Blossom Guardian",
+  "Bezwinge den Hüter der Seelen": "Overcome the Keeper of Souls",
+  "Bezwinge den Schattenfürsten": "Overcome the Shadow Lord",
+  "Bitte den Text von Hand markieren und kopieren.": "Please select and copy the text by hand.",
+  "Bitte mindestens zwei Zeichen eingeben.": "Please enter at least two characters.",
+  "Blauer Schatten": "Blue Shadow",
+  "Block abbauen": "Mine a block",
+  "Block setzen": "Place a block",
+  "Blütenboden": "Blossom Ground",
+  "Blütenfuchs": "Blossom Fox",
+  "Blütenwächter": "Blossom Guardian",
+  "Bretter": "Planks",
+  "Bretter aus Kirschholz": "Cherry Planks",
+  "Brüllaffe": "Howler Ape",
+  "Bäume so hoch wie Türme, kein Sonnenstrahl am Boden. Etwas beobachtet dich.": "Trees as tall as towers, not a ray of sun on the ground. Something is watching you.",
+  "Dafür brauchst du eine Werkbank.": "You need a crafting table for that.",
+  "Das Bild ist ": "The image is ",
+  "Das Portal ist verschlossen. Erledige zuerst alle Quests.": "The portal is locked. Finish all the quests first.",
+  "Das ist kein Bild, das ich lesen kann.": "That is not an image I can read.",
+  "Das ist kein gültiger Sicherungstext.": "That is not a valid backup text.",
+  "Datei gespeichert – falls nichts passiert, ": "File saved – if nothing happens, ",
+  "Davon hast du nicht mehr.": "You have none of those left.",
+  "Dein Aussehen": "How you look",
+  "Dein Spielername": "Your player name",
+  "Deine Welten": "Your Worlds",
+  "Der Portalrahmen ist unzerstörbar.": "The portal frame is indestructible.",
+  "Der Speicher ist voll – es passt nicht alles hinein.": "The storage is full – not everything fits.",
+  "Die Datei ist zu groß für einen Skin.": "The file is too big for a skin.",
+  "Die Datei ließ sich nicht lesen.": "The file could not be read.",
+  "Diese Welt lässt sich nicht laden.": "This world cannot be loaded.",
+  "Dieser Text gehört nicht zu Weltenkämpfer.": "That text does not belong to World Fighter.",
+  "Dornen": "Thorns",
+  "Dornenaxt": "Thorn Axe",
+  "Dornenkönig": "Thorn King",
+  "Dornenpanzer": "Thorn Plate",
+  "Dornenschwert": "Thorn Sword",
+  "Dornenspitzhacke": "Thorn Pickaxe",
+  "Dornenwüste": "Thorn Desert",
+  "Drachenschuppe": "Dragon Scale",
+  "Dschungelholz": "Jungle Wood",
+  "Dschungellaub": "Jungle Leaves",
+  "Dschungeltiefe": "Jungle Deep",
+  "Du fängst mit leeren Händen an. Halte die linke Maustaste auf einen Block, bis er zerbricht – dann wandert er in dein Inventar. Setzen kannst du nur, was du hast.": "You start empty-handed. Hold the left mouse button on a block until it breaks – then it goes into your inventory. You can only place what you have.",
+  "Du hast keine Blöcke. Bau erst welche ab! ⛏️": "You have no blocks. Mine some first! ⛏️",
+  "Du trägst schon eine bessere ": "You already wear a better ",
+  "Dunkelstein": "Darkstone",
+  "Dünen aus schwarzem Sand, Lavaseen und Felsnadeln. Fass die Lava nicht an.": "Dunes of black sand, lakes of lava and rock spires. Don't touch the lava.",
+  "Ein Wald ohne Sonne. Riesige schwarze Stämme, fahles Blätterdach, moosiger Boden – und etwas Großes, das dich beobachtet.": "A forest without sun. Huge black trunks, a pale canopy, mossy ground – and something big watching you.",
+  "Eine riesige Höhle unter einem Steindach. Schwefel glüht in der Dunkelheit, unten brodelt Lava.": "A huge cave under a roof of stone. Sulfur glows in the dark, lava bubbles below.",
+  "Eis": "Ice",
+  "Eisaxt": "Ice Axe",
+  "Eisgeist": "Ice Spirit",
+  "Eispanzer": "Ice Plate",
+  "Eisschwert": "Ice Sword",
+  "Eisspitzhacke": "Ice Pickaxe",
+  "Elf offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.": "Eleven open block worlds. Build, dig, fight – and find the portal.",
+  "Endlose Dünen. Und die Kakteen hier stehen nicht nur herum – sie laufen.": "Endless dunes. And the cacti here don't just stand around – they walk.",
+  "Erde": "Dirt",
+  "Erlege 14 Schattenriesen": "Slay 14 shadow giants",
+  "Erlege 9 Schattenpanther": "Slay 9 shadow panthers",
+  "Erlege den Lavadrachen": "Slay the Lava Dragon",
+  "Erlege den Schwefelwyrm": "Slay the Sulfur Wyrm",
+  "Erschlage 15 Giftfledermäuse": "Slay 15 poison bats",
+  "Esc": "Esc",
+  "Ewiges Eis": "Eternal Ice",
+  "Feuergeist": "Fire Spirit",
+  "Feuerwüste": "Fire Desert",
+  "Frostkoloss": "Frost Colossus",
+  "Frostmagier": "Frost Mage",
+  "Frostwolf": "Frost Wolf",
+  "Fälle 8 lebende Kakteen": "Fell 8 living cacti",
+  "Gezeichnete Figur": "Drawn Character",
+  "Gib deinen Spielernamen ein – er steht dann über deinem Helden und in jedem Kampf.": "Enter your player name – it appears above your hero and in every battle.",
+  "Giftfledermaus": "Poison Bat",
+  "Giftfledermäuse": "Poison Bats",
+  "Giftkröte": "Poison Toad",
+  "Gleicher Startwert = gleiche Landschaft. Jede Welt hat ihre eigenen Bauten, ihr eigenes Inventar und ihren eigenen Fortschritt.": "Same seed = same landscape. Every world has its own buildings, its own inventory and its own progress.",
+  "Glut": "Ember",
+  "Glutaxt": "Ember Axe",
+  "Glutschwert": "Ember Sword",
+  "Glutskorpion": "Ember Scorpion",
+  "Glutspitzhacke": "Ember Pickaxe",
+  "Glutstein": "Ember Stone",
+  "Goblin": "Goblin",
+  "Goldmagier": "Gold Mage",
+  "Gras": "Grass",
+  "Grünwald": "Greenwood",
+  "Hainkeiler": "Grove Boar",
+  "Heiltrank": "Healing Potion",
+  "Heiltrank gekauft.": "Healing potion bought.",
+  "Held": "Hero",
+  "Hier gibt es nichts zu benutzen.": "There is nothing to use here.",
+  "Hierbleiben": "Stay here",
+  "Holz": "Wood",
+  "Holzaxt": "Wooden Axe",
+  "Holzschwert": "Wooden Sword",
+  "Holzspitzhacke": "Wooden Pickaxe",
+  "Höhlenlauerer": "Cave Lurker",
+  "Höhlenwasser": "Cave Water",
+  "Hügel, Seen und dichte Wälder. Irgendwo dort draußen wartet ein Troll.": "Hills, lakes and thick forests. Somewhere out there a troll is waiting.",
+  "Hüter der Seelen": "Keeper of Souls",
+  "In die Zwischenablage kopiert ✓": "Copied to the clipboard ✓",
+  "Inventar & Herstellen": "Inventory & Crafting",
+  "Irrlicht": "Will-o'-the-Wisp",
+  "Jede Adresse hat ihren eigenen Speicher: die Datei auf deinem PC, der claude.ai-Link und die GitHub-Seite wissen nichts voneinander. Hier kannst du deinen Stand von einer zur anderen mitnehmen.": "Every address has its own storage: the file on your PC, the claude.ai link and the GitHub page know nothing about each other. Here you can carry your save from one to the other.",
+  "Kaktus": "Cactus",
+  "Kamera": "Camera",
+  "Kampf": "Battle",
+  "Kein Passwort, keine Anmeldung im Netz: Der Name wird nur auf diesem Gerät gespeichert. Du kannst ihn jederzeit ändern.": "No password, no signing in online: the name is stored only on this device. You can change it any time.",
+  "Kettenhemd": "Chainmail",
+  "Kirschblütenhain": "Cherry Blossom Grove",
+  "Kirschholz": "Cherry Wood",
+  "Kirschlaub": "Cherry Leaves",
+  "Knietiefes Brackwasser, fauler Nebel, tote Bäume. Hier verrottet alles.": "Knee-deep brackish water, foul mist, dead trees. Everything rots here.",
+  "Knochenholz": "Bone Wood",
+  "Knochenritter": "Bone Knight",
+  "Kristall": "Crystal",
+  "Kristallaxt": "Crystal Axe",
+  "Kristallschwert": "Crystal Sword",
+  "Kristallspitzhacke": "Crystal Pickaxe",
+  "Lagerfeuer": "Campfire",
+  "Laub": "Leaves",
+  "Lava": "Lava",
+  "Lavadrache": "Lava Dragon",
+  "Lebender Kaktus": "Living Cactus",
+  "Lederrüstung": "Leather Armor",
+  "Leertaste": "Spacebar",
+  "Linke Maustaste halten": "Hold left mouse button",
+  "Los geht's": "Let's go",
+  "Lösche 6 Feuergeister aus": "Extinguish 6 fire spirits",
+  "Magmagolem": "Magma Golem",
+  "Manatrank getrunken. +30 MP": "Mana potion drunk. +30 MP",
+  "Material wählen": "Choose material",
+  "Maus": "Mouse",
+  "Maus frei": "Free the mouse",
+  "Moosboden": "Mossy Ground",
+  "Myzel": "Mycelium",
+  "Nachthexe": "Night Witch",
+  "Name der Welt": "World name",
+  "Neue Rüstung: ": "New armor: ",
+  "Neue Waffe: ": "New weapon: ",
+  "Neue Welt anlegen": "Create a new world",
+  "Noch keine Welt. Leg unten deine erste an!": "No world yet. Create your first one below!",
+  "Obsidian": "Obsidian",
+  "Obsidianaxt": "Obsidian Axe",
+  "Obsidianklinge": "Obsidian Blade",
+  "Obsidianspitzhacke": "Obsidian Pickaxe",
+  "Pech": "Pitch",
+  "Pechaxt": "Pitch Axe",
+  "Pechrüstung": "Pitch Armor",
+  "Pechschwert": "Pitch Sword",
+  "Pechspitzhacke": "Pitch Pickaxe",
+  "Pechstein": "Pitch Stone",
+  "Pilze so groß wie Häuser, violetter Nebel, Sporen in der Luft. Die letzte Welt.": "Mushrooms as big as houses, purple mist, spores in the air. The last world.",
+  "Pilzhut": "Mushroom Cap",
+  "Pilzland": "Mushroom Land",
+  "Pilzstiel": "Mushroom Stem",
+  "Plattenpanzer": "Plate Armor",
+  "Portal": "Portal",
+  "Quests": "Quests",
+  "Quests": "Quests",
+  "Rechtsklick": "Right click",
+  "Reiß 12 Frostwölfe nieder": "Bring down 12 frost wolves",
+  "Riesenbiene": "Giant Bee",
+  "Riesenschleim": "Giant Slime",
+  "Riesenskarabäus": "Giant Scarab",
+  "Rosa Blüten, so weit das Auge reicht. Schön – aber nicht harmlos.": "Pink blossoms as far as the eye can see. Beautiful – but not harmless.",
+  "Rotfels": "Red Rock",
+  "Sammle 10 Smaragdsplitter": "Collect 10 emerald shards",
+  "Sammle 10 Wüstendornen": "Collect 10 desert thorns",
+  "Sammle 12 Pechtropfen": "Collect 12 pitch drops",
+  "Sammle 14 Eissplitter": "Collect 14 ice shards",
+  "Sammle 16 Sporenkapseln": "Collect 16 spore pods",
+  "Sammle 18 Schwefelklumpen": "Collect 18 sulfur lumps",
+  "Sammle 20 Seelenlichter": "Collect 20 soul lights",
+  "Sammle 5 Heilkräuter": "Collect 5 healing herbs",
+  "Sammle 6 Glutsteine": "Collect 6 ember stones",
+  "Sammle 6 Kirschblüten": "Collect 6 cherry blossoms",
+  "Sammle 8 Seelensteine": "Collect 8 soul stones",
+  "Sand": "Sand",
+  "Sandmumie": "Sand Mummy",
+  "Schattenfürst": "Shadow Lord",
+  "Schattenholz": "Shadow Wood",
+  "Schattenlaub": "Shadow Leaves",
+  "Schattenmagier": "Shadow Mage",
+  "Schattenmantel": "Shadow Cloak",
+  "Schattenpanther": "Shadow Panther",
+  "Schattenreich": "Shadow Realm",
+  "Schattenriese": "Shadow Giant",
+  "Schattenwesen": "Shadow Being",
+  "Schlammgolem": "Mud Golem",
+  "Schnee": "Snow",
+  "Schwarzes Gestein, leuchtende Kristalle, kein Sonnenlicht. Der Fürst wartet.": "Black rock, glowing crystals, no sunlight. The Lord is waiting.",
+  "Schwefel": "Sulfur",
+  "Schwefelaxt": "Sulfur Axe",
+  "Schwefelhöhle": "Sulfur Cave",
+  "Schwefelklinge": "Sulfur Blade",
+  "Schwefelrüstung": "Sulfur Armor",
+  "Schwefelspitzhacke": "Sulfur Pickaxe",
+  "Schwefelstein": "Sulfur Stone",
+  "Schwefelwurm": "Sulfur Worm",
+  "Schwefelwyrm": "Sulfur Wyrm",
+  "Schwert, Axt und Spitzhacke": "sword, axe and pickaxe",
+  "Seelen": "Souls",
+  "Seelenaxt": "Soul Axe",
+  "Seelenfeuer": "Soul Fire",
+  "Seelengarten": "Soul Garden",
+  "Seelenklinge": "Soul Blade",
+  "Seelenkristall": "Soul Crystal",
+  "Seelenrüstung": "Soul Armor",
+  "Seelensand": "Soul Sand",
+  "Seelenspitzhacke": "Soul Pickaxe",
+  "Seuchenmolch": "Plague Newt",
+  "Seuchensumpf": "Plague Swamp",
+  "Shift": "Shift",
+  "Sicherung: ": "Backup: ",
+  "Sicherungstext hier einfügen": "Paste backup text here",
+  "Skelettkönig": "Skeleton King",
+  "Skin übernommen ✓": "Skin applied ✓",
+  "Smaragd": "Emerald",
+  "Smaragdaxt": "Emerald Axe",
+  "Smaragderz": "Emerald Ore",
+  "Smaragdrüstung": "Emerald Armor",
+  "Smaragdschwert": "Emerald Sword",
+  "Smaragdspitzhacke": "Emerald Pickaxe",
+  "Speichern als Datei geht hier nicht – ": "Saving as a file does not work here – ",
+  "Sporen": "Spores",
+  "Sporenaxt": "Spore Axe",
+  "Sporenbrut": "Spore Brood",
+  "Sporenklinge": "Spore Blade",
+  "Sporenmutter": "Spore Mother",
+  "Sporenrüstung": "Spore Armor",
+  "Sporenspitzhacke": "Spore Pickaxe",
+  "Sporenstein": "Spore Stone",
+  "Sporling": "Sporeling",
+  "Startwert (Zahl oder Wort, freilassen = zufällig)": "Seed (number or word, leave empty = random)",
+  "Stein": "Stone",
+  "Steinaxt": "Stone Axe",
+  "Steinschwert": "Stone Sword",
+  "Steinspitzhacke": "Stone Pickaxe",
+  "Sternenmagier": "Star Mage",
+  "Stock": "Stick",
+  "Stofffetzen": "Cloth Scrap",
+  "Stufe": "Level",
+  "Stufe ": "Level ",
+  "Sturmmagier": "Storm Mage",
+  "Stöcke": "Sticks",
+  "Stürze den Dornenkönig": "Topple the Thorn King",
+  "Such dir einen aus - oder lade dein eigenes Skin-Bild (64×64 PNG). Es bleibt auf deinem Gerät.": "Pick one – or load your own skin image (64×64 PNG). It stays on your device.",
+  "Sumpferde": "Swamp Dirt",
+  "Sumpfhexer": "Swamp Warlock",
+  "Säure": "Acid",
+  "Todesritter": "Death Knight",
+  "Töte den Seuchenmolch": "Kill the Plague Newt",
+  "Uralte Ranke": "Ancient Vine",
+  "Verjage 6 Blütenfüchse": "Chase off 6 blossom foxes",
+  "Vernichte 14 Sporenbruten": "Destroy 14 spore broods",
+  "Vertreibe 5 Wölfe": "Drive off 5 wolves",
+  "WELTENKÄMPFER · BLOCKWELT": "WORLD FIGHTER · BLOCK WORLD",
+  "Waldspinne": "Forest Spider",
+  "Waldtroll": "Forest Troll",
+  "Wasser": "Water",
+  "Weiter": "Continue",
+  "Welt": "World",
+  "Welt löschen": "Delete world",
+  "Wer bist du?": "Who are you?",
+  "Werkbank": "Crafting Table",
+  "Wikingerkönig": "Viking King",
+  "Willkommen in ": "Welcome to ",
+  "Willkommen,": "Welcome,",
+  "Wohin willst du reisen? Deine Bauten bleiben in jeder Welt stehen.": "Where do you want to travel? Your buildings stay put in every world.",
+  "Wolf": "Wolf",
+  "Wähle dein Talent.": "Choose your talent.",
+  "Wähle erst unten ein Material aus.": "First choose a material below.",
+  "Würgeschlange": "Constrictor",
+  "Yeti": "Yeti",
+  "Zerschlage 7 Todesritter": "Smash 7 death knights",
+  "Zerschmettere den Frostkoloss": "Shatter the Frost Colossus",
+  "Zerschneide die Uralte Ranke": "Cut down the Ancient Vine",
+  "Zugefrorene Seen, Schneesturm, Stille. Die Kälte frisst sich durch alles.": "Frozen lakes, blizzard, silence. The cold eats through everything.",
+  "Zurück zur gezeichneten Figur.": "Back to the drawn character.",
+  "benutzen": "use",
+  "bloße Fäuste": "bare fists",
+  "keine Axt": "no axe",
+  "keine Spitzhacke": "no pickaxe",
+  "laufen": "walk",
+  "nimm den Text und die Zwischenablage.": "use the text and the clipboard instead.",
+  "nimm den Weg über die Zwischenablage.": "go by way of the clipboard instead.",
+  "ran: dort legst du im 3×3-Gitter Muster für": ": there you lay out patterns in the 3×3 grid for",
+  "rennen": "run",
+  "springen": "jump",
+  "umsehen": "look around",
+  "▶ Spielen": "▶ Play",
+  "⚔️ +4 Angriff": "⚔️ +4 Attack",
+  "⛏️ Linke Maustaste <b>gedrückt halten</b>, bis der Block zerbricht · <b>I</b> = Inventar & Herstellen": "⛏️ <b>Hold</b> the left mouse button until the block breaks · <b>I</b> = Inventory & Crafting",
+  "✏️ Name & Skin": "✏️ Name & skin",
+  "✨ +4 Magie": "✨ +4 Magic",
+  "❤️ +20 Leben": "❤️ +20 Health",
+  "🌀 Angekommen in ": "🌀 Arrived in ",
+  "🌍 Welten": "🌍 Worlds",
+  "🌟 Stufe ": "🌟 Level ",
+  "🌱 Welt erschaffen": "🌱 Create world",
+  "🌵 Autsch – die Stacheln!": "🌵 Ouch – the spines!",
+  "🌵 Wüstendorn": "🌵 Desert Thorn",
+  "🌸 Kirschblüte": "🌸 Cherry Blossom",
+  "🌿 Heilkraut": "🌿 Healing Herb",
+  "🎒 Inventar (2×2)": "🎒 Inventory (2×2)",
+  "🎥 Kamera: ": "🎥 Camera: ",
+  "🏃 Fliehen": "🏃 Flee",
+  "💀 Du bist gestorben. −": "💀 You died. −",
+  "💚 Heilung": "💚 Heal",
+  "💚 Smaragdsplitter": "💚 Emerald Shard",
+  "💾 Als Datei speichern": "💾 Save as file",
+  "💾 Spielstand übertragen": "💾 Transfer save",
+  "📂 Datei laden": "📂 Load file",
+  "📋 Text kopieren": "📋 Copy text",
+  "📜 Quests – ": "📜 Quests – ",
+  "📥 Übernehmen": "📥 Apply",
+  "🔥 Die Lava verbrennt dich!": "🔥 The lava burns you!",
+  "🔥 Feuerball": "🔥 Fireball",
+  "🔨 Hergestellt: ": "🔨 Crafted: ",
+  "🔨 Werkbank (3×3)": "🔨 Crafting Table (3×3)",
+  "🔮 Seelenstein": "🔮 Soul Stone",
+  "🔴 Glutstein": "🔴 Ember Stone",
+  "🕯️ Seelenlicht": "🕯️ Soul Light",
+  "🖤 Pechtropfen": "🖤 Pitch Drop",
+  "🖼️ Eigenen Skin laden": "🖼️ Load your own skin",
+  "🗡️ Angriff": "🗡️ Attack",
+  "🗺️ Karte": "🗺️ Map",
+  "😴 Rasten (10 💰)": "😴 Rest (10 💰)",
+  "🛡️ +3 Rüstung": "🛡️ +3 Armor",
+  "🟡 Schwefelklumpen": "🟡 Sulfur Lump",
+  "🟣 Sporenkapsel": "🟣 Spore Pod",
+  "🧊 Eissplitter": "🧊 Ice Shard",
+  "🧪 Gebraut: ": "🧪 Brewed: ",
+  "🧪 Trank": "🧪 Potion",
+  " Angriff.</b> Rüste dich vorher aus!": " attack.</b> Gear up first!",
+  " Angriff</b></div>": " attack</b></div>",
+  " Angriff</span>": " attack</span>",
+  " Aufgaben": " tasks",
+  " Gold sind weg. Rüste dich am Lagerfeuer aus!": " gold are gone. Gear up at the campfire!",
+  " Leben · ": " health · ",
+  " Quest(s), dann öffnet sich das Portal.</p>": " quest(s) left, then the portal opens.</p>",
+  " Rüstung</b></div>": " armor</b></div>",
+  " Rüstung</span>": " armor</span>",
+  " besiegt</span>": " defeated</span>",
+  " darüber erledigt ": " above ",
+  " erledigt ": " ",
+  " erwacht!": " awakens!",
+  " gestorben und erwachst am Startpunkt.<br>": " and wake up at the starting point.<br>",
+  " sind erledigt.<br>": " are done.<br>",
+  " stellt sich dir!": " stands against you!",
+  " trifft dich für <b>": " hits you for <b>",
+  " wartet in der Arena<br><span style='font-size:10.5px'>oranger Kreis auf der Karte</span></span>": " is waiting in the arena<br><span style='font-size:10.5px'>orange circle on the map</span></span>",
+  " wird <b>rasend</b> und schlägt härter zu!": " goes <b>berserk</b> and hits harder!",
+  " – klicken zum Zurücklegen": " – click to put it back",
+  " 💰<br>Durch das Portal kommst du jetzt in <b>jede</b> Welt zurück – deine Bauten stehen dort noch.": " 💰<br>Through the portal you can now go back to <b>any</b> world – your buildings are still there.",
+  "</b> Schaden.": "</b> damage.",
+  "<br><br>Die Gegner hier sind viel stärker – schmiede dir am besten erst bessere Werkzeuge!": "<br><br>The enemies here are much stronger – best forge yourself better tools first!",
+  "<br><span style='font-size:10.5px'>kommt erst, wenn die ": "<br><span style='font-size:10.5px'>appears once the ",
+  "Alle Quests erledigt – ab zum Portal! 🌀": "All quests done – off to the portal! 🌀",
+  "Alle Quests in ": "All quests in ",
+  "Aufgabe": "task",
+  "Augen des Helden": "Hero's eyes",
+  "Besiegt!": "Defeated!",
+  "Der Boss erscheint erst in der Arena, ": "The boss only appears in the arena ",
+  "Der Schattenfürst ist gefallen, alle drei Welten sind frei.<br>": "The Shadow Lord has fallen, all three worlds are free.<br>",
+  "Der violette Punkt auf der Karte ist das Portal – geh hin und drück <b>E</b>.": "The purple dot on the map is the portal – go there and press <b>E</b>.",
+  "Die anderen Quests sind erledigt – jetzt zeigt sich der Boss.<br>": "The other quests are done – now the boss shows itself.<br>",
+  "Du bist ": "You died ",
+  "Du hast gewonnen!": "You won!",
+  "Du triffst für <b>": "You hit for <b>",
+  "Endstand: Stufe <b>": "Final score: Level <b>",
+  "Er wartet in der <b>Arena</b>, dem Steinring auf der Karte (großer oranger Punkt).<br><br>": "It waits in the <b>arena</b>, the stone ring on the map (big orange dot).<br><br>",
+  "Keine Tränke mehr!": "No potions left!",
+  "Meine erste Welt": "My first world",
+  "Neue Welt": "New World",
+  "Neue Welt: ": "New world: ",
+  "Noch ": "",
+  "Portal offen!": "Portal open!",
+  "Schulterblick": "Over the shoulder",
+  "Vor einem Boss gibt es kein Entkommen!": "There is no escaping a boss!",
+  "[E] Lagerfeuer – rasten & handeln": "[E] Campfire – rest & trade",
+  "[E] Portal nach ": "[E] Portal to ",
+  "[E] Portal – Welt wechseln": "[E] Portal – change world",
+  "[E] Werkbank – 3×3 herstellen": "[E] Crafting table – craft 3×3",
+  "an einem Kaktus": "on a cactus",
+  "andere Aufgabe": "other task",
+  "anderen ": "other ",
+  "hier ein Material ablegen": "place a material here",
+  "im Kampf": "in battle",
+  "in der Lava": "in the lava",
+  "ist": "is done",
+  "sind": "are done",
+  "von vorne": "From the front",
+  "wenn die ": "once the ",
+  "🔒 Portal verschlossen – erst alle Quests": "🔒 Portal locked – all quests first",
+  "🔥 Feuerball für <b>": "🔥 Fireball for <b>",
+  " <span class=\"c-dim\">– du bist hier</span>": " <span class=\"c-dim\">– you are here</span>",
+  " Leben.": " health.",
+  " Leben</span>": " health</span>",
+  "\" wirklich löschen? Alles darin ist dann weg.": "\" – really delete it? Everything in it will be gone.",
+  ")\">Reisen</button></div>": ")\">Travel</button></div>",
+  ")\">ins Gitter legen</button></div>": ")\">put in the grid</button></div>",
+  "<br><span class=\"c-dim\" style=\"font-size:12px\">Der Boss erscheint erst in der Arena, ": "<br><span class=\"c-dim\" style=\"font-size:12px\">The boss only appears in the arena ",
+  "<br><span class=\"c-good\">anklicken zum Herstellen</span>": "<br><span class=\"c-good\">click to craft</span>",
+  "<div class=\"karte2\"><span>🛡️ Beste Rüstung getragen</span></div>": "<div class=\"karte2\"><span>🛡️ Best armor equipped</span></div>",
+  "<div class=\"karte2\"><span>🧪 Heiltränke</span><b>": "<div class=\"karte2\"><span>🧪 Healing potions</span><b>",
+  "<div class=\"leer\">Leeres Inventar – halte die linke Maustaste auf einen Block, um ihn abzubauen</div>": "<div class=\"leer\">Empty inventory – hold the left mouse button on a block to mine it</div>",
+  "<h3 style=\"margin-top:16px\">Ausrüstung & Vorrat</h3>": "<h3 style=\"margin-top:16px\">Gear &amp; supplies</h3>",
+  "<h3 style=\"margin-top:16px\">Baupläne</h3>": "<h3 style=\"margin-top:16px\">Blueprints</h3>",
+  "<h3 style=\"margin-top:16px\">Dein Vorrat – zum Auswählen anklicken</h3>": "<h3 style=\"margin-top:16px\">Your supplies – click to select</h3>",
+  "<p class=\"c-dim\" style=\"margin-top:0\">Du hast <b class=\"c-gold\">": "<p class=\"c-dim\" style=\"margin-top:0\">You have <b class=\"c-gold\">",
+  "<p class=\"c-dim\" style=\"margin:6px 0 0\">Für 3×3-Baupläne brauchst du eine <b>Werkbank</b>: ": "<p class=\"c-dim\" style=\"margin:6px 0 0\">For 3×3 blueprints you need a <b>crafting table</b>: ",
+  "<p class=\"c-dim\">Noch ": "<p class=\"c-dim\">",
+  "<p class=\"c-dim\">Noch nichts gesammelt. Halte draußen die linke Maustaste auf einen Block.</p>": "<p class=\"c-dim\">Nothing collected yet. Outside, hold the left mouse button on a block.</p>",
+  "<p class=\"c-gold\" style=\"margin:6px 0 0\">In der Hand: <b>": "<p class=\"c-gold\" style=\"margin:6px 0 0\">In hand: <b>",
+  "<p class=\"c-good\">Alle Quests erledigt – ab zum Portal! 🌀</p>": "<p class=\"c-good\">All quests done – off to the portal! 🌀</p>",
+  "<span class=\"c-dim\">Leg ein Muster ins Gitter<br>oder wähle unten einen Bauplan</span>": "<span class=\"c-dim\">Lay a pattern in the grid<br>or pick a blueprint below</span>",
+  "Welt \"": "World \"",
+  "stell sie hin und geh nah ran.</p>": "put it down and step close to it.</p>",
+  "wenn die ": "once the ",
+  "🏃 Du entkommst!": "🏃 You escape!",
+  "💚 Heilung: +": "💚 Heal: +",
+  "💧 Manatrank <span class='c-dim'>+30 MP sofort</span>": "💧 Mana potion <span class='c-dim'>+30 MP at once</span>",
+  "🧪 Heiltrank <span class='c-dim'>heilt ": "🧪 Healing potion <span class='c-dim'>heals ",
+  "🧪 Trank getrunken: +": "🧪 Potion drunk: +",
+  ",false)\">Reisen</button></div>": ",false)\">Travel</button></div>"
+};
+function ue(s){
+  if(sprache !== "en" || typeof s !== "string") return s;
+  const e = EN[s];
+  return e === undefined ? s : e;
+}
+
+/* Die Namen in den Datentabellen werden einmal auf Deutsch gemerkt und dann
+   bei jedem Sprachwechsel neu gesetzt - so liest der Rest des Spiels einfach
+   weiter .name und bekommt automatisch die richtige Sprache. */
+let sprachOriginale = null;
+function datenUebersetzen(){
+  if(!sprachOriginale){
+    sprachOriginale = [];
+    const felder = ["name", "beschreibung", "text"];
+    const merken = o => {
+      if(!o || typeof o !== "object") return;
+      if(Array.isArray(o)){ o.forEach(merken); return; }
+      for(const f of felder) if(typeof o[f] === "string"){
+        sprachOriginale.push([o, f, o[f]]);
+        if(f === "name") o.nameDe = o[f];      // fester Schlüssel: ändert sich nie mit
+      }
+      for(const k in o) if(o[k] && typeof o[k] === "object") merken(o[k]);
+    };
+    [BLOECKE, WAFFEN, RUESTUNGEN, HACKEN, AEXTE, WERKSTOFFE, WELTEN, BRAUEN, BAUPLAENE, SKIN_SAMMLUNG].forEach(merken);
+  }
+  for(const [o, f, deutsch] of sprachOriginale) o[f] = ue(deutsch);
+}
+
+/* Der feste Text im Fenster: jeder Textknoten wird einmal auf Deutsch gemerkt
+   und dann übersetzt. Die Leerzeichen ringsum bleiben erhalten. */
+let sprachKnoten = null, sprachAttribute = null;
+function oberflaecheUebersetzen(){
+  if(!sprachKnoten){
+    sprachKnoten = [];
+    const lauf = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    for(let n = lauf.nextNode(); n; n = lauf.nextNode()){
+      const eltern = n.parentNode && n.parentNode.nodeName;
+      if(eltern === "SCRIPT" || eltern === "STYLE") continue;
+      if(!/[A-Za-zÄÖÜäöüß]/.test(n.nodeValue)) continue;
+      sprachKnoten.push([n, n.nodeValue]);
+    }
+    sprachAttribute = [];
+    for(const el of document.querySelectorAll("[placeholder], [title]")){
+      if(el.getAttribute("placeholder")) sprachAttribute.push([el, "placeholder", el.getAttribute("placeholder")]);
+      if(el.getAttribute("title"))       sprachAttribute.push([el, "title",       el.getAttribute("title")]);
+    }
+  }
+  for(const [n, roh] of sprachKnoten){
+    const vorn = roh.match(/^\s*/)[0], hinten = roh.match(/\s*$/)[0];
+    const kern = roh.trim().replace(/\s+/g, " ");   // Umbrüche im Quelltext glätten
+    n.nodeValue = vorn + ue(kern) + hinten;
+  }
+  for(const [el, a, roh] of sprachAttribute) el.setAttribute(a, ue(roh));
+}
+
+// Umschalten: alles neu beschriften, was gerade zu sehen ist
+function spracheSetzen(k){
+  sprache = (k === "en") ? "en" : "de";
+  try { localStorage.setItem("wkSprache", sprache); } catch(e){}
+  document.documentElement.lang = sprache;
+  spracheAnwenden();
+}
+function spracheAnwenden(){
+  datenUebersetzen();
+  oberflaecheUebersetzen();
+  for(const k of ["de", "en"]){
+    for(const nr of ["", "2"]){
+      const b = document.getElementById("spr" + k + nr);
+      if(b) b.classList.toggle("gewaehlt", sprache === k);
+    }
+  }
+  // Alles neu zeichnen, was Text aus den Tabellen zeigt
+  if(typeof s !== "undefined" && s){
+    if(typeof hudZeichnen === "function") hudZeichnen();
+    if(typeof bastelZeichnen === "function" && !$("lager").classList.contains("hidden")) bastelZeichnen();
+    if(typeof kampfZeichnen === "function" && gegner) kampfZeichnen();
+  }
+  if(typeof nameAnzeigen === "function") nameAnzeigen();
+  if(typeof weltlisteZeichnen === "function") weltlisteZeichnen();
+  if(typeof galerieZeichnen === "function") galerieZeichnen();
+  if(typeof reiseFenster === "function" && !$("reise").classList.contains("hidden")) reiseFenster();
+}
+
 const $ = id => document.getElementById(id);
 const rnd = (a,b) => Math.floor(Math.random()*(b-a+1))+a;
 const klemm = (v,a,b) => v<a?a:(v>b?b:v);
@@ -771,7 +1328,7 @@ const BRAUEN = [
    ===================================================================== */
 let s;
 function neuerStand(){
-  return {id:null, name:"Welt", saat:0, level:1, xp:0, xpNext:30, hp:70, maxHp:70, mp:25, maxMp:25, atk:9, def:3, mag:7,
+  return {id:null, name:ue("Welt"), saat:0, level:1, xp:0, xpNext:30, hp:70, maxHp:70, mp:25, maxMp:25, atk:9, def:3, mag:7,
           gold:30, traenke:3, welt:0, freigeschaltet:0, waffe:0, ruestung:0, hacke:0, axt:0, kills:{}, sachen:{}, gesammelt:{},
           fertig:{}, gewonnen:false, aenderungen:{}, inventar:{}, version:2};
 }
@@ -828,7 +1385,7 @@ function saatAus(text){
 function weltAnlegen(name, saatText){
   s = neuerStand();
   s.id = "w" + Date.now().toString(36) + Math.floor(Math.random()*1000).toString(36);
-  s.name = (name || "").trim() || "Neue Welt";
+  s.name = (name || "").trim() || ue("Neue Welt");
   s.saat = saatAus(saatText);
   speichern();
   return s;
@@ -846,7 +1403,7 @@ function altenStandUebernehmen(){
   let d = null;
   try{ d = JSON.parse(localStorage.getItem("wkBlock")); }catch(e){}
   if(!d || !d.level) return;
-  d.id = "wAlt"; d.name = "Meine erste Welt"; d.saat = 0;
+  d.id = "wAlt"; d.name = ue("Meine erste Welt"); d.saat = 0;
   s = d; standPruefen(); speichern();
   try{ localStorage.removeItem("wkBlock"); }catch(e){}
   s = null;
@@ -956,22 +1513,22 @@ function bauen(gross){
   if(e.hacke !== undefined)      werkzeugAnlegen("hacke", e.hacke, HACKEN, "⛏️", "Spitzhacke");
   else if(e.axt !== undefined)    werkzeugAnlegen("axt",   e.axt,   AEXTE,  "🪓", "Axt");
   else if(e.waffe !== undefined)  werkzeugAnlegen("waffe", e.waffe, WAFFEN, "🗡️", "Waffe");
-  else meldung("🔨 Hergestellt: " + plan.name, "c-gold");
+  else meldung(ue("🔨 Hergestellt: ") + plan.name, "c-gold");
   gitterLeeren();
   speichern(); hudZeichnen(); bastelZeichnen();
 }
 function werkzeugAnlegen(feld, stufe, liste, symbol, art){
   if(stufe > s[feld]){
     s[feld] = stufe;
-    meldung(symbol + " " + liste[stufe].name + " hergestellt und angelegt!", "c-gold");
+    meldung(symbol + " " + liste[stufe].name + ue(" hergestellt und angelegt!"), "c-gold");
   } else {
-    meldung("Du trägst schon eine bessere " + art + " (" + liste[s[feld]].name + ").", "c-dim");
+    meldung(ue("Du trägst schon eine bessere ") + art + " (" + liste[s[feld]].name + ").", "c-dim");
   }
 }
 // Bauplan anklicken → Gitter automatisch füllen (wie das Rezeptbuch)
 function planLegen(nr, gross){
   const plan = BAUPLAENE[nr];
-  if(plan.gross && !gross){ meldung("Dafür brauchst du eine Werkbank.", "c-bad"); return; }
+  if(plan.gross && !gross){ meldung(ue("Dafür brauchst du eine Werkbank."), "c-bad"); return; }
   gitterLeeren();
   if(plan.formlos){
     const felder = gitterFelder(gross);
@@ -1768,8 +2325,8 @@ function bewegen(dt){
     const nb = block(Math.floor(pos.x+d[0]), fy, Math.floor(pos.z+d[1]));
     if(nb > 0 && BLOECKE[nb].stachlig){
       s.hp -= 9*dt;
-      if(Math.random() < dt*1.5) meldung("🌵 Autsch – die Stacheln!", "c-bad");
-      if(s.hp <= 0){ sterben("an einem Kaktus"); return; }
+      if(Math.random() < dt*1.5) meldung(ue("🌵 Autsch – die Stacheln!"), "c-bad");
+      if(s.hp <= 0){ sterben(ue("an einem Kaktus")); return; }
       hudZeichnen();
       break;
     }
@@ -1778,8 +2335,8 @@ function bewegen(dt){
   const bIn = block(Math.floor(pos.x), Math.floor(pos.y+0.4), Math.floor(pos.z));
   if(bIn > 0 && BLOECKE[bIn].heiss){
     s.hp -= 14*dt;
-    if(Math.random() < dt*2) meldung(BLOECKE[bIn].schadenText || "🔥 Die Lava verbrennt dich!", "c-bad");
-    if(s.hp <= 0) sterben("in der Lava");
+    if(Math.random() < dt*2) meldung(BLOECKE[bIn].schadenText || ue("🔥 Die Lava verbrennt dich!"), "c-bad");
+    if(s.hp <= 0) sterben(ue("in der Lava"));
     hudZeichnen();
   }
 }
@@ -1822,7 +2379,7 @@ function abbauSchritt(dt){
     abbauZiel = null; abbauFortschritt = 0;
     if(performance.now() - letzteWarnung > 2000){
       letzteWarnung = performance.now();
-      meldung(geschuetzt ? "Der Portalrahmen ist unzerstörbar." : (def.name + " lässt sich nicht abbauen."), "c-dim");
+      meldung(geschuetzt ? ue("Der Portalrahmen ist unzerstörbar.") : (def.name + ue(" lässt sich nicht abbauen.")), "c-dim");
     }
     return;
   }
@@ -1856,7 +2413,7 @@ function blockUmgebungNeu(x, z){
 }
 function setzen(){
   const liste = besitz();
-  if(!liste.length){ meldung("Du hast keine Blöcke. Bau erst welche ab! ⛏️", "c-bad"); return; }
+  if(!liste.length){ meldung(ue("Du hast keine Blöcke. Bau erst welche ab! ⛏️"), "c-bad"); return; }
   const id = liste[klemm(gewaehlt, 0, liste.length-1)];
   const z = strahl(6);
   if(!z) return;
@@ -1914,11 +2471,11 @@ function bossSetzen(melden){
   wesen.push({art:"gegner", boss:true, id:b.id, name:b.name, emoji:b.emoji,
               x:bossOrt.x+0.5, y:bodenHoehe(bossOrt.x, bossOrt.z), z:bossOrt.z+0.5,
               hp:b.hp, maxHp:b.hp, atk:b.atk, def:b.def, xp:b.xp, gold:b.gold, tempo:1.9, gross:3.2, ruhe:0});
-  meldung(b.emoji + " " + b.name + " ist in der Arena erschienen – der große orange Punkt auf der Karte!", "c-bad");
+  meldung(b.emoji + " " + b.name + ue(" ist in der Arena erschienen – der große orange Punkt auf der Karte!"), "c-bad");
   if(melden)
-    infoZeigen(b.emoji, b.name + " erwacht!", "Die anderen Quests sind erledigt – jetzt zeigt sich der Boss.<br>"
-      + "Er wartet in der <b>Arena</b>, dem Steinring auf der Karte (großer oranger Punkt).<br><br>"
-      + "<b>" + b.hp + " Leben · " + b.atk + " Angriff.</b> Rüste dich vorher aus!");
+    infoZeigen(b.emoji, b.name + ue(" erwacht!"), ue("Die anderen Quests sind erledigt – jetzt zeigt sich der Boss.<br>")
+      + ue("Er wartet in der <b>Arena</b>, dem Steinring auf der Karte (großer oranger Punkt).<br><br>")
+      + "<b>" + b.hp + ue(" Leben · ") + b.atk + ue(" Angriff.</b> Rüste dich vorher aus!"));
 }
 function wesenAktualisieren(dt){
   for(let i = wesen.length-1; i >= 0; i--){
@@ -1930,7 +2487,7 @@ function wesenAktualisieren(dt){
       if(ab < 1.3 && Math.abs(pos.y - o.y) < 2.5){
         s.sachen[o.id] = (s.sachen[o.id] || 0) + 1;
         s.gesammelt[o.id] = (s.gesammelt[o.id] || 0) + 1;   // zählt für die Quest, auch wenn du es verbrauchst
-        meldung("Aufgesammelt: " + o.name + " (" + s.sachen[o.id] + ")", "c-gold");
+        meldung(ue("Aufgesammelt: ") + o.name + " (" + s.sachen[o.id] + ")", "c-gold");
         wesen.splice(i,1);
         setTimeout(() => { if(modus !== "start") itemSetzen(); }, 6000);
         questsPruefen();
@@ -2551,18 +3108,18 @@ function platzRaeumen(o, r, hoehe, boden){
     }
 }
 function bauwerkeSetzen(w, wuerfel){
-  const plan = BAUPLAN_WELT[w.name];
+  const plan = BAUPLAN_WELT[w.nameDe];
   if(!plan) return;
   const holz = w.baumArt === "kirsch" ? B_KIRSCHHOLZ
-             : (w.name === "Dschungeltiefe" ? B_DSCHUNGELHOLZ
-             : (w.name === "Seelengarten" ? B_SCHATTENHOLZ : B_HOLZ));
+             : (w.nameDe === "Dschungeltiefe" ? B_DSCHUNGELHOLZ
+             : (w.nameDe === "Seelengarten" ? B_SCHATTENHOLZ : B_HOLZ));
   const laub = w.baumArt === "kirsch" ? B_KIRSCHLAUB
-             : (w.name === "Dschungeltiefe" ? B_DSCHUNGELLAUB
-             : (w.name === "Seelengarten" ? B_SCHATTENLAUB : B_LAUB));
-  const stein = (w.name === "Schattenreich" || w.name === "Feuerwüste") ? B_OBSIDIAN
-              : (w.name === "Dornenwüste" ? B_SAND
-              : (w.name === "Seelengarten" ? B_MOOSBODEN
-              : (w.name === "Schwefelhöhle" ? B_SCHWEFELSTEIN : B_STEIN)));
+             : (w.nameDe === "Dschungeltiefe" ? B_DSCHUNGELLAUB
+             : (w.nameDe === "Seelengarten" ? B_SCHATTENLAUB : B_LAUB));
+  const stein = (w.nameDe === "Schattenreich" || w.nameDe === "Feuerwüste") ? B_OBSIDIAN
+              : (w.nameDe === "Dornenwüste" ? B_SAND
+              : (w.nameDe === "Seelengarten" ? B_MOOSBODEN
+              : (w.nameDe === "Schwefelhöhle" ? B_SCHWEFELSTEIN : B_STEIN)));
   const gesetzt = [];
   for(const eintrag of plan){
     const art = eintrag[0], anzahl = eintrag[1];
@@ -2579,9 +3136,9 @@ function bauwerkeSetzen(w, wuerfel){
       else if(art === "pyramide") pyramide(o, stein);
       else if(art === "huette") huette(o);
       else if(art === "iglu") iglu(o);
-      else if(art === "spitzen") spitzen(o, w.name === "Ewiges Eis" ? B_EIS
-                                    : (w.name === "Schwefelhöhle" ? B_SCHWEFEL
-                                    : (w.name === "Seelengarten" ? B_SEELENKRISTALL : B_KRISTALL)), wuerfel);
+      else if(art === "spitzen") spitzen(o, w.nameDe === "Ewiges Eis" ? B_EIS
+                                    : (w.nameDe === "Schwefelhöhle" ? B_SCHWEFEL
+                                    : (w.nameDe === "Seelengarten" ? B_SEELENKRISTALL : B_KRISTALL)), wuerfel);
       else if(art === "pilzriese") pilzriese(o, wuerfel);
       else if(art === "pilzkoloss") pilzkoloss(o, wuerfel);
     }
@@ -2683,11 +3240,11 @@ function hudZeichnen(){
   const bq = w.quests.find(q => q.typ === "boss");
   const offen = normal.filter(q => !s.fertig[q.id]).length;
   h += '<div class="bosszeile">';
-  if(s.fertig[bq.id]) h += '<span class="c-good">👑 ' + w.boss.name + " besiegt</span>";
+  if(s.fertig[bq.id]) h += '<span class="c-good">👑 ' + w.boss.name + ue(" besiegt</span>");
   else if(!offen) h += '<span style="color:#ffb03a">👹 ' + w.boss.name
-    + " wartet in der Arena<br><span style=\'font-size:10.5px\'>oranger Kreis auf der Karte</span></span>";
-  else h += '<span class="c-dim">🔒 ' + w.boss.name + "<br><span style='font-size:10.5px'>kommt erst, wenn die "
-    + (offen === 1 ? "Aufgabe" : offen + " Aufgaben") + " darüber erledigt " + (offen === 1 ? "ist" : "sind")
+    + ue(" wartet in der Arena<br><span style=\'font-size:10.5px\'>oranger Kreis auf der Karte</span></span>");
+  else h += '<span class="c-dim">🔒 ' + w.boss.name + ue("<br><span style='font-size:10.5px'>kommt erst, wenn die ")
+    + (offen === 1 ? ue("Aufgabe") : offen + ue(" Aufgaben")) + ue(" darüber erledigt ") + (offen === 1 ? ue("ist") : ue("sind"))
     + "</span></span>";
   h += "</div>";
   $("questbox").innerHTML = h;
@@ -2698,7 +3255,7 @@ function gurtBauen(){
   gewaehlt = klemm(gewaehlt, 0, Math.max(0, liste.length-1));
   g.innerHTML = "";
   if(!liste.length){
-    g.innerHTML = '<div class="leer">Leeres Inventar – halte die linke Maustaste auf einen Block, um ihn abzubauen</div>';
+    g.innerHTML = ue('<div class="leer">Leeres Inventar – halte die linke Maustaste auf einen Block, um ihn abzubauen</div>');
     return;
   }
   liste.forEach((id, i) => {
@@ -2728,12 +3285,12 @@ function meldungenAufraeumen(){
 }
 function hinweisPruefen(){
   let t = "";
-  if(werkbankNah()) t = "[E] Werkbank – 3×3 herstellen";
-  else if(naheOrt(lagerOrt, 4.5)) t = "[E] Lagerfeuer – rasten & handeln";
+  if(werkbankNah()) t = ue("[E] Werkbank – 3×3 herstellen");
+  else if(naheOrt(lagerOrt, 4.5)) t = ue("[E] Lagerfeuer – rasten & handeln");
   else if(naheOrt(portalOrt, 4.5)){
-    if(!WELTEN[s.welt].quests.every(q => s.fertig[q.id])) t = "🔒 Portal verschlossen – erst alle Quests";
-    else if(s.welt + 1 < WELTEN.length && s.welt + 1 > s.freigeschaltet) t = "[E] Portal nach " + WELTEN[s.welt+1].name;
-    else t = "[E] Portal – Welt wechseln";
+    if(!WELTEN[s.welt].quests.every(q => s.fertig[q.id])) t = ue("🔒 Portal verschlossen – erst alle Quests");
+    else if(s.welt + 1 < WELTEN.length && s.welt + 1 > s.freigeschaltet) t = ue("[E] Portal nach ") + WELTEN[s.welt+1].name;
+    else t = ue("[E] Portal – Welt wechseln");
   }
   $("hinweis").classList.toggle("hidden", !t);
   $("hinweis").textContent = t;
@@ -2763,30 +3320,30 @@ function benutzen(){
   if(naheOrt(lagerOrt, 4.5)){ ladenZeichnen(); oeffne("lager"); return; }
   if(naheOrt(portalOrt, 4.5)){
     if(WELTEN[s.welt].quests.every(q => s.fertig[q.id])) portalNehmen();
-    else meldung("Das Portal ist verschlossen. Erledige zuerst alle Quests.", "c-bad");
+    else meldung(ue("Das Portal ist verschlossen. Erledige zuerst alle Quests."), "c-bad");
     return;
   }
-  meldung("Hier gibt es nichts zu benutzen.", "c-dim");
+  meldung(ue("Hier gibt es nichts zu benutzen."), "c-dim");
 }
 function tafelZeigen(art){
   const w = WELTEN[s.welt];
   let h = "";
   if(art === "quests"){
-    $("tafelTitel").textContent = "📜 Quests – " + w.name;
+    $("tafelTitel").textContent = ue("📜 Quests – ") + w.name;
     const offenVor = w.quests.filter(q => q.typ !== "boss" && !s.fertig[q.id]).length;
     w.quests.forEach(q => {
       const p = fortschritt(q), ok = !!s.fertig[q.id];
       const gesperrt = q.typ === "boss" && offenVor > 0 && !ok;
       h += '<div class="karte2 ' + (ok?"ok":"") + '"><div style="flex:1">' + (ok?"✅ ":(gesperrt?"🔒 ":"🔸 ")) + q.text
-        + (gesperrt ? '<br><span class="c-dim" style="font-size:12px">Der Boss erscheint erst in der Arena, '
-            + 'wenn die ' + (offenVor === 1 ? "andere Aufgabe" : "anderen " + offenVor + " Aufgaben")
-            + ' erledigt ' + (offenVor === 1 ? "ist" : "sind") + '.</span>' : "")
+        + (gesperrt ? ue('<br><span class="c-dim" style="font-size:12px">Der Boss erscheint erst in der Arena, ')
+            + ue('wenn die ') + (offenVor === 1 ? ue("andere Aufgabe") : ue("anderen ") + offenVor + ue(" Aufgaben"))
+            + ' erledigt ' + (offenVor === 1 ? ue("ist") : ue("sind")) + '.</span>' : "")
         + ' <span class="c-dim">(' + p + "/" + q.anz + ')</span><div class="balkenmini"><i style="width:'
         + (p/q.anz*100) + '%"></i></div></div><span class="c-gold">+' + q.xp + " XP<br>+" + q.gold + " 💰</span></div>";
     });
     const offen = w.quests.filter(q => !s.fertig[q.id]).length;
-    h += offen ? '<p class="c-dim">Noch ' + offen + " Quest(s), dann öffnet sich das Portal.</p>"
-               : '<p class="c-good">Alle Quests erledigt – ab zum Portal! 🌀</p>';
+    h += offen ? ue('<p class="c-dim">Noch ') + offen + ue(" Quest(s), dann öffnet sich das Portal.</p>")
+               : ue('<p class="c-good">Alle Quests erledigt – ab zum Portal! 🌀</p>');
   } else {
     $("tafelInhalt").innerHTML = "";
     oeffne("tafel");
@@ -2838,24 +3395,24 @@ function skinSetzen(url){
   }catch(e){}
   if(url) skinFigurBauen(); else figurenAuffrischen();
   const f = $("skinfehler");
-  if(f) f.textContent = url ? "" : "Zurück zur gezeichneten Figur.";
+  if(f) f.textContent = url ? "" : ue("Zurück zur gezeichneten Figur.");
 }
 function skinDateiWaehlen(datei){
   const f = $("skinfehler");
   if(!datei) return;
-  if(datei.size > 400000){ f.textContent = "Die Datei ist zu groß für einen Skin."; return; }
+  if(datei.size > 400000){ f.textContent = ue("Die Datei ist zu groß für einen Skin."); return; }
   const leser = new FileReader();
-  leser.onerror = () => { f.textContent = "Die Datei ließ sich nicht lesen."; };
+  leser.onerror = () => { f.textContent = ue("Die Datei ließ sich nicht lesen."); };
   leser.onload = () => {
     const bild = new Image();
-    bild.onerror = () => { f.textContent = "Das ist kein Bild, das ich lesen kann."; };
+    bild.onerror = () => { f.textContent = ue("Das ist kein Bild, das ich lesen kann."); };
     bild.onload = () => {
       if(bild.width !== 64 || (bild.height !== 64 && bild.height !== 32)){
-        f.textContent = "Das Bild ist " + bild.width + "×" + bild.height
-          + " groß. Ein Minecraft-Skin muss 64×64 sein (ganz alte 64×32).";
+        f.textContent = ue("Das Bild ist ") + bild.width + "×" + bild.height
+          + ue(" groß. Ein Minecraft-Skin muss 64×64 sein (ganz alte 64×32).");
         return;
       }
-      f.textContent = "Skin übernommen ✓";
+      f.textContent = ue("Skin übernommen ✓");
       skinSetzen(leser.result);
     };
     bild.src = leser.result;
@@ -3093,7 +3650,7 @@ function ergebnisSymbol(plan){
 }
 function bastelZeichnen(){
   const gross = werkbankNah();
-  $("tafelTitel").textContent = gross ? "🔨 Werkbank (3×3)" : "🎒 Inventar (2×2)";
+  $("tafelTitel").textContent = gross ? ue("🔨 Werkbank (3×3)") : ue("🎒 Inventar (2×2)");
   const felder = gitterFelder(gross);
   const plan = findePlan(gross);
   const machbar = plan && vorratReicht();
@@ -3103,7 +3660,7 @@ function bastelZeichnen(){
   felder.forEach(f => {
     const id = gitter[f];
     h += '<div class="slot' + (id ? " voll" : "") + '" onclick="gitterKlick(' + f + ',' + gross + ')" title="'
-      + (id ? dingName(id) + " – klicken zum Zurücklegen" : "hier ein Material ablegen") + '">'
+      + (id ? dingName(id) + ue(" – klicken zum Zurücklegen") : ue("hier ein Material ablegen")) + '">'
       + (id ? '<img src="' + symbolBild(id) + '">' : "") + "</div>";
   });
   h += "</div>";
@@ -3113,19 +3670,19 @@ function bastelZeichnen(){
     + (plan ? '<img src="' + symbolBild(ergebnisSymbol(plan)) + '">'
               + '<u>' + (plan.ergebnis.n || 1) + "</u>" : "") + "</div>";
   h += '<div class="ergebnistext">' + (plan
-        ? "<b>" + plan.name + "</b>" + (machbar ? '<br><span class="c-good">anklicken zum Herstellen</span>'
+        ? "<b>" + plan.name + "</b>" + (machbar ? ue('<br><span class="c-good">anklicken zum Herstellen</span>')
                                                : '<br><span class="c-bad">zu wenig Material</span>')
-        : '<span class="c-dim">Leg ein Muster ins Gitter<br>oder wähle unten einen Bauplan</span>') + "</div>";
+        : ue('<span class="c-dim">Leg ein Muster ins Gitter<br>oder wähle unten einen Bauplan</span>')) + "</div>";
   h += "</div>";
 
-  if(!gross) h += '<p class="c-dim" style="margin:6px 0 0">Für 3×3-Baupläne brauchst du eine <b>Werkbank</b>: '
-    + 'stell sie hin und geh nah ran.</p>';
-  if(handMaterial) h += '<p class="c-gold" style="margin:6px 0 0">In der Hand: <b>' + dingName(handMaterial)
+  if(!gross) h += ue('<p class="c-dim" style="margin:6px 0 0">Für 3×3-Baupläne brauchst du eine <b>Werkbank</b>: ')
+    + ue('stell sie hin und geh nah ran.</p>');
+  if(handMaterial) h += ue('<p class="c-gold" style="margin:6px 0 0">In der Hand: <b>') + dingName(handMaterial)
     + "</b> – klick ein Gitterfeld an.</p>";
 
-  h += '<h3 style="margin-top:16px">Dein Vorrat – zum Auswählen anklicken</h3>';
+  h += ue('<h3 style="margin-top:16px">Dein Vorrat – zum Auswählen anklicken</h3>');
   const mats = alleSachen();
-  if(!mats.length) h += '<p class="c-dim">Noch nichts gesammelt. Halte draußen die linke Maustaste auf einen Block.</p>';
+  if(!mats.length) h += ue('<p class="c-dim">Noch nichts gesammelt. Halte draußen die linke Maustaste auf einen Block.</p>');
   else {
     h += '<div class="gitter">';
     mats.forEach(id => {
@@ -3137,12 +3694,12 @@ function bastelZeichnen(){
     h += "</div>";
   }
 
-  h += '<h3 style="margin-top:16px">Baupläne</h3>';
+  h += ue('<h3 style="margin-top:16px">Baupläne</h3>');
   BAUPLAENE.forEach((p, i) => {
     const gesperrt = p.gross && !gross;
     h += '<div class="karte2"><span>' + (gesperrt ? "🔒 " : "") + p.name
       + ' <span class="c-dim">' + planText(p) + "</span></span>"
-      + '<button ' + (gesperrt ? "disabled" : "") + ' onclick="planLegen(' + i + ',' + gross + ')">ins Gitter legen</button></div>';
+      + '<button ' + (gesperrt ? "disabled" : "") + ' onclick="planLegen(' + i + ',' + gross + ue(')">ins Gitter legen</button></div>');
   });
 
   h += '<h3 style="margin-top:16px">Brauen</h3>';
@@ -3152,8 +3709,8 @@ function bastelZeichnen(){
       + '<button class="goldbtn" ' + (geht ? "" : "disabled") + ' onclick="brauen(' + i + ')">Brauen</button></div>';
   });
 
-  h += '<h3 style="margin-top:16px">Ausrüstung & Vorrat</h3>';
-  h += '<div class="karte2"><span>🧪 Heiltränke</span><b>' + s.traenke + "</b></div>";
+  h += ue('<h3 style="margin-top:16px">Ausrüstung & Vorrat</h3>');
+  h += ue('<div class="karte2"><span>🧪 Heiltränke</span><b>') + s.traenke + "</b></div>";
   WELTEN.forEach(wl => {
     const n = s.sachen[wl.item.id] || 0;
     if(n > 0) h += '<div class="karte2"><span>' + wl.item.name + "</span><b>" + n + "</b></div>";
@@ -3162,8 +3719,8 @@ function bastelZeichnen(){
     + grabTempo(BLOECKE[B_STEIN]).toFixed(1) + " · " + (BLOECKE[B_STEIN].haerte/grabTempo(BLOECKE[B_STEIN])).toFixed(1) + " s</b></div>";
   h += '<div class="karte2"><span>🪓 ' + AEXTE[s.axt].name + "</span><b>Holz ×"
     + grabTempo(BLOECKE[B_HOLZ]).toFixed(1) + " · " + (BLOECKE[B_HOLZ].haerte/grabTempo(BLOECKE[B_HOLZ])).toFixed(1) + " s</b></div>";
-  h += '<div class="karte2"><span>🗡️ ' + WAFFEN[s.waffe].name + "</span><b>+" + WAFFEN[s.waffe].atk + " Angriff</b></div>";
-  h += '<div class="karte2"><span>🛡️ ' + RUESTUNGEN[s.ruestung].name + "</span><b>+" + RUESTUNGEN[s.ruestung].def + " Rüstung</b></div>";
+  h += '<div class="karte2"><span>🗡️ ' + WAFFEN[s.waffe].name + "</span><b>+" + WAFFEN[s.waffe].atk + ue(" Angriff</b></div>");
+  h += '<div class="karte2"><span>🛡️ ' + RUESTUNGEN[s.ruestung].name + "</span><b>+" + RUESTUNGEN[s.ruestung].def + ue(" Rüstung</b></div>");
   $("tafelInhalt").innerHTML = h;
 }
 function planText(p){
@@ -3178,8 +3735,8 @@ function materialWaehlen(id){
 }
 function gitterKlick(feld, gross){
   if(gitter[feld]){ gitter[feld] = 0; bastelZeichnen(); return; }   // zurücklegen
-  if(!handMaterial){ meldung("Wähle erst unten ein Material aus.", "c-dim"); return; }
-  if(habe(handMaterial) - imGitter(handMaterial) <= 0){ meldung("Davon hast du nicht mehr.", "c-bad"); return; }
+  if(!handMaterial){ meldung(ue("Wähle erst unten ein Material aus."), "c-dim"); return; }
+  if(habe(handMaterial) - imGitter(handMaterial) <= 0){ meldung(ue("Davon hast du nicht mehr."), "c-bad"); return; }
   gitter[feld] = handMaterial;
   bastelZeichnen();
 }
@@ -3189,19 +3746,19 @@ function brauen(nr){
   s.sachen[r.ein.s] -= r.ein.n;
   if(r.aus.trank) s.traenke += r.aus.trank;
   if(r.aus.mp) s.mp = Math.min(s.maxMp, s.mp + r.aus.mp);
-  meldung("🧪 Gebraut: " + r.text.split("→")[1].trim(), "c-gold");
+  meldung(ue("🧪 Gebraut: ") + r.text.split("→")[1].trim(), "c-gold");
   speichern(); hudZeichnen(); bastelZeichnen();
 }
 function ladenZeichnen(){
-  let h = '<p class="c-dim" style="margin-top:0">Du hast <b class="c-gold">' + s.gold + " 💰</b></p>";
-  h += ladenZeile("🧪 Heiltrank <span class='c-dim'>heilt " + Math.max(60, Math.round(s.maxHp*0.25)) + " Leben</span>", 30, "trank");
-  h += ladenZeile("💧 Manatrank <span class='c-dim'>+30 MP sofort</span>", 25, "mana");
+  let h = ue('<p class="c-dim" style="margin-top:0">Du hast <b class="c-gold">') + s.gold + " 💰</b></p>";
+  h += ladenZeile(ue("🧪 Heiltrank <span class='c-dim'>heilt ") + Math.max(60, Math.round(s.maxHp*0.25)) + ue(" Leben</span>"), 30, "trank");
+  h += ladenZeile(ue("💧 Manatrank <span class='c-dim'>+30 MP sofort</span>"), 25, "mana");
   const nw = WAFFEN[s.waffe+1];
-  h += nw ? ladenZeile("🗡️ " + nw.name + " <span class='c-dim'>+" + nw.atk + " Angriff</span>", nw.preis, "waffe")
+  h += nw ? ladenZeile("🗡️ " + nw.name + " <span class='c-dim'>+" + nw.atk + ue(" Angriff</span>"), nw.preis, "waffe")
           : '<div class="karte2"><span>🗡️ Beste Waffe getragen</span></div>';
   const nr = RUESTUNGEN[s.ruestung+1];
-  h += nr ? ladenZeile("🛡️ " + nr.name + " <span class='c-dim'>+" + nr.def + " Rüstung</span>", nr.preis, "ruestung")
-          : '<div class="karte2"><span>🛡️ Beste Rüstung getragen</span></div>';
+  h += nr ? ladenZeile("🛡️ " + nr.name + " <span class='c-dim'>+" + nr.def + ue(" Rüstung</span>"), nr.preis, "ruestung")
+          : ue('<div class="karte2"><span>🛡️ Beste Rüstung getragen</span></div>');
   $("ladenInhalt").innerHTML = h;
   $("rastknopf").disabled = s.gold < 10;
 }
@@ -3212,16 +3769,16 @@ function ladenZeile(text, preis, was){
 function kaufe(was, preis){
   if(s.gold < preis) return;
   s.gold -= preis;
-  if(was === "trank"){ s.traenke++; meldung("Heiltrank gekauft.", "c-gold"); }
-  if(was === "mana"){ s.mp = Math.min(s.maxMp, s.mp+30); meldung("Manatrank getrunken. +30 MP", "c-mag"); }
-  if(was === "waffe"){ s.waffe++; meldung("Neue Waffe: " + WAFFEN[s.waffe].name + "!", "c-gold"); }
-  if(was === "ruestung"){ s.ruestung++; meldung("Neue Rüstung: " + RUESTUNGEN[s.ruestung].name + "!", "c-gold"); }
+  if(was === "trank"){ s.traenke++; meldung(ue("Heiltrank gekauft."), "c-gold"); }
+  if(was === "mana"){ s.mp = Math.min(s.maxMp, s.mp+30); meldung(ue("Manatrank getrunken. +30 MP"), "c-mag"); }
+  if(was === "waffe"){ s.waffe++; meldung(ue("Neue Waffe: ") + WAFFEN[s.waffe].name + "!", "c-gold"); }
+  if(was === "ruestung"){ s.ruestung++; meldung(ue("Neue Rüstung: ") + RUESTUNGEN[s.ruestung].name + "!", "c-gold"); }
   speichern(); ladenZeichnen(); hudZeichnen();
 }
 function rasten(){
   if(s.gold < 10) return;
   s.gold -= 10; s.hp = s.maxHp; s.mp = s.maxMp;
-  meldung("Am Feuer gerastet. Leben und Magie voll. 🔥", "c-good");
+  meldung(ue("Am Feuer gerastet. Leben und Magie voll. 🔥"), "c-good");
   speichern(); ladenZeichnen(); hudZeichnen();
 }
 
@@ -3239,13 +3796,13 @@ function kampfStarten(o){
   if(modus !== "welt") return;
   gegner = o; spielerDran = true;
   $("kampflog").innerHTML = "";
-  $("kampfort").textContent = WELTEN[s.welt].name + " · Kampf";
+  $("kampfort").textContent = WELTEN[s.welt].name + ue(" · Kampf");
   $("figurP").src = heldBild();
   $("figurG").textContent = o.emoji;
   $("figurG").style.fontSize = o.boss ? "84px" : "58px";
   $("nameG").textContent = o.name + (o.boss ? " 👑" : "");
-  $("nameP").textContent = spielerName + " (Stufe " + s.level + ")";
-  kampflog((o.boss ? "⚠️ " : "⚔️ ") + o.name + " stellt sich dir!", o.boss ? "c-bad" : "");
+  $("nameP").textContent = spielerName + ue(" (Stufe ") + s.level + ")";
+  kampflog((o.boss ? "⚠️ " : "⚔️ ") + o.name + ue(" stellt sich dir!"), o.boss ? "c-bad" : "");
   knoepfe(false);
   oeffne("kampf");
   modus = "kampf";
@@ -3264,7 +3821,7 @@ function aktion(art){
   if(modus !== "kampf" || !spielerDran || !gegner) return;
   if(art === "feuer" && s.mp < 8){ kampflog("Nicht genug Magie!", "c-bad"); return; }
   if(art === "heil" && s.mp < 10){ kampflog("Nicht genug Magie!", "c-bad"); return; }
-  if(art === "trank" && s.traenke <= 0){ kampflog("Keine Tränke mehr!", "c-bad"); return; }
+  if(art === "trank" && s.traenke <= 0){ kampflog(ue("Keine Tränke mehr!"), "c-bad"); return; }
   spielerDran = false; knoepfe(true);
 
   if(art === "angriff"){
@@ -3274,27 +3831,27 @@ function aktion(art){
     if(krit) dmg = Math.round(dmg*1.9);
     gegner.hp -= dmg;
     setTimeout(() => animiere("figurG","treffer"), 110);
-    kampflog("Du triffst für <b>" + dmg + "</b> Schaden." + (krit?" 💥 KRITISCH!":""), krit?"c-gold":"");
+    kampflog(ue("Du triffst für <b>") + dmg + ue("</b> Schaden.") + (krit?" 💥 KRITISCH!":""), krit?"c-gold":"");
   } else if(art === "feuer"){
     s.mp -= 8; animiere("figurP","schlagA");
     const dmg = Math.max(1, Math.round(s.mag*2.1) + rnd(0,6) - Math.floor(gegner.def/4));
     gegner.hp -= dmg;
     setTimeout(() => animiere("figurG","treffer"), 110);
-    kampflog("🔥 Feuerball für <b>" + dmg + "</b> Schaden.", "c-mag");
+    kampflog(ue("🔥 Feuerball für <b>") + dmg + ue("</b> Schaden."), "c-mag");
   } else if(art === "heil"){
     s.mp -= 10;
     const h = 25 + s.mag*2;
     s.hp = Math.min(s.maxHp, s.hp+h);
-    kampflog("💚 Heilung: +" + h + " Leben.", "c-good");
+    kampflog(ue("💚 Heilung: +") + h + ue(" Leben."), "c-good");
   } else if(art === "trank"){
     s.traenke--;
     const heil = Math.max(60, Math.round(s.maxHp*0.25));      // wächst mit dir mit
     s.hp = Math.min(s.maxHp, s.hp + heil);
-    kampflog("🧪 Trank getrunken: +" + heil + " Leben.", "c-good");
+    kampflog(ue("🧪 Trank getrunken: +") + heil + ue(" Leben."), "c-good");
   } else if(art === "flucht"){
-    if(gegner.boss) kampflog("Vor einem Boss gibt es kein Entkommen!", "c-bad");
+    if(gegner.boss) kampflog(ue("Vor einem Boss gibt es kein Entkommen!"), "c-bad");
     else if(Math.random() < 0.55){
-      kampflog("🏃 Du entkommst!", "c-dim");
+      kampflog(ue("🏃 Du entkommst!"), "c-dim");
       gegner.ruhe = 5;
       const wx = pos.x - gegner.x, wz = pos.z - gegner.z, l = Math.hypot(wx,wz) || 1;
       gegner.x -= wx/l*3; gegner.z -= wz/l*3;
@@ -3317,21 +3874,21 @@ function gegnerZug(){
     dmg = Math.round(dmg*1.4);
     if(!gegner.rasend){
       gegner.rasend = true;
-      kampflog("🔥 " + gegner.name + " wird <b>rasend</b> und schlägt härter zu!", "c-bad");
+      kampflog("🔥 " + gegner.name + ue(" wird <b>rasend</b> und schlägt härter zu!"), "c-bad");
     }
   }
   s.hp -= dmg;
   setTimeout(() => animiere("figurP","treffer"), 110);
-  kampflog(gegner.name + " trifft dich für <b>" + dmg + "</b> Schaden." + (wucht?" 💢 WUCHTSCHLAG!":""), "c-bad");
+  kampflog(gegner.name + ue(" trifft dich für <b>") + dmg + ue("</b> Schaden.") + (wucht?" 💢 WUCHTSCHLAG!":""), "c-bad");
   kampfZeichnen();
-  if(s.hp <= 0){ setTimeout(() => sterben("im Kampf"), 500); return; }
+  if(s.hp <= 0){ setTimeout(() => sterben(ue("im Kampf")), 500); return; }
   spielerDran = true; knoepfe(false);
 }
 function sieg(){
   if(!gegner) return;
   const g = gegner;
   kampflog("🎉 " + g.name + " besiegt! +" + g.xp + " XP, +" + g.gold + " 💰", "c-good");
-  meldung("🎉 " + g.name + " besiegt (+" + g.xp + " XP, +" + g.gold + " 💰)", "c-good");
+  meldung("🎉 " + g.name + ue(" besiegt (+") + g.xp + " XP, +" + g.gold + " 💰)", "c-good");
   s.gold += g.gold;
   s.kills[g.id] = (s.kills[g.id] || 0) + 1;
   if(g.boss) s.fertig[WELTEN[s.welt].quests.find(q => q.typ === "boss").id] = "besiegt";
@@ -3350,9 +3907,9 @@ function sterben(wo){
   pos.x = startOrt.x + 0.5; pos.z = startOrt.z + 0.5; pos.y = bodenHoehe(startOrt.x, startOrt.z) + 1;
   geschw.y = 0;
   kampfEnde();
-  infoZeigen("💀","Besiegt!","Du bist " + wo + " gestorben und erwachst am Startpunkt.<br>"
-    + verlust + " Gold sind weg. Rüste dich am Lagerfeuer aus!");
-  meldung("💀 Du bist gestorben. −" + verlust + " Gold.", "c-bad");
+  infoZeigen("💀",ue("Besiegt!"),ue("Du bist ") + wo + ue(" gestorben und erwachst am Startpunkt.<br>")
+    + verlust + ue(" Gold sind weg. Rüste dich am Lagerfeuer aus!"));
+  meldung(ue("💀 Du bist gestorben. −") + verlust + ue(" Gold."), "c-bad");
   speichern();
 }
 function kampfEnde(){ gegner = null; schliesse("kampf"); hudZeichnen(); }
@@ -3370,7 +3927,7 @@ function xpGeben(x){
     s.maxMp += 4;  s.mp = s.maxMp;
     s.atk += 2; s.def += 1; s.mag += 2;
     offeneStufen++;
-    meldung("🌟 Stufe " + s.level + " erreicht!", "c-gold");
+    meldung(ue("🌟 Stufe ") + s.level + ue(" erreicht!"), "c-gold");
   }
   hudZeichnen();
   if(offeneStufen > 0) stufeZeigen();
@@ -3405,12 +3962,12 @@ function questsPruefen(){
   if(w.quests.every(q => s.fertig[q.id])){
     if(s.welt === WELTEN.length-1 && !s.gewonnen){
       s.gewonnen = true;
-      infoZeigen("🏆","Du hast gewonnen!","Der Schattenfürst ist gefallen, alle drei Welten sind frei.<br>"
-        + "Endstand: Stufe <b>" + s.level + "</b> · " + s.gold + " 💰<br>Durch das Portal kommst du jetzt in <b>jede</b> Welt zurück – deine Bauten stehen dort noch.");
+      infoZeigen("🏆",ue("Du hast gewonnen!"),ue("Der Schattenfürst ist gefallen, alle drei Welten sind frei.<br>")
+        + ue("Endstand: Stufe <b>") + s.level + "</b> · " + s.gold + ue(" 💰<br>Durch das Portal kommst du jetzt in <b>jede</b> Welt zurück – deine Bauten stehen dort noch."));
     } else if(s.welt < WELTEN.length-1 && !s.fertig["portal"+s.welt]){
       s.fertig["portal"+s.welt] = true;
-      infoZeigen("🌀","Portal offen!","Alle Quests in " + w.name + " sind erledigt.<br>"
-        + "Der violette Punkt auf der Karte ist das Portal – geh hin und drück <b>E</b>.");
+      infoZeigen("🌀",ue("Portal offen!"),ue("Alle Quests in ") + w.name + ue(" sind erledigt.<br>")
+        + ue("Der violette Punkt auf der Karte ist das Portal – geh hin und drück <b>E</b>."));
     }
   }
   speichern(); hudZeichnen();
@@ -3433,10 +3990,10 @@ function reiseNach(nr, zumErstenMal){
   weltLaden();
   const w = WELTEN[nr];
   if(zumErstenMal)
-    infoZeigen(w.emoji, "Neue Welt: " + w.name, w.beschreibung
-      + "<br><br>Die Gegner hier sind viel stärker – schmiede dir am besten erst bessere Werkzeuge!");
+    infoZeigen(w.emoji, ue("Neue Welt: ") + w.name, w.beschreibung
+      + ue("<br><br>Die Gegner hier sind viel stärker – schmiede dir am besten erst bessere Werkzeuge!"));
   else
-    meldung("🌀 Angekommen in " + w.name + ". Deine Bauten stehen noch.", "c-mag");
+    meldung(ue("🌀 Angekommen in ") + w.name + ue(". Deine Bauten stehen noch."), "c-mag");
   speichern();
 }
 function reiseFenster(){
@@ -3446,9 +4003,9 @@ function reiseFenster(){
     const hier = i === s.welt;
     const fertig = w.quests.every(q => s.fertig[q.id]);
     h += '<div class="karte2"><span>' + w.emoji + " <b>" + w.name + "</b>"
-      + (hier ? ' <span class="c-dim">– du bist hier</span>'
+      + (hier ? ue(' <span class="c-dim">– du bist hier</span>')
               : (fertig ? ' <span class="c-good">– befreit</span>' : ' <span class="c-gold">– Quests offen</span>')) + "</span>"
-      + '<button class="primary" ' + (hier ? "disabled" : "") + ' onclick="reiseNach(' + i + ',false)">Reisen</button></div>';
+      + '<button class="primary" ' + (hier ? "disabled" : "") + ' onclick="reiseNach(' + i + ue(',false)">Reisen</button></div>');
   }
   $("reiseZiele").innerHTML = h;
   oeffne("reise");
@@ -3469,10 +4026,10 @@ function weltLaden(){
   for(let i=0; i<8; i++) itemSetzen();
   const w = WELTEN[s.welt];
   if(w.quests.filter(q => q.typ !== "boss").every(q => s.fertig[q.id])) bossSetzen();
-  meldung("Willkommen in " + w.name + ".", "c-mag");
+  meldung(ue("Willkommen in ") + w.name + ".", "c-mag");
   meldung(w.beschreibung, "c-dim");
   if(!besitz().length)
-    meldung("⛏️ Linke Maustaste <b>gedrückt halten</b>, bis der Block zerbricht · <b>I</b> = Inventar & Herstellen", "c-gold");
+    meldung(ue("⛏️ Linke Maustaste <b>gedrückt halten</b>, bis der Block zerbricht · <b>I</b> = Inventar & Herstellen"), "c-gold");
   hudZeichnen();
 }
 
@@ -3494,7 +4051,7 @@ addEventListener("keydown", e => {
   if(k === "e") benutzen();
   if(k === "r"){
     kameraModus = (kameraModus + 1) % 3;
-    meldung("🎥 Kamera: " + KAMERA_NAMEN[kameraModus], "c-mag");
+    meldung(ue("🎥 Kamera: ") + ue(KAMERA_NAMEN[kameraModus]), "c-mag");
   }
   if(k === "q") tafelZeigen("quests");
   if(k === "i") tafelZeigen("tasche");
@@ -3603,7 +4160,7 @@ function schleife(zeit){
     meldungenAufraeumen();
     bildZaehler++;
     if(zeit - fpsZeit > 500){
-      $("fps").textContent = Math.round(bildZaehler*1000/(zeit-fpsZeit)) + " fps";
+      $("fps").textContent = Math.round(bildZaehler*1000/(zeit-fpsZeit)) + ue(" fps");
       $("koord").textContent = "x " + Math.floor(pos.x) + " · y " + Math.floor(pos.y) + " · z " + Math.floor(pos.z);
       bildZaehler = 0; fpsZeit = zeit;
     }
@@ -3628,12 +4185,12 @@ function nameAnzeigen(){
   figurenAuffrischen();
   $("grussName").textContent = spielerName;
   $("aname").textContent = spielerName;
-  if(gegner) $("nameP").textContent = spielerName + " (Stufe " + s.level + ")";
+  if(gegner) $("nameP").textContent = spielerName + ue(" (Stufe ") + s.level + ")";
 }
 function nameBestaetigen(){
   const roh = $("spielerFeld").value.replace(/[^\p{L}\p{N} _.\-]/gu, "").trim();
   if(roh.length < 2){
-    $("namefehler").textContent = "Bitte mindestens zwei Zeichen eingeben.";
+    $("namefehler").textContent = ue("Bitte mindestens zwei Zeichen eingeben.");
     $("spielerFeld").focus();
     return;
   }
@@ -3673,9 +4230,9 @@ function sicherungEinlesen(text){
   const meldungsfeld = $("uebertragMeldung");
   let daten;
   try{ daten = JSON.parse(text); }
-  catch(e){ meldungsfeld.textContent = "Das ist kein gültiger Sicherungstext."; return false; }
+  catch(e){ meldungsfeld.textContent = ue("Das ist kein gültiger Sicherungstext."); return false; }
   if(!daten || daten.marke !== "weltenkaempfer"){
-    meldungsfeld.textContent = "Dieser Text gehört nicht zu Weltenkämpfer.";
+    meldungsfeld.textContent = ue("Dieser Text gehört nicht zu Weltenkämpfer.");
     return false;
   }
   let welten = 0;
@@ -3694,12 +4251,12 @@ function sicherungEinlesen(text){
     });
     listeSchreiben(jetzt);
   }catch(e){
-    meldungsfeld.textContent = "Der Speicher ist voll – es passt nicht alles hinein.";
+    meldungsfeld.textContent = ue("Der Speicher ist voll – es passt nicht alles hinein.");
     return false;
   }
   nameLaden(); skinLaden(); nameAnzeigen(); weltlisteZeichnen();
-  meldungsfeld.textContent = welten + " Welt(en) übernommen"
-    + (daten.spieler ? ", Spieler: " + daten.spieler : "") + " ✓";
+  meldungsfeld.textContent = welten + ue(" Welt(en) übernommen")
+    + (daten.spieler ? ue(", Spieler: ") + daten.spieler : "") + " ✓";
   return true;
 }
 // Im claude.ai-Fenster darf eine Seite keine Dateien speichern - dort nur Zwischenablage
@@ -3711,7 +4268,7 @@ function uebertragZeigen(){
   if(dl) dl.style.display = dateiSpeichernGeht ? "" : "none";
   const text = sicherungBauen();
   $("sicherungText").value = text;
-  $("sicherungGroesse").textContent = "Sicherung: " + Math.round(text.length/1024) + " kB";
+  $("sicherungGroesse").textContent = ue("Sicherung: ") + Math.round(text.length/1024) + " kB";
   $("einleseText").value = "";
   $("uebertragMeldung").textContent = "";
   $("uebertragung").classList.remove("hidden");
@@ -3724,13 +4281,13 @@ function sicherungKopieren(){
   try{ geklappt = document.execCommand("copy"); }catch(e){}
   if(navigator.clipboard && !geklappt){
     navigator.clipboard.writeText(feld.value)
-      .then(() => { $("uebertragMeldung").textContent = "In die Zwischenablage kopiert ✓"; })
-      .catch(() => { $("uebertragMeldung").textContent = "Bitte den Text von Hand markieren und kopieren."; });
+      .then(() => { $("uebertragMeldung").textContent = ue("In die Zwischenablage kopiert ✓"); })
+      .catch(() => { $("uebertragMeldung").textContent = ue("Bitte den Text von Hand markieren und kopieren."); });
     return;
   }
   $("uebertragMeldung").textContent = geklappt
-    ? "In die Zwischenablage kopiert ✓"
-    : "Bitte den Text von Hand markieren und kopieren.";
+    ? ue("In die Zwischenablage kopiert ✓")
+    : ue("Bitte den Text von Hand markieren und kopieren.");
 }
 function sicherungDatei(){
   try{
@@ -3741,18 +4298,18 @@ function sicherungDatei(){
     document.body.appendChild(a);
     a.click();
     setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
-    $("uebertragMeldung").textContent = "Datei gespeichert – falls nichts passiert, "
-      + "nimm den Weg über die Zwischenablage.";
+    $("uebertragMeldung").textContent = ue("Datei gespeichert – falls nichts passiert, ")
+      + ue("nimm den Weg über die Zwischenablage.");
   }catch(e){
-    $("uebertragMeldung").textContent = "Speichern als Datei geht hier nicht – "
-      + "nimm den Text und die Zwischenablage.";
+    $("uebertragMeldung").textContent = ue("Speichern als Datei geht hier nicht – ")
+      + ue("nimm den Text und die Zwischenablage.");
   }
 }
 function sicherungDateiLesen(datei){
   if(!datei) return;
   const leser = new FileReader();
   leser.onload = () => { $("einleseText").value = leser.result; sicherungEinlesen(leser.result); };
-  leser.onerror = () => { $("uebertragMeldung").textContent = "Die Datei ließ sich nicht lesen."; };
+  leser.onerror = () => { $("uebertragMeldung").textContent = ue("Die Datei ließ sich nicht lesen."); };
   leser.readAsText(datei);
 }
 
@@ -3766,7 +4323,7 @@ function weltlisteZeichnen(){
   if(!l.length){
     const leer = document.createElement("p");
     leer.className = "c-dim";
-    leer.textContent = "Noch keine Welt. Leg unten deine erste an!";
+    leer.textContent = ue("Noch keine Welt. Leg unten deine erste an!");
     ziel.appendChild(leer);
     return;
   }
@@ -3783,8 +4340,8 @@ function weltlisteZeichnen(){
     const zeile = document.createElement("span");
     zeile.className = "c-dim";
     zeile.style.fontSize = "12px";
-    zeile.textContent = "Stufe " + (e.stufe||1) + " · " + wname
-                      + " · Startwert " + (e.saat||0) + (wann ? " · " + wann : "");
+    zeile.textContent = ue("Stufe ") + (e.stufe||1) + " · " + wname
+                      + ue(" · Startwert ") + (e.saat||0) + (wann ? " · " + wann : "");
     links.appendChild(name);
     links.appendChild(document.createElement("br"));
     links.appendChild(zeile);
@@ -3794,12 +4351,12 @@ function weltlisteZeichnen(){
     rechts.style.gap = "6px";
     const spielen = document.createElement("button");
     spielen.className = "primary";
-    spielen.textContent = "▶ Spielen";
+    spielen.textContent = ue("▶ Spielen");
     spielen.onclick = () => weltSpielen(e.id);
     const loeschen = document.createElement("button");
     loeschen.className = "danger";
     loeschen.textContent = "🗑️";
-    loeschen.title = "Welt löschen";
+    loeschen.title = ue("Welt löschen");
     loeschen.onclick = () => weltFragenLoeschen(e.id, e.name);
     rechts.appendChild(spielen);
     rechts.appendChild(loeschen);
@@ -3817,11 +4374,11 @@ function neueWelt(){
   starteAktuelleWelt();
 }
 function weltSpielen(id){
-  if(!standLaden(id)){ alert("Diese Welt lässt sich nicht laden."); return; }
+  if(!standLaden(id)){ alert(ue("Diese Welt lässt sich nicht laden.")); return; }
   starteAktuelleWelt();
 }
 function weltFragenLoeschen(id, name){
-  if(!confirm('Welt "' + name + '" wirklich löschen? Alles darin ist dann weg.')) return;
+  if(!confirm(ue('Welt "') + name + ue('" wirklich löschen? Alles darin ist dann weg.'))) return;
   weltLoeschen(id);
 }
 function starteAktuelleWelt(){
@@ -3864,6 +4421,7 @@ if(nameLaden()){
   $("anmeldung").classList.remove("hidden");
   setTimeout(() => $("spielerFeld").focus(), 100);
 }
+spracheAnwenden();                 // Deutsch oder Englisch, wie zuletzt gewählt
 requestAnimationFrame(schleife);
 </script>
 </body>
