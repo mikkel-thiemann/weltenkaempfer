@@ -2131,11 +2131,13 @@ function kastenSeiten(u, v, w, h, d){
 }
 // Ein Kasten wird zu zwölf Dreiecken. x/y/z sind Skin-Pixel, Mitte zwischen den Füßen.
 function kastenBauen(aus, x0, y0, z0, w, h, d, u, v, wachsen, teil){
+  // Erst den Bildausschnitt aus der echten Größe holen: die zweite Schicht wird
+  // gleich etwas größer, ihr Stück im Skin bleibt aber genau dasselbe.
+  const s = kastenSeiten(u, v, w, h, d);
   if(wachsen){                                   // zweite Schicht minimal größer
     const f = 0.55;
     x0 -= f; y0 -= f; z0 -= f; w += f*2; h += f*2; d += f*2;
   }
-  const s = kastenSeiten(u, v, Math.round(w), Math.round(h), Math.round(d));
   const x1 = x0+w, y1 = y0+h, z1 = z0+d;
   const T = 64;
   // Seite: vier Ecken gegen den Uhrzeigersinn + Bildausschnitt + Helligkeit
@@ -2916,6 +2918,10 @@ function galerieZeichnen(){
     const kopf = document.createElement("div");
     kopf.className = "skinkopf";
     kopf.style.backgroundImage = "url(" + eintrag.bild + ")";
+    // Alte 64×32-Skins sind halb so hoch - sonst zeigt die Kachel den falschen Ausschnitt
+    const messen = new Image();
+    messen.onload = () => { kopf.style.backgroundSize = (messen.width*6) + "px " + (messen.height*6) + "px"; };
+    messen.src = eintrag.bild;
     const name = document.createElement("span");
     name.textContent = eintrag.name;
     feld.appendChild(kopf);
