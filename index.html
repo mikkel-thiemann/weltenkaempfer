@@ -123,6 +123,7 @@
   .karte2{background:rgba(255,255,255,.05); border:1px solid var(--rahmen); border-radius:10px; padding:9px 12px;
           margin-bottom:8px; font-size:14px; display:flex; justify-content:space-between; align-items:center; gap:10px}
   .karte2.ok{border-color:var(--xp)}
+  .karte2.getragen{background:rgba(255,255,255,.02); border-style:dashed; margin-bottom:6px}
   .balkenmini{height:6px; background:rgba(0,0,0,.5); border-radius:3px; overflow:hidden; margin-top:6px}
   .balkenmini > i{display:block; height:100%; background:linear-gradient(90deg,var(--gold),var(--xp))}
 
@@ -846,7 +847,12 @@ const EN = {
   "💧 Manatrank <span class='c-dim'>+30 MP sofort</span>": "💧 Mana potion <span class='c-dim'>+30 MP at once</span>",
   "🧪 Heiltrank <span class='c-dim'>heilt ": "🧪 Healing potion <span class='c-dim'>heals ",
   "🧪 Trank getrunken: +": "🧪 Potion drunk: +",
-  ",false)\">Reisen</button></div>": ",false)\">Travel</button></div>"
+  ",false)\">Reisen</button></div>": ",false)\">Travel</button></div>",
+  " Angriff": " attack",
+  " Rüstung": " armor",
+  "<h3 style=\"margin-top:0\">Das trägst du gerade</h3>": "<h3 style=\"margin-top:0\">What you are carrying</h3>",
+  "<h3 style=\"margin-top:18px\">Kaufen</h3>": "<h3 style=\"margin-top:18px\">Buy</h3>",
+  "selbst geschmiedet": "forged by you"
 };
 function ue(s){
   if(sprache !== "en" || typeof s !== "string") return s;
@@ -3750,7 +3756,14 @@ function brauen(nr){
   speichern(); hudZeichnen(); bastelZeichnen();
 }
 function ladenZeichnen(){
-  let h = ue('<p class="c-dim" style="margin-top:0">Du hast <b class="c-gold">') + s.gold + " 💰</b></p>";
+  // Erst einmal zeigen, was man wirklich dabeihat - gekauft wie selbst geschmiedet
+  let h = ue('<h3 style="margin-top:0">Das trägst du gerade</h3>');
+  h += getragen("🗡️", WAFFEN[s.waffe],     WAFFEN[s.waffe].atk,     ue(" Angriff"));
+  h += getragen("🛡️", RUESTUNGEN[s.ruestung], RUESTUNGEN[s.ruestung].def, ue(" Rüstung"));
+  h += getragen("⛏️", HACKEN[s.hacke], 0, "");
+  h += getragen("🪓", AEXTE[s.axt],   0, "");
+  h += ue('<h3 style="margin-top:18px">Kaufen</h3>');
+  h += ue('<p class="c-dim" style="margin-top:0">Du hast <b class="c-gold">') + s.gold + " 💰</b></p>";
   h += ladenZeile(ue("🧪 Heiltrank <span class='c-dim'>heilt ") + Math.max(60, Math.round(s.maxHp*0.25)) + ue(" Leben</span>"), 30, "trank");
   h += ladenZeile(ue("💧 Manatrank <span class='c-dim'>+30 MP sofort</span>"), 25, "mana");
   const nw = WAFFEN[s.waffe+1];
@@ -3761,6 +3774,12 @@ function ladenZeichnen(){
           : ue('<div class="karte2"><span>🛡️ Beste Rüstung getragen</span></div>');
   $("ladenInhalt").innerHTML = h;
   $("rastknopf").disabled = s.gold < 10;
+}
+/* Ein Stück Ausrüstung, das man schon hat. Werte nur zeigen, wenn es welche gibt -
+   bei Spitzhacke und Axt steht die Stärke ja im Namen. */
+function getragen(symbol, ding, wert, einheit){
+  return '<div class="karte2 getragen"><span>' + symbol + " " + ding.name + "</span>"
+       + (wert ? '<b class="c-gold">+' + wert + einheit + "</b>" : "") + "</div>";
 }
 function ladenZeile(text, preis, was){
   return '<div class="karte2"><span>' + text + '</span><button class="goldbtn" '
