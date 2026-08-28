@@ -1560,10 +1560,16 @@ const gesDef = () => s.def + RUESTUNGEN[s.ruestung].def;
 /* =====================================================================
    WELTDATEN
    ===================================================================== */
-const WX = 192, WY = 56, WZ = 192, CH = 16;
+const WX = 192, WY = 900, WZ = 192, CH = 16;   // 900 Blöcke Bauhöhe
+/* Die Landschaft wurde früher von der damaligen Welthöhe (56) begrenzt. Diese
+   Grenzen bleiben genau so stehen: sonst entstünden alte Welten anders und die
+   Bauten der Spieler stünden plötzlich in der Luft. Nur nach oben ist jetzt
+   mehr Platz zum Bauen.                                                      */
+const GELAENDE = 56;
 const CX = WX/CH, CZ = WZ/CH;
 let bloecke = new Uint8Array(WX*WY*WZ);
 let hoehen  = new Int16Array(WX*WZ);
+let hoechsteEbene = 0;          // höchster nicht leerer Block +1, für die ganze Welt
 const idx = (x,y,z) => (y*WZ + z)*WX + x;
 function block(x,y,z){
   if(y < 0) return B_STEIN;
@@ -1572,7 +1578,9 @@ function block(x,y,z){
 }
 function setzeBlock(x,y,z,id,merken){
   if(x < 0 || y < 0 || z < 0 || x >= WX || y >= WY || z >= WZ) return;
+  if(imAufbau && y >= GELAENDE) return;      // Landschaft bleibt, wie sie immer war
   bloecke[idx(x,y,z)] = id;
+  if(id && y >= hoechsteEbene) hoechsteEbene = y + 1;
   if(merken){
     const k = s.welt + ":" + idx(x,y,z);
     if(Object.keys(s.aenderungen).length < 6000 || s.aenderungen[k] !== undefined) s.aenderungen[k] = id;
@@ -1580,7 +1588,10 @@ function setzeBlock(x,y,z,id,merken){
 }
 function bodenHoehe(x,z){
   x = Math.floor(x); z = Math.floor(z);
-  const start = deckenHoehe ? Math.min(WY-1, deckenHoehe-2) : WY-1;   // unter der Höhlendecke suchen
+  // So weit oben anfangen, wie in dieser Spalte überhaupt etwas steht
+  const spalte = (x >= 0 && z >= 0 && x < WX && z < WZ) ? hoehen[z*WX+x] : hoechsteEbene;
+  const start = deckenHoehe ? Math.min(WY-1, deckenHoehe-2)
+                            : Math.min(WY-1, Math.max(spalte, 1));   // unter der Höhlendecke suchen
   for(let y = start; y >= 0; y--) if(fest(block(x,y,z))) return y+1;
   return 0;
 }
@@ -1620,11 +1631,14 @@ let lagerOrt, portalOrt, bossOrt, startOrt;
 let gelaendeHoehen = null;
 let deckenHoehe = null;
 let schneeWelt = false;   // nur im Eis liegt Schnee auf den Fichten
+let imAufbau = false;     // solange die Welt entsteht, endet sie am alten Himmel
 function weltErzeugen(){
+  imAufbau = true;
   const w = WELTEN[s.welt];
   const saat = (w.saat + (s.saat||0)*7919) | 0;      // jede Spielwelt sieht anders aus
   const wuerfel = zufall(saat + 4711);               // fester Zufall: Orte bleiben, wo sie sind
   bloecke = new Uint8Array(WX*WY*WZ);
+  hoechsteEbene = 0;
 
   for(let z=0; z<WZ; z++){
     for(let x=0; x<WX; x++){
@@ -1632,7 +1646,7 @@ function weltErzeugen(){
       const rand = Math.pow(Math.max(Math.abs(mx), Math.abs(mz)), 5) * 26;   // Bergrand als Weltgrenze
       let h = Math.round(w.grund + fbm(x, z, saat, 4, 0.045)*w.hoehe + rand);
       if(w.terrassen) h = Math.round(h/2)*2;      // Absätze statt sanfter Hänge
-      h = klemm(h, 3, WY-6);
+      h = klemm(h, 3, GELAENDE-6);          // Landschaft wie früher
       hoehen[z*WX+x] = h;
       for(let y=0; y<=h; y++){
         let b = w.tief;
@@ -1723,12 +1737,17 @@ function weltErzeugen(){
   platzRaeumen(startOrt, 5, 16, w.oben);      // freie Lichtung am Startpunkt
   bauwerkeSetzen(w, wuerfel);
 
-  // gespeicherte Änderungen zurückspielen
+  // gespeicherte Änderungen zurückspielen - die dürfen bis ganz nach oben reichen
+  imAufbau = false;
   for(const k in s.aenderungen){
     const t = k.split(":");
     if(+t[0] !== s.welt) continue;
     const i = +t[1];
     bloecke[i] = s.aenderungen[k];
+    if(s.aenderungen[k]){                     // Höchstmarke mitziehen
+      const hy = (i / (WX*WZ)) | 0;
+      if(hy >= hoechsteEbene) hoechsteEbene = hy + 1;
+    }
   }
   hoehenNeu();
   kartenbildErzeugen();
@@ -1740,7 +1759,7 @@ function platzSuchen(zx, zz, w, wuerfel){
     for(let i=0; i<12; i++){
       const x = klemm(zx + streu(r), 6, WX-7), z = klemm(zz + streu(r), 6, WZ-7);
       const h = hoehen[z*WX+x];
-      if(h > w.seehoehe+1 && h < WY-14) return {x:x, y:h, z:z};
+      if(h > w.seehoehe+1 && h < GELAENDE-14) return {x:x, y:h, z:z};
     }
   }
   return {x:zx, y:hoehen[zz*WX+zx], z:zz};
@@ -1910,9 +1929,10 @@ function arenaBauen(o){
   }
 }
 function hoehenNeu(){
+  const oben = Math.min(WY-1, hoechsteEbene);
   for(let z=0; z<WZ; z++) for(let x=0; x<WX; x++){
     let h = 0;
-    for(let y=WY-1; y>=0; y--) if(block(x,y,z) !== B_LUFT){ h = y+1; break; }
+    for(let y=oben; y>=0; y--) if(block(x,y,z) !== B_LUFT){ h = y+1; break; }
     hoehen[z*WX+x] = h;
   }
 }
@@ -2194,8 +2214,10 @@ function netzBauen(c){
   const x0 = c.cx*CH, z0 = c.cz*CH;
   for(let z=z0; z<z0+CH; z++){
     for(let x=x0; x<x0+CH; x++){
+      // sonne ist zugleich die Obergrenze: darüber ist in dieser Spalte nur Luft.
+      // So kostet ein einzelner hoher Turm nicht das ganze Weltstück.
       const sonne = hoehen[z*WX+x];
-      for(let y=0; y<WY; y++){
+      for(let y=0; y<sonne; y++){
         const b = block(x,y,z);
         if(b === B_LUFT) continue;
         const def = BLOECKE[b];
@@ -2310,7 +2332,7 @@ function bewegen(dt){
   }
   pos.x = klemm(pos.x, 0.4, WX-0.4);
   pos.z = klemm(pos.z, 0.4, WZ-0.4);
-  if(pos.y < -8){ pos.y = WY-2; geschw.y = 0; }
+  if(pos.y < -8){ pos.y = bodenHoehe(pos.x, pos.z) + 1; geschw.y = 0; }
 
   // Nur die wirklich zurückgelegte Strecke zählt: an einer Wand strampelt niemand
   const gelaufen = Math.hypot(pos.x - startX, pos.z - startZ);
@@ -2428,7 +2450,7 @@ function setzen(){
 }
 function hoeheNeu(x,z){
   let h = 0;
-  for(let y=WY-1; y>=0; y--) if(block(x,y,z) !== B_LUFT){ h = y+1; break; }
+  for(let y=Math.min(WY-1, hoechsteEbene); y>=0; y--) if(block(x,y,z) !== B_LUFT){ h = y+1; break; }
   hoehen[z*WX+x] = h;
 }
 const naheOrt = (o, r) => o && Math.hypot(pos.x-o.x, pos.z-o.z) < r;
@@ -3076,7 +3098,7 @@ function bauplatz(wuerfel, w, radius, schonBelegt){
     const x = 10 + Math.floor(wuerfel()*(WX-20)), z = 10 + Math.floor(wuerfel()*(WZ-20));
     const boden = gelaendeHoehen || hoehen;
     const h = boden[z*WX+x];
-    if(h <= w.seehoehe+1 || h > WY-22) continue;
+    if(h <= w.seehoehe+1 || h > GELAENDE-22) continue;
     let min = 99, max = 0;
     for(let dz=-radius; dz<=radius; dz+=2)
       for(let dx=-radius; dx<=radius; dx+=2){
