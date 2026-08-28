@@ -845,7 +845,11 @@ const EN = {
   " Rüstung": " armor",
   "<h3 style=\"margin-top:0\">Das trägst du gerade</h3>": "<h3 style=\"margin-top:0\">What you are carrying</h3>",
   "<h3 style=\"margin-top:18px\">Kaufen</h3>": "<h3 style=\"margin-top:18px\">Buy</h3>",
-  "selbst geschmiedet": "forged by you"
+  "selbst geschmiedet": "forged by you",
+  "Bretter aus Dschungelholz": "Jungle Planks",
+  "Bretter aus Knochenholz": "Bone Planks",
+  "Bretter aus Pilzstiel": "Mushroom Planks",
+  "Bretter aus Schattenholz": "Shadow Planks"
 };
 function ue(s){
   if(sprache !== "en" || typeof s !== "string") return s;
@@ -1289,7 +1293,11 @@ const REIHENFOLGE = [B_GRAS, B_BLUETENBODEN, B_MYZEL, B_ERDE, B_SUMPFERDE, B_SAN
    gross = braucht 3×3, also eine Werkbank                                              */
 const BAUPLAENE = [
   {name:"Bretter",   ergebnis:{b:B_BRETTER, n:4}, formlos:[B_HOLZ]},
-  {name:"Bretter aus Kirschholz", ergebnis:{b:B_BRETTER, n:4}, formlos:[B_KIRSCHHOLZ]},
+  {name:"Bretter aus Kirschholz",    ergebnis:{b:B_BRETTER, n:4}, formlos:[B_KIRSCHHOLZ]},
+  {name:"Bretter aus Dschungelholz", ergebnis:{b:B_BRETTER, n:4}, formlos:[B_DSCHUNGELHOLZ]},
+  {name:"Bretter aus Schattenholz",  ergebnis:{b:B_BRETTER, n:4}, formlos:[B_SCHATTENHOLZ]},
+  {name:"Bretter aus Knochenholz",   ergebnis:{b:B_BRETTER, n:4}, formlos:[B_KNOCHEN]},
+  {name:"Bretter aus Pilzstiel",     ergebnis:{b:B_BRETTER, n:4}, formlos:[B_PILZSTIEL]},
   {name:"Stöcke",    ergebnis:{i:I_STOCK, n:4},   form:[["p"],["p"]],           schluessel:{p:B_BRETTER}},
   {name:"Werkbank",  ergebnis:{b:B_WERKBANK, n:1},form:[["p","p"],["p","p"]],   schluessel:{p:B_BRETTER}},
   {name:"Gras",      ergebnis:{b:B_GRAS, n:2},    formlos:[B_ERDE,B_ERDE,B_ERDE,B_ERDE,B_LAUB], gross:true},
