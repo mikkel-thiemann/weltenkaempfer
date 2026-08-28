@@ -1475,13 +1475,31 @@ function ausschnitt(){
   }
   return reihen;
 }
+/* Jede Holzart geht dort durch, wo ein Bauplan Bretter verlangt. So kann man
+   auch mit Dschungel-, Schatten-, Knochenholz oder Pilzstiel direkt bauen,
+   ohne sie vorher zu Brettern zu machen. */
+const HOLZARTEN = [B_HOLZ, B_KIRSCHHOLZ, B_DSCHUNGELHOLZ, B_SCHATTENHOLZ,
+                   B_KNOCHEN, B_PILZSTIEL, B_BRETTER];
+const istHolz = id => HOLZARTEN.indexOf(id) >= 0;
+const passtZutat = (soll, ist) => ist === soll || (soll === B_BRETTER && istHolz(ist));
+
 function passtPlan(plan){
   const belegt = gitter.filter(x => x > 0);
   if(!belegt.length) return false;
   if(plan.formlos){
     if(belegt.length !== plan.formlos.length) return false;
-    const a = belegt.slice().sort((p,q) => p-q), b = plan.formlos.slice().sort((p,q) => p-q);
-    return a.every((v,i) => v === b[i]);
+    const rest = belegt.slice();
+    const offen = [];
+    for(const soll of plan.formlos){          // erst die genauen Treffer vergeben
+      const i = rest.indexOf(soll);
+      if(i >= 0) rest.splice(i, 1); else offen.push(soll);
+    }
+    for(const soll of offen){                 // dann darf Holz für Bretter einspringen
+      const i = rest.findIndex(ist => passtZutat(soll, ist));
+      if(i < 0) return false;
+      rest.splice(i, 1);
+    }
+    return rest.length === 0;
   }
   const aus = ausschnitt();
   if(!aus || aus.length !== plan.form.length || aus[0].length !== plan.form[0].length) return false;
@@ -1491,7 +1509,7 @@ function passtPlan(plan){
       const soll = plan.form[y][x];
       const ist = aus[y][x];
       if(soll === ""){ if(ist !== 0) return false; }
-      else if(ist !== plan.schluessel[soll]) return false;
+      else if(!passtZutat(plan.schluessel[soll], ist)) return false;
     }
   }
   return true;
@@ -1537,14 +1555,25 @@ function planLegen(nr, gross){
   const plan = BAUPLAENE[nr];
   if(plan.gross && !gross){ meldung(ue("Dafür brauchst du eine Werkbank."), "c-bad"); return; }
   gitterLeeren();
+  // Wie oft kommen Bretter im Bauplan vor - und habe ich überhaupt so viele?
+  let brauchtBretter = 0;
+  if(plan.formlos) plan.formlos.forEach(id => { if(id === B_BRETTER) brauchtBretter++; });
+  else for(const zeile of plan.form) for(const k of zeile)
+    if(k !== "" && plan.schluessel[k] === B_BRETTER) brauchtBretter++;
+  // Sonst die Holzart einsetzen, von der genug im Rucksack liegt
+  let ersatz = B_BRETTER;
+  if(brauchtBretter && habe(B_BRETTER) < brauchtBretter)
+    ersatz = HOLZARTEN.find(id => habe(id) >= brauchtBretter) || B_BRETTER;
+  const nimm = id => (id === B_BRETTER ? ersatz : id);
+
   if(plan.formlos){
     const felder = gitterFelder(gross);
-    plan.formlos.forEach((id, i) => { if(i < felder.length) gitter[felder[i]] = id; });
+    plan.formlos.forEach((id, i) => { if(i < felder.length) gitter[felder[i]] = nimm(id); });
   } else {
     for(let y=0; y<plan.form.length; y++)
       for(let x=0; x<plan.form[y].length; x++){
         const k = plan.form[y][x];
-        if(k !== "") gitter[y*3+x] = plan.schluessel[k];
+        if(k !== "") gitter[y*3+x] = nimm(plan.schluessel[k]);
       }
   }
   bastelZeichnen();
