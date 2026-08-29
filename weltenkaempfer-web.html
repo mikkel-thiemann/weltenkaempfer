@@ -95,6 +95,15 @@
   .primary{background:linear-gradient(180deg,#7d50e0,#5a31b2); border-color:#9b78ff}
   .goldbtn{background:linear-gradient(180deg,#cba63c,#8e6f1d); border-color:var(--gold); color:#1c1503}
 
+  /* Vorspann: liegt über allem, füllt das Fenster, Ränder bleiben schwarz */
+  #vorspann{position:fixed; inset:0; z-index:60; background:#000;
+            display:flex; align-items:center; justify-content:center}
+  #vorspann video{width:100%; height:100%; object-fit:contain; background:#000}
+  .vorspannKnoepfe{position:absolute; right:16px; bottom:16px; display:flex; gap:8px}
+  .vorspannKnoepfe button{background:rgba(10,14,22,.72); color:#eef2f9; font-size:14px;
+            border:1px solid rgba(255,255,255,.28); border-radius:10px; padding:9px 15px;
+            cursor:pointer; backdrop-filter:blur(4px)}
+  .vorspannKnoepfe button:hover{background:rgba(30,40,58,.85); border-color:#8fa6c8}
   .overlay{position:fixed; inset:0; z-index:20; display:flex; align-items:center; justify-content:center;
            background:rgba(4,6,11,.8); backdrop-filter:blur(3px); padding:16px}
   .fenster{background:linear-gradient(180deg,#141a26,#0d121b); border:1px solid var(--rahmen); border-radius:16px;
@@ -199,6 +208,14 @@
       <div style="text-align:center"><button data-k=" ">⤒</button><button data-k="e">✋</button></div>
       <div><button data-k="pfeilL">↰</button><button data-k="abbau">⛏️</button><button data-k="pfeilR">↱</button></div>
     </div>
+  </div>
+</div>
+
+<div id="vorspann" class="hidden">
+  <video id="vorspannVideo" src="intro.mp4" playsinline preload="auto"></video>
+  <div class="vorspannKnoepfe">
+    <button id="vorspannTon" class="hidden" onclick="vorspannTonAn()">🔊 Ton an</button>
+    <button onclick="vorspannEnde()">Überspringen ⏭</button>
   </div>
 </div>
 
@@ -849,7 +866,9 @@ const EN = {
   "Bretter aus Dschungelholz": "Jungle Planks",
   "Bretter aus Knochenholz": "Bone Planks",
   "Bretter aus Pilzstiel": "Mushroom Planks",
-  "Bretter aus Schattenholz": "Shadow Planks"
+  "Bretter aus Schattenholz": "Shadow Planks",
+  "Überspringen ⏭": "Skip ⏭",
+  "🔊 Ton an": "🔊 Sound on"
 };
 function ue(s){
   if(sprache !== "en" || typeof s !== "string") return s;
@@ -4483,15 +4502,64 @@ $("skinFeld").addEventListener("change", e => {
 });
 skinLaden();
 galerieZeichnen();
-if(nameLaden()){
-  nameAnzeigen();
-  weltlisteZeichnen();
-  $("start").classList.remove("hidden");
-} else {
-  nameAnzeigen();
-  $("anmeldung").classList.remove("hidden");
-  setTimeout(() => $("spielerFeld").focus(), 100);
+/* ---------- Vorspann ----------
+   Läuft einmal beim Start, davor ist nichts zu sehen. Fehlt die Videodatei
+   oder mag der Browser sie nicht, geht es sofort ohne Vorspann weiter.
+   Ton beim Selbststart ist in Browsern gesperrt, solange man noch nichts
+   angeklickt hat - dann läuft das Video stumm und ein Knopf schaltet den
+   Ton dazu.                                                              */
+let vorspannFertig = false;
+function startBildschirmZeigen(){
+  if(nameLaden()){
+    nameAnzeigen();
+    weltlisteZeichnen();
+    $("start").classList.remove("hidden");
+  } else {
+    nameAnzeigen();
+    $("anmeldung").classList.remove("hidden");
+    setTimeout(() => $("spielerFeld").focus(), 100);
+  }
+  spracheAnwenden();               // Deutsch oder Englisch, wie zuletzt gewählt
 }
-spracheAnwenden();                 // Deutsch oder Englisch, wie zuletzt gewählt
+function vorspannEnde(){
+  if(vorspannFertig) return;
+  vorspannFertig = true;
+  const v = $("vorspannVideo");
+  if(v){ try { v.pause(); } catch(e){} v.removeAttribute("src"); v.load(); }
+  $("vorspann").classList.add("hidden");
+  startBildschirmZeigen();
+}
+function vorspannTonAn(){
+  const v = $("vorspannVideo");
+  if(!v) return;
+  v.muted = false;
+  v.play().catch(() => {});
+  $("vorspannTon").classList.add("hidden");
+}
+function vorspannStarten(){
+  const kasten = $("vorspann"), v = $("vorspannVideo");
+  if(!kasten || !v){ startBildschirmZeigen(); return; }
+  let losgelaufen = false;
+  v.addEventListener("ended", vorspannEnde);
+  v.addEventListener("error", vorspannEnde);
+  // Lädt das Video gar nicht an, nicht ewig warten
+  const notausgang = setTimeout(() => { if(!losgelaufen) vorspannEnde(); }, 6000);
+  v.addEventListener("playing", () => { losgelaufen = true; clearTimeout(notausgang); });
+
+  kasten.classList.remove("hidden");
+  v.play().then(() => {
+    spracheAnwenden();             // die Knöpfe im Vorspann beschriften
+  }).catch(() => {
+    v.muted = true;                // mit Ton verboten - dann eben stumm
+    $("vorspannTon").classList.remove("hidden");
+    spracheAnwenden();
+    v.play().catch(vorspannEnde);
+  });
+}
+// Esc oder Leertaste überspringen den Vorspann ebenfalls
+window.addEventListener("keydown", e => {
+  if(!vorspannFertig && (e.key === "Escape" || e.key === " " || e.key === "Enter")) vorspannEnde();
+});
+vorspannStarten();
 requestAnimationFrame(schleife);
 </script>
