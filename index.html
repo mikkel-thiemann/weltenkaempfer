@@ -931,7 +931,9 @@ const EN = {
   "🔒 Diesen Skin gibt es für den Sieg über den Warden.": "🔒 This skin is the reward for beating the Warden.",
   "🎁 Belohnung nachgetragen – dein Skin ist frei!": "🎁 Reward granted – your skin is unlocked!",
   "<br><br>Wenn du ihn trägst, springst du <b>2 Blöcke</b> hoch statt einen.": "<br><br>While you wear it you jump <b>2 blocks</b> high instead of one.",
-  "springt 2 Blöcke": "jumps 2 blocks"
+  "springt 2 Blöcke": "jumps 2 blocks",
+  "2 Blöcke hoch springen": "jump 2 blocks high",
+  "<br><br>Ab jetzt springst du <b>2 Blöcke</b> hoch statt einen.": "<br><br>From now on you jump <b>2 blocks</b> high instead of one."
 };
 function ue(s){
   if(sprache !== "en" || typeof s !== "string") return s;
@@ -3665,13 +3667,11 @@ function belohnungen(){
   catch(e){ return []; }
 }
 function hatBelohnung(id){ return !id || belohnungen().indexOf(id) >= 0; }
-/* Der Warden-Skin trägt seine Kraft mit sich: damit springt man zwei
-   Blöcke hoch statt einen. 8.6 reichen für 1,28 Blöcke, 11.2 für 2,16. */
+/* Wer den Warden gelegt hat, springt zwei Blöcke hoch statt einen -
+   ganz gleich, welchen Skin er gerade trägt. 8.6 reichen für 1,28
+   Blöcke, 11.2 für 2,16.                                            */
 const SPRUNG_NORMAL = 8.6, SPRUNG_WARDEN = 11.2;
-function wardenSkinAn(){
-  const k = SKIN_SAMMLUNG.find(x => x.belohnung === "warden");
-  return !!(k && skinDaten === k.bild);
-}
+function wardenSkinAn(){ return hatBelohnung("warden"); }
 /* Wer einen Boss schon gelegt hat, bevor es die Belohnung gab, soll sie
    trotzdem bekommen. Dafür werden alle gespeicherten Welten durchgesehen. */
 function belohnungenNachtragen(){
@@ -3814,7 +3814,7 @@ function galerieZeichnen(){
       const kraft = document.createElement("span");
       kraft.className = "c-gold";
       kraft.style.fontSize = "9.5px";
-      kraft.textContent = ue("springt 2 Blöcke");
+      kraft.textContent = ue("2 Blöcke hoch springen");
       feld.appendChild(kraft);
     }
     feld.appendChild(kopf);
@@ -4265,7 +4265,7 @@ function sieg(){
       galerieZeichnen();
       infoZeigen("🎁", ue("Neuer Skin!"),
         ue("Du hast den Skin <b>") + k.name + ue("</b> freigeschaltet.<br>Du findest ihn unter „Name &amp; Skin“.")
-        + (k.belohnung === "warden" ? ue("<br><br>Wenn du ihn trägst, springst du <b>2 Blöcke</b> hoch statt einen.") : ""));
+        + (k.belohnung === "warden" ? ue("<br><br>Ab jetzt springst du <b>2 Blöcke</b> hoch statt einen.") : ""));
     }, 900);
   }
   const i = wesen.indexOf(g);
