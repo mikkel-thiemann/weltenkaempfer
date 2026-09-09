@@ -915,7 +915,9 @@ const EN = {
   "🎁 +60 ": "🎁 +60 ",
   "🎁 Auswahl schließen": "🎁 Close the picker",
   "🎁 Blöcke holen": "🎁 Get blocks",
-  "⚠️ Speicher voll – Gebautes geht verloren!": "⚠️ Storage full – your buildings will be lost!"
+  "⚠️ Speicher voll – Gebautes geht verloren!": "⚠️ Storage full – your buildings will be lost!",
+  " (ältere Kopie)": " (older copy)",
+  " · Dein weiter fortgeschrittener Stand blieb erhalten.": " · Your further-along save was kept."
 };
 function ue(s){
   if(sprache !== "en" || typeof s !== "string") return s;
@@ -4542,18 +4544,33 @@ function sicherungEinlesen(text){
     meldungsfeld.textContent = ue("Dieser Text gehört nicht zu Weltenkämpfer.");
     return false;
   }
-  let welten = 0;
+  let welten = 0, geschuetzt = 0;
   try{
     if(daten.spieler) localStorage.setItem(NAME_KEY, daten.spieler);
     if(daten.skin) localStorage.setItem(SKIN_KEY, daten.skin);
-    // Vorhandene Welten behalten, gesicherte dazulegen
+    /* Vorhandene Welten behalten, gesicherte dazulegen.
+       Wichtig: eine Welt wird nie durch eine zurückliegende ersetzt.
+       Sonst waeren mit einem alten Sicherungstext alle Stufen weg, die
+       man seitdem geschafft hat. Der aeltere Stand kommt dann daneben. */
     const jetzt = weltListe();
     (daten.liste || []).forEach(w => {
       const roh = daten.staende[w.id];
       if(!roh) return;
-      localStorage.setItem(standKey(w.id), roh);
+      let id = w.id, eintrag = w;
       const da = jetzt.find(x => x.id === w.id);
-      if(da) Object.assign(da, w); else jetzt.push(w);
+      if(da){
+        let alteStufe = 0, neueStufe = 0;
+        try{ alteStufe = (JSON.parse(localStorage.getItem(standKey(w.id))) || {}).level || 0; }catch(e){}
+        try{ neueStufe = (JSON.parse(roh) || {}).level || 0; }catch(e){}
+        if(neueStufe < alteStufe){
+          id = w.id + "-" + Date.now().toString(36);
+          eintrag = Object.assign({}, w, {id: id, name: w.name + ue(" (ältere Kopie)")});
+          geschuetzt++;
+        }
+      }
+      localStorage.setItem(standKey(id), roh);
+      const schon = jetzt.find(x => x.id === id);
+      if(schon) Object.assign(schon, eintrag); else jetzt.push(eintrag);
       welten++;
     });
     listeSchreiben(jetzt);
@@ -4563,7 +4580,8 @@ function sicherungEinlesen(text){
   }
   nameLaden(); skinLaden(); nameAnzeigen(); weltlisteZeichnen();
   meldungsfeld.textContent = welten + ue(" Welt(en) übernommen")
-    + (daten.spieler ? ue(", Spieler: ") + daten.spieler : "") + " ✓";
+    + (daten.spieler ? ue(", Spieler: ") + daten.spieler : "") + " ✓"
+    + (geschuetzt ? ue(" · Dein weiter fortgeschrittener Stand blieb erhalten.") : "");
   return true;
 }
 // Im claude.ai-Fenster darf eine Seite keine Dateien speichern - dort nur Zwischenablage
