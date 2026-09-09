@@ -921,7 +921,8 @@ const EN = {
   "Besiege den Warden, dann gehört er dir": "Beat the Warden and it is yours",
   "Du hast den Skin <b>": "You unlocked the <b>",
   "Neuer Skin!": "New skin!",
-  "🔒 Diesen Skin gibt es für den Sieg über den Warden.": "🔒 This skin is the reward for beating the Warden."
+  "🔒 Diesen Skin gibt es für den Sieg über den Warden.": "🔒 This skin is the reward for beating the Warden.",
+  "🎁 Belohnung nachgetragen – dein Skin ist frei!": "🎁 Reward granted – your skin is unlocked!"
 };
 function ue(s){
   if(sprache !== "en" || typeof s !== "string") return s;
@@ -3655,6 +3656,27 @@ function belohnungen(){
   catch(e){ return []; }
 }
 function hatBelohnung(id){ return !id || belohnungen().indexOf(id) >= 0; }
+/* Wer einen Boss schon gelegt hat, bevor es die Belohnung gab, soll sie
+   trotzdem bekommen. Dafür werden alle gespeicherten Welten durchgesehen. */
+function belohnungenNachtragen(){
+  let neu = 0;
+  weltListe().forEach(w => {
+    let d = null;
+    try{ d = JSON.parse(localStorage.getItem(standKey(w.id))); }catch(e){}
+    if(!d || !d.fertig) return;
+    WELTEN.forEach(welt => {
+      const bq = welt.quests.find(q => q.typ === "boss");
+      if(!bq || !d.fertig[bq.id]) return;
+      if(!SKIN_SAMMLUNG.some(k => k.belohnung === welt.boss.id)) return;
+      if(belohnungGeben(welt.boss.id)) neu++;
+    });
+  });
+  if(neu){
+    if(typeof galerieZeichnen === "function") galerieZeichnen();
+    meldung(ue("🎁 Belohnung nachgetragen – dein Skin ist frei!"), "c-gold");
+  }
+  return neu;
+}
 function belohnungGeben(id){
   if(!id || hatBelohnung(id)) return false;
   const l = belohnungen(); l.push(id);
@@ -4616,7 +4638,7 @@ function sicherungEinlesen(text){
     meldungsfeld.textContent = ue("Der Speicher ist voll – es passt nicht alles hinein.");
     return false;
   }
-  nameLaden(); skinLaden(); nameAnzeigen(); weltlisteZeichnen();
+  nameLaden(); skinLaden(); belohnungenNachtragen(); nameAnzeigen(); weltlisteZeichnen();
   meldungsfeld.textContent = welten + ue(" Welt(en) übernommen")
     + (daten.spieler ? ue(", Spieler: ") + daten.spieler : "") + " ✓"
     + (geschuetzt ? ue(" · Dein weiter fortgeschrittener Stand blieb erhalten.") : "");
@@ -4800,6 +4822,7 @@ function standAusLink(){
 }
 function startBildschirmZeigen(){
   standAusLink();
+  belohnungenNachtragen();
   if(nameLaden()){
     nameAnzeigen();
     weltlisteZeichnen();
