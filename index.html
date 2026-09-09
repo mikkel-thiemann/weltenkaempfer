@@ -1001,7 +1001,7 @@ const K = {gras:0, grasSeite:1, erde:2, stein:3, sand:4, wasser:5, holz:6, holzO
 // [oben, unten, seite] · haerte = Sekunden mit bloßen Händen · gibt = was beim Abbau herausfällt
 const BLOECKE = [
   null,
-  {name:"Gras",       kacheln:[K.gras,K.erde,K.grasSeite], fest:true,  dicht:true, haerte:0.9, gibt:2},
+  {name:"Gras",       kacheln:[K.gras,K.erde,K.grasSeite], fest:true,  dicht:true, haerte:0.9, gibt:1},
   {name:"Erde",       kacheln:[K.erde,K.erde,K.erde],      fest:true,  dicht:true, haerte:0.9, gibt:2},
   {name:"Stein",      kacheln:[K.stein,K.stein,K.stein],   fest:true,  dicht:true, haerte:3.4, gibt:3, werkzeug:"hacke"},
   {name:"Sand",       kacheln:[K.sand,K.sand,K.sand],      fest:true,  dicht:true, haerte:0.8, gibt:4},
@@ -1018,7 +1018,7 @@ const BLOECKE = [
   {name:"Werkbank",   kacheln:[K.werkOben,K.bretter,K.werkSeite], fest:true, dicht:true, haerte:1.8, gibt:15, werkzeug:"axt"},
   {name:"Kirschholz", kacheln:[K.kirschOben,K.kirschOben,K.kirschHolz], fest:true, dicht:true, haerte:2.2, gibt:16, werkzeug:"axt"},
   {name:"Kirschlaub", kacheln:[K.kirschLaub,K.kirschLaub,K.kirschLaub], fest:true, dicht:true, haerte:0.4, gibt:17},
-  {name:"Blütenboden",kacheln:[K.kirschBoden,K.erde,K.grasSeite], fest:true, dicht:true, haerte:0.9, gibt:2},
+  {name:"Blütenboden",kacheln:[K.kirschBoden,K.erde,K.grasSeite], fest:true, dicht:true, haerte:0.9, gibt:18},
   {name:"Kaktus",     kacheln:[K.kaktusOben,K.kaktusOben,K.kaktus], fest:true, dicht:true, haerte:1.4, gibt:19, werkzeug:"axt", stachlig:true},
   {name:"Smaragderz", kacheln:[K.smaragd,K.smaragd,K.smaragd], fest:true, dicht:true, haerte:6.5, gibt:20, werkzeug:"hacke"},
   {name:"Pechstein",  kacheln:[K.pech,K.pech,K.pech], fest:true, dicht:true, haerte:8.5, gibt:21, werkzeug:"hacke"},
@@ -2515,6 +2515,14 @@ function strahl(reichweite){
   return null;
 }
 // Je besser die Waffe, desto schneller gräbst du
+/* Wie lange ein Block braucht. Nach unten gedeckelt: mit den besten
+   Werkzeugen wurde sonst jeder Block in Sekundenbruchteilen weggeputzt,
+   man sah die Risse gar nicht mehr.                                    */
+function abbauDauer(def){
+  // Auch mit dem besten Werkzeug bleibt harter Stein spürbar zäher als Erde
+  const kuerzeste = 0.25 + def.haerte * 0.06;
+  return Math.max(kuerzeste, def.haerte / grabTempo(def));
+}
 function grabTempo(def){
   if(!def) return 1;
   if(def.werkzeug === "hacke") return 1 + HACKEN[s.hacke].bonus;
@@ -2540,7 +2548,7 @@ function abbauSchritt(dt){
     abbauZiel = {x:z.x, y:z.y, z:z.z};
     abbauFortschritt = 0;
   }
-  abbauFortschritt += dt * grabTempo(def) / def.haerte;
+  abbauFortschritt += dt / abbauDauer(def);
   $("abbaubalken").style.width = klemm(abbauFortschritt*100, 0, 100) + "%";
   $("abbaubox").classList.remove("hidden");
   if(abbauFortschritt < 1) return;
@@ -2548,8 +2556,11 @@ function abbauSchritt(dt){
   // geschafft
   setzeBlock(z.x, z.y, z.z, B_LUFT, true);
   blockUmgebungNeu(z.x, z.z);
-  gibMaterial(def.gibt, 1);
-  meldung("+1 " + BLOECKE[def.gibt].name + " (" + habe(def.gibt) + ")", "c-good");
+  const beute = def.gibt !== undefined ? def.gibt : z.block;
+  if(beute){
+    gibMaterial(beute, 1);
+    meldung("+1 " + BLOECKE[beute].name + " (" + habe(beute) + ")", "c-good");
+  }
   abbauZiel = null; abbauFortschritt = 0;
   $("abbaubox").classList.add("hidden");
   speichern();
@@ -3870,9 +3881,9 @@ function bastelZeichnen(){
     if(n > 0) h += '<div class="karte2"><span>' + wl.item.name + "</span><b>" + n + "</b></div>";
   });
   h += '<div class="karte2"><span>⛏️ ' + HACKEN[s.hacke].name + "</span><b>Stein ×"
-    + grabTempo(BLOECKE[B_STEIN]).toFixed(1) + " · " + (BLOECKE[B_STEIN].haerte/grabTempo(BLOECKE[B_STEIN])).toFixed(1) + " s</b></div>";
+    + grabTempo(BLOECKE[B_STEIN]).toFixed(1) + " · " + abbauDauer(BLOECKE[B_STEIN]).toFixed(2) + " s</b></div>";
   h += '<div class="karte2"><span>🪓 ' + AEXTE[s.axt].name + "</span><b>Holz ×"
-    + grabTempo(BLOECKE[B_HOLZ]).toFixed(1) + " · " + (BLOECKE[B_HOLZ].haerte/grabTempo(BLOECKE[B_HOLZ])).toFixed(1) + " s</b></div>";
+    + grabTempo(BLOECKE[B_HOLZ]).toFixed(1) + " · " + abbauDauer(BLOECKE[B_HOLZ]).toFixed(2) + " s</b></div>";
   h += '<div class="karte2"><span>🗡️ ' + WAFFEN[s.waffe].name + "</span><b>+" + WAFFEN[s.waffe].atk + ue(" Angriff</b></div>");
   h += '<div class="karte2"><span>🛡️ ' + RUESTUNGEN[s.ruestung].name + "</span><b>+" + RUESTUNGEN[s.ruestung].def + ue(" Rüstung</b></div>");
   $("tafelInhalt").innerHTML = h;
