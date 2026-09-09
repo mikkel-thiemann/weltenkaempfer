@@ -888,7 +888,9 @@ const EN = {
   "Tiefes Dunkel": "Deep Dark",
   "Warden": "Warden",
   "💠 Sculkherz": "💠 Sculk Heart",
-  "📥 Spielstand aus dem Link übernommen ✓": "📥 Save taken from the link ✓"
+  "📥 Spielstand aus dem Link übernommen ✓": "📥 Save taken from the link ✓",
+  "🎁 Alle Blöcke holen": "🎁 Get all blocks",
+  "🎁 Alle Blöcke sind jetzt im Rucksack!": "🎁 All blocks are in your backpack now!"
 };
 function ue(s){
   if(sprache !== "en" || typeof s !== "string") return s;
@@ -1522,6 +1524,15 @@ function nimmMaterial(id, anz){
   return true;
 }
 function besitz(){ return REIHENFOLGE.filter(id => habe(id) > 0); }
+/* Legt von jedem Block einen vollen Stapel in den Rucksack - zum Bauen,
+   ohne vorher alles zusammensuchen zu müssen.                          */
+function alleBloeckeGeben(){
+  REIHENFOLGE.forEach(id => { if(habe(id) < 999) s.inventar[id] = 999; });
+  gurtBauen();
+  if(typeof bastelZeichnen === "function") bastelZeichnen();
+  speichern();
+  meldung(ue("🎁 Alle Blöcke sind jetzt im Rucksack!"), "c-gold");
+}
 function alleSachen(){                                  // Blöcke + Gegenstände fürs Inventar
   return REIHENFOLGE.filter(id => habe(id) > 0).concat(Object.keys(ITEMS).map(Number).filter(id => habe(id) > 0));
 }
@@ -3846,6 +3857,8 @@ function bastelZeichnen(){
     + "</b> – klick ein Gitterfeld an.</p>";
 
   h += ue('<h3 style="margin-top:16px">Dein Vorrat – zum Auswählen anklicken</h3>');
+  h += '<div class="reihe" style="justify-content:flex-start; margin-bottom:8px">'
+     + '<button onclick="alleBloeckeGeben()">' + ue("🎁 Alle Blöcke holen") + '</button></div>';
   const mats = alleSachen();
   if(!mats.length) h += ue('<p class="c-dim">Noch nichts gesammelt. Halte draußen die linke Maustaste auf einen Block.</p>');
   else {
