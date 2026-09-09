@@ -910,7 +910,11 @@ const EN = {
   "🎁 Blöcke holen": "🎁 Get blocks",
   "⚠️ Speicher voll – Gebautes geht verloren!": "⚠️ Storage full – your buildings will be lost!",
   " (ältere Kopie)": " (older copy)",
-  " · Dein weiter fortgeschrittener Stand blieb erhalten.": " · Your further-along save was kept."
+  " · Dein weiter fortgeschrittener Stand blieb erhalten.": " · Your further-along save was kept.",
+  "⚔️ +35 Angriff": "⚔️ +35 Attack",
+  "✨ +35 Magie": "✨ +35 Magic",
+  "❤️ +70 Leben": "❤️ +70 Health",
+  "🛡️ +35 Rüstung": "🛡️ +35 Armor"
 };
 function ue(s){
   if(sprache !== "en" || typeof s !== "string") return s;
@@ -4225,8 +4229,10 @@ function xpGeben(x){
 /* Ab Stufe 100 bringen die Talente deutlich mehr - vorher fielen die
    kleinen Schritte gegenüber den Gegnern der späten Welten kaum auf. */
 function talentWerte(){
-  return (s && s.level >= 100) ? {hp:50, atk:25, mag:25, def:25}
-                               : {hp:20, atk:4,  mag:4,  def:3};
+  const stufe = s ? s.level : 1;
+  if(stufe >= 140) return {hp:70, atk:35, mag:35, def:35};
+  if(stufe >= 100) return {hp:50, atk:25, mag:25, def:25};
+  return {hp:20, atk:4, mag:4, def:3};
 }
 function talentKnoepfe(){
   const w = talentWerte();
