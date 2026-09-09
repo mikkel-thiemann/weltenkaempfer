@@ -341,8 +341,8 @@
     <h2>Stufe <span id="neueStufe">2</span>!</h2>
     <p class="c-dim">Wähle dein Talent.</p>
     <div class="reihe">
-      <button onclick="talent('hp')">❤️ +20 Leben</button><button onclick="talent('atk')">⚔️ +4 Angriff</button>
-      <button onclick="talent('mag')">✨ +4 Magie</button><button onclick="talent('def')">🛡️ +3 Rüstung</button>
+      <button id="tHp"  onclick="talent('hp')">❤️ +20 Leben</button><button id="tAtk" onclick="talent('atk')">⚔️ +4 Angriff</button>
+      <button id="tMag" onclick="talent('mag')">✨ +4 Magie</button><button id="tDef" onclick="talent('def')">🛡️ +3 Rüstung</button>
     </div>
   </div>
 </div>
@@ -890,7 +890,15 @@ const EN = {
   "💠 Sculkherz": "💠 Sculk Heart",
   "📥 Spielstand aus dem Link übernommen ✓": "📥 Save taken from the link ✓",
   "🎁 Alle Blöcke holen": "🎁 Get all blocks",
-  "🎁 Alle Blöcke sind jetzt im Rucksack!": "🎁 All blocks are in your backpack now!"
+  "🎁 Alle Blöcke sind jetzt im Rucksack!": "🎁 All blocks are in your backpack now!",
+  "⚔️ +25 Angriff": "⚔️ +25 Attack",
+  "⚔️ +4 Angriff": "⚔️ +4 Attack",
+  "✨ +25 Magie": "✨ +25 Magic",
+  "✨ +4 Magie": "✨ +4 Magic",
+  "❤️ +20 Leben": "❤️ +20 Health",
+  "❤️ +50 Leben": "❤️ +50 Health",
+  "🛡️ +25 Rüstung": "🛡️ +25 Armor",
+  "🛡️ +3 Rüstung": "🛡️ +3 Armor"
 };
 function ue(s){
   if(sprache !== "en" || typeof s !== "string") return s;
@@ -969,6 +977,7 @@ function spracheAnwenden(){
     if(typeof bastelZeichnen === "function" && !$("lager").classList.contains("hidden")) bastelZeichnen();
     if(typeof kampfZeichnen === "function" && gegner) kampfZeichnen();
   }
+  if(typeof talentKnoepfe === "function") talentKnoepfe();
   if(typeof nameAnzeigen === "function") nameAnzeigen();
   if(typeof weltlisteZeichnen === "function") weltlisteZeichnen();
   if(typeof galerieZeichnen === "function") galerieZeichnen();
@@ -4123,12 +4132,27 @@ function xpGeben(x){
   hudZeichnen();
   if(offeneStufen > 0) stufeZeigen();
 }
-function stufeZeigen(){ $("neueStufe").textContent = s.level; oeffne("stufe"); }
+/* Ab Stufe 100 bringen die Talente deutlich mehr - vorher fielen die
+   kleinen Schritte gegenüber den Gegnern der späten Welten kaum auf. */
+function talentWerte(){
+  return (s && s.level >= 100) ? {hp:50, atk:25, mag:25, def:25}
+                               : {hp:20, atk:4,  mag:4,  def:3};
+}
+function talentKnoepfe(){
+  const w = talentWerte();
+  const setz = (id, txt) => { const el = $(id); if(el) el.textContent = txt; };
+  setz("tHp",  ue("❤️ +" + w.hp  + " Leben"));
+  setz("tAtk", ue("⚔️ +" + w.atk + " Angriff"));
+  setz("tMag", ue("✨ +" + w.mag + " Magie"));
+  setz("tDef", ue("🛡️ +" + w.def + " Rüstung"));
+}
+function stufeZeigen(){ $("neueStufe").textContent = s.level; talentKnoepfe(); oeffne("stufe"); }
 function talent(t){
-  if(t === "hp"){ s.maxHp += 20; s.hp += 20; }
-  if(t === "atk") s.atk += 4;
-  if(t === "mag"){ s.mag += 4; s.maxMp += 10; s.mp += 10; }
-  if(t === "def") s.def += 3;
+  const w = talentWerte();
+  if(t === "hp"){ s.maxHp += w.hp; s.hp += w.hp; }
+  if(t === "atk") s.atk += w.atk;
+  if(t === "mag"){ s.mag += w.mag; s.maxMp += 10; s.mp += 10; }
+  if(t === "def") s.def += w.def;
   offeneStufen--;
   if(offeneStufen > 0) stufeZeigen(); else schliesse("stufe");
   speichern(); hudZeichnen();
