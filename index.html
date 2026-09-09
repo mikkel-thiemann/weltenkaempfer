@@ -1863,9 +1863,12 @@ function weltErzeugen(){
       if(w.terrassen) h = Math.round(h/2)*2;      // Absätze statt sanfter Hänge
       h = klemm(h, 3, GELAENDE-6);          // Landschaft wie früher
       hoehen[z*WX+x] = h;
+      /* Die oberste Schicht ist mal einen, mal zwei Blöcke dick. Fleckig
+         verteilt, damit der Boden nicht überall gleich aussieht.        */
+      const doppelt = (hashZ(x, z, saat+4242)+1)/2 > 0.68;
       for(let y=0; y<=h; y++){
         let b = w.tief;
-        if(y === h){
+        if(y === h || (doppelt && y === h-1 && h > w.seehoehe+1)){
           b = (h <= w.seehoehe+1 ? w.strand : w.oben);
           if(w.flecken && h > w.seehoehe+1){
             const misch = fbm(x, z, saat+606, 3, 0.085);
