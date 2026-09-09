@@ -914,7 +914,8 @@ const EN = {
   "<p class=\"c-dim\" style=\"margin:0 0 6px\">Klick einen Block an – du bekommst 60 davon.</p>": "<p class=\"c-dim\" style=\"margin:0 0 6px\">Click a block – you get 60 of it.</p>",
   "🎁 +60 ": "🎁 +60 ",
   "🎁 Auswahl schließen": "🎁 Close the picker",
-  "🎁 Blöcke holen": "🎁 Get blocks"
+  "🎁 Blöcke holen": "🎁 Get blocks",
+  "⚠️ Speicher voll – Gebautes geht verloren!": "⚠️ Storage full – your buildings will be lost!"
 };
 function ue(s){
   if(sprache !== "en" || typeof s !== "string") return s;
@@ -1454,16 +1455,58 @@ function weltListe(){
 }
 function listeSchreiben(l){ try{ localStorage.setItem(LISTE_KEY, JSON.stringify(l)); }catch(e){} }
 
+/* Gesetzte und abgebaute Blöcke werden platzsparend abgelegt: statt
+   {"11:1234567": 3} je Block eine Liste "qglj:3,..." pro Welt, mit
+   Zahlen zur Basis 36. Das halbiert den Platz, darum passt viel mehr
+   Gebautes hinein. Alte Spielstände werden weiter gelesen.            */
+const BAU_GRENZE = 40000;                  // so viele gesetzte Blöcke je Welt
+function aenderungenPacken(a){
+  const proWelt = {};
+  for(const k in a){
+    const p = k.indexOf(":");
+    const w = k.slice(0, p);
+    (proWelt[w] = proWelt[w] || []).push(
+      parseInt(k.slice(p+1), 10).toString(36) + ":" + a[k].toString(36));
+  }
+  const aus = {};
+  for(const w in proWelt) aus[w] = proWelt[w].join(",");
+  return aus;
+}
+function aenderungenEntpacken(a){
+  const aus = {};
+  if(!a) return aus;
+  for(const w in a){
+    const v = a[w];
+    if(typeof v !== "string"){ aus[w] = v; continue; }   // alte Schreibweise
+    if(!v) continue;
+    for(const teil of v.split(",")){
+      const p = teil.indexOf(":");
+      if(p < 0) continue;
+      aus[w + ":" + parseInt(teil.slice(0, p), 36)] = parseInt(teil.slice(p+1), 36);
+    }
+  }
+  return aus;
+}
+let speicherKlemmt = false;
 function speichern(){
   if(!s || !s.id) return;
   try{
-    localStorage.setItem(standKey(s.id), JSON.stringify(s));
+    const kopie = Object.assign({}, s, {aenderungen: aenderungenPacken(s.aenderungen)});
+    localStorage.setItem(standKey(s.id), JSON.stringify(kopie));
     const l = weltListe();
     const eintrag = {id:s.id, name:s.name, saat:s.saat, stufe:s.level, welt:s.welt, zuletzt:Date.now()};
     const alt = l.find(x => x.id === s.id);
     if(alt) Object.assign(alt, eintrag); else l.push(eintrag);
     listeSchreiben(l);
-  }catch(e){}
+    speicherKlemmt = false;
+  }catch(e){
+    // Stillschweigend scheitern wäre das Schlimmste: dann wäre alles Gebaute
+    // beim nächsten Laden weg, ohne dass man es geahnt hätte.
+    if(!speicherKlemmt){
+      speicherKlemmt = true;
+      meldung(ue("⚠️ Speicher voll – Gebautes geht verloren!"), "c-bad");
+    }
+  }
 }
 function standPruefen(){                     // fehlende Felder älterer Stände ergänzen
   if(!s.aenderungen) s.aenderungen = {};
@@ -1478,6 +1521,7 @@ function standLaden(id){
   try{
     const d = JSON.parse(localStorage.getItem(standKey(id)));
     if(!d || !d.level) return false;
+    d.aenderungen = aenderungenEntpacken(d.aenderungen);
     s = d; s.id = id;
     standPruefen();
     return true;
@@ -1752,7 +1796,7 @@ function setzeBlock(x,y,z,id,merken){
   if(id && y >= hoechsteEbene) hoechsteEbene = y + 1;
   if(merken){
     const k = s.welt + ":" + idx(x,y,z);
-    if(Object.keys(s.aenderungen).length < 6000 || s.aenderungen[k] !== undefined) s.aenderungen[k] = id;
+    if(Object.keys(s.aenderungen).length < BAU_GRENZE || s.aenderungen[k] !== undefined) s.aenderungen[k] = id;
   }
 }
 function bodenHoehe(x,z){
