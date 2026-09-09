@@ -903,7 +903,11 @@ const EN = {
   "🛡️ +25 Rüstung": "🛡️ +25 Armor",
   "🛡️ +3 Rüstung": "🛡️ +3 Armor",
   "Wegwerfen": "Throw away",
-  "🗑️ Weggeworfen: ": "🗑️ Thrown away: "
+  "🗑️ Weggeworfen: ": "🗑️ Thrown away: ",
+  "<p class=\"c-dim\" style=\"margin:0 0 6px\">Klick einen Block an – du bekommst 60 davon.</p>": "<p class=\"c-dim\" style=\"margin:0 0 6px\">Click a block – you get 60 of it.</p>",
+  "🎁 +60 ": "🎁 +60 ",
+  "🎁 Auswahl schließen": "🎁 Close the picker",
+  "🎁 Blöcke holen": "🎁 Get blocks"
 };
 function ue(s){
   if(sprache !== "en" || typeof s !== "string") return s;
@@ -1553,12 +1557,19 @@ function wegwerfen(id){
   speichern();
   meldung(ue("🗑️ Weggeworfen: ") + dingName(id), "c-dim");
 }
-function alleBloeckeGeben(){
-  REIHENFOLGE.forEach(id => { if(habe(id) < 999) s.inventar[id] = 999; });
-  gurtBauen();
-  if(typeof bastelZeichnen === "function") bastelZeichnen();
+/* Blockauswahl: man klickt sich heraus, was man zum Bauen braucht,
+   und bekommt davon 60 Stück - statt alles auf einmal.               */
+const HOL_MENGE = 60;
+let holenOffen = false;
+function holenUmschalten(){
+  holenOffen = !holenOffen;
+  bastelZeichnen();
+}
+function blockHolen(id){
+  gibMaterial(id, HOL_MENGE);
+  bastelZeichnen();
   speichern();
-  meldung(ue("🎁 Alle Blöcke sind jetzt im Rucksack!"), "c-gold");
+  meldung(ue("🎁 +" + HOL_MENGE + " ") + dingName(id), "c-gold");
 }
 function alleSachen(){                                  // Blöcke + Gegenstände fürs Inventar
   return REIHENFOLGE.filter(id => habe(id) > 0).concat(Object.keys(ITEMS).map(Number).filter(id => habe(id) > 0));
@@ -3885,7 +3896,17 @@ function bastelZeichnen(){
 
   h += ue('<h3 style="margin-top:16px">Dein Vorrat – zum Auswählen anklicken</h3>');
   h += '<div class="reihe" style="justify-content:flex-start; margin-bottom:8px">'
-     + '<button onclick="alleBloeckeGeben()">' + ue("🎁 Alle Blöcke holen") + '</button></div>';
+     + '<button onclick="holenUmschalten()">'
+     + (holenOffen ? ue("🎁 Auswahl schließen") : ue("🎁 Blöcke holen")) + '</button></div>';
+  if(holenOffen){
+    h += ue('<p class="c-dim" style="margin:0 0 6px">Klick einen Block an – du bekommst 60 davon.</p>');
+    h += '<div class="gitter" style="margin-bottom:10px">';
+    REIHENFOLGE.forEach(id => {
+      h += '<div class="zelle" onclick="blockHolen(' + id + ')"><img src="' + symbolBild(id) + '">'
+        + "<span>" + dingName(id) + "</span><b>+" + HOL_MENGE + "</b></div>";
+    });
+    h += "</div>";
+  }
   const mats = alleSachen();
   if(!mats.length) h += ue('<p class="c-dim">Noch nichts gesammelt. Halte draußen die linke Maustaste auf einen Block.</p>');
   else {
