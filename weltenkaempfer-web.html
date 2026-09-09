@@ -796,7 +796,7 @@ const EN = {
   "Augen des Helden": "Hero's eyes",
   "Besiegt!": "Defeated!",
   "Der Boss erscheint erst in der Arena, ": "The boss only appears in the arena ",
-  "Der Schattenfürst ist gefallen, alle drei Welten sind frei.<br>": "The Shadow Lord has fallen, all three worlds are free.<br>",
+  "Der Warden ist gefallen. Alle zwölf Welten sind frei.<br>": "The Warden has fallen. All twelve worlds are free.<br>",
   "Der violette Punkt auf der Karte ist das Portal – geh hin und drück <b>E</b>.": "The purple dot on the map is the portal – go there and press <b>E</b>.",
   "Die anderen Quests sind erledigt – jetzt zeigt sich der Boss.<br>": "The other quests are done – now the boss shows itself.<br>",
   "Du bist ": "You died ",
@@ -868,7 +868,26 @@ const EN = {
   "Bretter aus Pilzstiel": "Mushroom Planks",
   "Bretter aus Schattenholz": "Shadow Planks",
   "Überspringen ⏭": "Skip ⏭",
-  "🔊 Ton an": "🔊 Sound on"
+  "🔊 Ton an": "🔊 Sound on",
+  "Bezwinge den Warden": "Overcome the Warden",
+  "Erlege 16 Lauscher": "Slay 16 listeners",
+  "Kein Himmel, kein Laut. Der Boden lebt und lauscht – und wenn er dich hört, kommt der Warden.": "No sky, no sound. The ground is alive and listening – and if it hears you, the Warden comes.",
+  "Kreischer": "Shrieker",
+  "Lauscher": "Listener",
+  "Sammle 24 Sculkherzen": "Collect 24 sculk hearts",
+  "Sculk": "Sculk",
+  "Sculkadern": "Sculk Veins",
+  "Sculkauge": "Sculk Eye",
+  "Sculkaxt": "Sculk Axe",
+  "Sculkklinge": "Sculk Blade",
+  "Sculkkriecher": "Sculk Crawler",
+  "Sculkrüstung": "Sculk Armor",
+  "Sculkschwert": "Sculk Sword",
+  "Sculkspitzhacke": "Sculk Pickaxe",
+  "Tiefenschiefer": "Deepslate",
+  "Tiefes Dunkel": "Deep Dark",
+  "Warden": "Warden",
+  "💠 Sculkherz": "💠 Sculk Heart"
 };
 function ue(s){
   if(sprache !== "en" || typeof s !== "string") return s;
@@ -969,7 +988,8 @@ const K = {gras:0, grasSeite:1, erde:2, stein:3, sand:4, wasser:5, holz:6, holzO
            schnee:28, dschungelHolz:29, dschungelLaub:30, sumpfErde:31,
            pilzHut:32, pilzStiel:33, myzel:34,
            schwefel:35, schwefelStein:36, seelenSand:37, seelenFeuer:38,
-           knochen:39, seelenKristall:40, dunkelHolz:41, schattenLaub:42, moosBoden:43, rotFels:44, hoehlenWasser:45};
+           knochen:39, seelenKristall:40, dunkelHolz:41, schattenLaub:42, moosBoden:43, rotFels:44, hoehlenWasser:45,
+           sculk:46, sculkAder:47, tiefenschiefer:48, sculkAuge:49};
 // [oben, unten, seite] · haerte = Sekunden mit bloßen Händen · gibt = was beim Abbau herausfällt
 const BLOECKE = [
   null,
@@ -1014,7 +1034,13 @@ const BLOECKE = [
   {name:"Moosboden",  kacheln:[K.moosBoden,K.erde,K.moosBoden], fest:true, dicht:true, haerte:1.0, gibt:39},
   {name:"Rotfels",    kacheln:[K.rotFels,K.rotFels,K.rotFels], fest:true, dicht:true, haerte:4.0, gibt:40, werkzeug:"hacke"},
   {name:"Höhlenwasser",kacheln:[K.hoehlenWasser,K.hoehlenWasser,K.hoehlenWasser],
-                      fest:false, dicht:false, fluessig:true, leuchtet:true}
+                      fest:false, dicht:false, fluessig:true, leuchtet:true},
+  {name:"Sculk",      kacheln:[K.sculk,K.sculk,K.sculk], fest:true, dicht:true, haerte:4.5, gibt:42, werkzeug:"axt"},
+  {name:"Sculkadern", kacheln:[K.sculkAder,K.sculkAder,K.sculkAder], fest:true, dicht:true, haerte:6.0, gibt:43, werkzeug:"hacke"},
+  {name:"Tiefenschiefer",kacheln:[K.tiefenschiefer,K.tiefenschiefer,K.tiefenschiefer],
+                      fest:true, dicht:true, haerte:7.5, gibt:44, werkzeug:"hacke"},
+  {name:"Sculkauge",  kacheln:[K.sculkAuge,K.sculkAuge,K.sculkAuge], fest:true, dicht:true,
+                      leuchtet:true, haerte:20, gibt:45, werkzeug:"hacke"}
 ];
 const B_LUFT=0, B_GRAS=1, B_ERDE=2, B_STEIN=3, B_SAND=4, B_WASSER=5, B_HOLZ=6,
       B_LAUB=7, B_BRETTER=8, B_GLUT=9, B_OBSIDIAN=10, B_PORTAL=11, B_LAVA=12,
@@ -1023,7 +1049,8 @@ const B_LUFT=0, B_GRAS=1, B_ERDE=2, B_STEIN=3, B_SAND=4, B_WASSER=5, B_HOLZ=6,
       B_DSCHUNGELHOLZ=25, B_DSCHUNGELLAUB=26, B_SUMPFERDE=27, B_PILZHUT=28,
       B_PILZSTIEL=29, B_MYZEL=30, B_SCHWEFEL=31, B_SCHWEFELSTEIN=32,
       B_SEELENSAND=33, B_SEELENFEUER=34, B_KNOCHEN=35, B_SEELENKRISTALL=36,
-      B_SCHATTENHOLZ=37, B_SCHATTENLAUB=38, B_MOOSBODEN=39, B_ROTFELS=40, B_HOEHLENWASSER=41;
+      B_SCHATTENHOLZ=37, B_SCHATTENLAUB=38, B_MOOSBODEN=39, B_ROTFELS=40, B_HOEHLENWASSER=41,
+      B_SCULK=42, B_SCULKADER=43, B_TIEFENSCHIEFER=44, B_SCULKAUGE=45;
 
 // Gegenstände (keine Blöcke – kann man nicht setzen). IDs ab 100.
 const I_STOCK = 100;
@@ -1043,7 +1070,7 @@ const HACKEN = [
   {name:"Dornenspitzhacke",   bonus:7.8}, {name:"Smaragdspitzhacke",  bonus:9.8},
   {name:"Pechspitzhacke",     bonus:12},  {name:"Eisspitzhacke",      bonus:15},
   {name:"Sporenspitzhacke",   bonus:19}, {name:"Schwefelspitzhacke", bonus:24},
-  {name:"Seelenspitzhacke",   bonus:30}
+  {name:"Seelenspitzhacke",   bonus:30}, {name:"Sculkspitzhacke",    bonus:38}
 ];
 const AEXTE = [
   {name:"keine Axt",   bonus:0},   {name:"Holzaxt",     bonus:0.9},
@@ -1052,7 +1079,7 @@ const AEXTE = [
   {name:"Dornenaxt",   bonus:7.8}, {name:"Smaragdaxt",  bonus:9.8},
   {name:"Pechaxt",     bonus:12},  {name:"Eisaxt",      bonus:15},
   {name:"Sporenaxt",   bonus:19}, {name:"Schwefelaxt", bonus:24},
-  {name:"Seelenaxt",   bonus:30}
+  {name:"Seelenaxt",   bonus:30}, {name:"Sculkaxt",    bonus:38}
 ];
 // Aus diesen Stoffen lassen sich Schwert, Axt und Spitzhacke bauen
 const WERKSTOFFE = [
@@ -1061,7 +1088,8 @@ const WERKSTOFFE = [
   {name:"Obsidian", b:B_OBSIDIAN, stufe:5},   {name:"Dornen",   b:B_KAKTUS,   stufe:6},
   {name:"Smaragd",  b:B_SMARAGD,  stufe:7},   {name:"Pech",     b:B_PECH,     stufe:8},
   {name:"Eis",      b:B_EIS,      stufe:9},   {name:"Sporen",   b:B_SPORE,    stufe:10},
-  {name:"Schwefel", b:B_SCHWEFEL, stufe:11},  {name:"Seelen",   b:B_SEELENKRISTALL, stufe:12}
+  {name:"Schwefel", b:B_SCHWEFEL, stufe:11},  {name:"Seelen",   b:B_SEELENKRISTALL, stufe:12},
+  {name:"Sculk",    b:B_SCULK,     stufe:13}
 ];
 const fest  = id => id > 0 && BLOECKE[id].fest;
 const dicht = id => id > 0 && BLOECKE[id].dicht;
@@ -1279,6 +1307,25 @@ const WELTEN = [
       {id:"w10q2", typ:"sammeln", ziel:"seelenlicht", anz:20, text:"Sammle 20 Seelenlichter",     xp:110000, gold:70000},
       {id:"w10q3", typ:"boss",    ziel:"huter",       anz:1,  text:"Bezwinge den Hüter der Seelen", xp:250000, gold:400000}
     ]
+  },
+  {
+    name:"Tiefes Dunkel", emoji:"🕳️", saat:60606,
+    himmelOben:"#080c12", himmelUnten:"#111b24", nebel:[0.05,0.09,0.12],
+    oben:B_SCULK, unter:B_SCULKADER, tief:B_TIEFENSCHIEFER, strand:B_SCULKADER, erz:B_SCULKAUGE,
+    fluessig:B_HOEHLENWASSER, seehoehe:8, grund:12, hoehe:6, terrassen:true,
+    beschreibung:"Kein Himmel, kein Laut. Der Boden lebt und lauscht – und wenn er dich hört, kommt der Warden.",
+    gegner:[
+      {id:"lauscher", name:"Lauscher",      emoji:"👂", hp:16000, atk:1290, def:760, xp:60000, gold:40000, tempo:3.2},
+      {id:"kreischer",name:"Kreischer",     emoji:"📢", hp:12000, atk:1330, def:660, xp:64000, gold:42000, tempo:2.5},
+      {id:"kriecher", name:"Sculkkriecher", emoji:"🕸️", hp:22000, atk:1240, def:900, xp:72000, gold:46000, tempo:4.2}
+    ],
+    boss:{id:"warden", name:"Warden", emoji:"🫀", hp:16000, atk:1380, def:950, xp:1500000, gold:2500000},
+    item:{id:"sculkherz", name:"💠 Sculkherz", emoji:"💠"},
+    quests:[
+      {id:"w11q1", typ:"kill",    ziel:"lauscher",  anz:16, text:"Erlege 16 Lauscher",       xp:400000, gold:250000},
+      {id:"w11q2", typ:"sammeln", ziel:"sculkherz", anz:24, text:"Sammle 24 Sculkherzen",    xp:450000, gold:280000},
+      {id:"w11q3", typ:"boss",    ziel:"warden",    anz:1,  text:"Bezwinge den Warden",      xp:900000, gold:1500000}
+    ]
   }
 ];
 
@@ -1288,7 +1335,8 @@ const WAFFEN = [
   {name:"Dornenschwert",atk:95,preis:14000},{name:"Smaragdschwert",atk:140,preis:32000},
   {name:"Pechschwert",atk:200,preis:70000},{name:"Eisschwert",atk:280,preis:150000},
   {name:"Sporenklinge",atk:400,preis:320000},
-  {name:"Schwefelklinge",atk:560,preis:700000},{name:"Seelenklinge",atk:800,preis:1500000}
+  {name:"Schwefelklinge",atk:560,preis:700000},{name:"Seelenklinge",atk:800,preis:1500000},
+  {name:"Sculkklinge",atk:1150,preis:3200000}
 ];
 const RUESTUNGEN = [
   {name:"Stofffetzen",def:0,preis:0},{name:"Lederrüstung",def:4,preis:80},{name:"Kettenhemd",def:9,preis:260},
@@ -1296,7 +1344,8 @@ const RUESTUNGEN = [
   {name:"Dornenpanzer",def:70,preis:13000},{name:"Smaragdrüstung",def:105,preis:30000},
   {name:"Pechrüstung",def:150,preis:66000},{name:"Eispanzer",def:210,preis:140000},
   {name:"Sporenrüstung",def:300,preis:300000},
-  {name:"Schwefelrüstung",def:420,preis:650000},{name:"Seelenrüstung",def:600,preis:1400000}
+  {name:"Schwefelrüstung",def:420,preis:650000},{name:"Seelenrüstung",def:600,preis:1400000},
+  {name:"Sculkrüstung",def:860,preis:3000000}
 ];
 // Reihenfolge der Materialien in der Leiste (nur was du wirklich besitzt, wird gezeigt)
 const REIHENFOLGE = [B_GRAS, B_BLUETENBODEN, B_MYZEL, B_ERDE, B_SUMPFERDE, B_SAND, B_SCHNEE, B_STEIN,
@@ -2095,6 +2144,25 @@ function atlasBauen(){
   kachel(K.rotFels,     (g,T)=>{ grund(g,T,"#6e2a24"); rauschen(g,T,["#7f342c","#59201b","#8c3f33"],.8);
                                  g.fillStyle="#4a1a16"; for(let i=0;i<7;i++)
                                    g.fillRect(Math.random()*T, Math.random()*T, 3+Math.random()*5, 2); });
+  // Tiefes Dunkel: fast schwarzer Stein, darüber wucherndes Sculk mit blauem Glimmen
+  kachel(K.tiefenschiefer, (g,T)=>{ grund(g,T,"#31323a"); rauschen(g,T,["#3a3b44","#26272e","#44454f"],.85);
+                                 g.fillStyle="#22232a"; for(let i=0;i<6;i++)
+                                   g.fillRect(Math.random()*T, Math.random()*T, 4+Math.random()*7, 2); });
+  kachel(K.sculk,       (g,T)=>{ grund(g,T,"#10161d"); rauschen(g,T,["#16202b","#0b1015","#1c2836"],.9);
+                                 for(let i=0;i<26;i++){ const x=Math.random()*T, y=Math.random()*T;
+                                   g.fillStyle = Math.random()<0.35 ? "#2ee6c8" : "#137d78";
+                                   g.fillRect(x, y, 1+Math.random()*2, 1+Math.random()*2); } });
+  kachel(K.sculkAder,   (g,T)=>{ grund(g,T,"#2b2c34"); rauschen(g,T,["#33343d","#212229"],.8);
+                                 g.strokeStyle="#1c8f86"; g.lineWidth=1.6;
+                                 for(let i=0;i<5;i++){ g.beginPath();
+                                   let x=Math.random()*T, y=Math.random()*T; g.moveTo(x,y);
+                                   for(let k=0;k<3;k++){ x+=Math.random()*10-5; y+=Math.random()*10-5; g.lineTo(x,y); }
+                                   g.stroke(); } });
+  kachel(K.sculkAuge,   (g,T)=>{ grund(g,T,"#0d141b"); rauschen(g,T,["#122029","#080d12"],.85);
+                                 const m=T/2;
+                                 g.fillStyle="#0e5f5c"; g.beginPath(); g.arc(m,m,T*0.34,0,6.3); g.fill();
+                                 g.fillStyle="#35f0d2"; g.beginPath(); g.arc(m,m,T*0.19,0,6.3); g.fill();
+                                 g.fillStyle="#d8fff8"; g.beginPath(); g.arc(m,m,T*0.08,0,6.3); g.fill(); });
   kachel(K.hoehlenWasser,      (g,T)=>{ grund(g,T,"#2fb89a"); rauschen(g,T,["#48d6b4","#1e9c82","#7ff0d8"],.7);
                                  g.fillStyle="#b6ffee"; for(let i=0;i<5;i++){ const x=Math.random()*T,y=Math.random()*T;
                                    g.beginPath(); g.arc(x,y,1.5+Math.random()*2,0,6.3); g.fill(); } });
@@ -3147,7 +3215,8 @@ const BAUPLAN_WELT = {
   "Ewiges Eis":       [["iglu",5],["spitzen",6],["turm",2]],
   "Pilzland":         [["pilzkoloss",1]],
   "Schwefelhöhle":    [["spitzen",8],["ruine",4]],
-  "Seelengarten":     [["prachtbaum",7],["ruine",5],["spitzen",4]]
+  "Seelengarten":     [["prachtbaum",7],["ruine",5],["spitzen",4]],
+  "Tiefes Dunkel":    [["ruine",7],["spitzen",9],["turm",3]]
 };
 function bauplatz(wuerfel, w, radius, schonBelegt){
   for(let versuch=0; versuch<400; versuch++){
@@ -4052,7 +4121,7 @@ function questsPruefen(){
   if(w.quests.every(q => s.fertig[q.id])){
     if(s.welt === WELTEN.length-1 && !s.gewonnen){
       s.gewonnen = true;
-      infoZeigen("🏆",ue("Du hast gewonnen!"),ue("Der Schattenfürst ist gefallen, alle drei Welten sind frei.<br>")
+      infoZeigen("🏆",ue("Du hast gewonnen!"),ue("Der Warden ist gefallen. Alle zwölf Welten sind frei.<br>")
         + ue("Endstand: Stufe <b>") + s.level + "</b> · " + s.gold + ue(" 💰<br>Durch das Portal kommst du jetzt in <b>jede</b> Welt zurück – deine Bauten stehen dort noch."));
     } else if(s.welt < WELTEN.length-1 && !s.fertig["portal"+s.welt]){
       s.fertig["portal"+s.welt] = true;
