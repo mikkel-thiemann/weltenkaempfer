@@ -85,6 +85,9 @@
          padding:8px; text-align:center; font-size:11.5px; position:relative}
   .zelle img{width:34px; height:34px; image-rendering:pixelated; border-radius:4px; display:block; margin:0 auto 4px}
   .zelle span{display:block; color:#c9d5e6}
+  .zelle .wegwerf{position:absolute; top:2px; right:4px; font-style:normal; font-size:13px;
+                  line-height:1; color:#7d8ba1; cursor:pointer; padding:2px 4px; border-radius:6px}
+  .zelle .wegwerf:hover{color:#fff; background:var(--hp)}
   .zelle b{position:absolute; top:5px; right:8px; color:var(--gold)}
   .zelle{cursor:pointer; transition:border-color .12s, background .12s}
   .zelle:hover{border-color:#8fa6c8; background:rgba(255,255,255,.09)}
@@ -905,7 +908,9 @@ const EN = {
   "❤️ +20 Leben": "❤️ +20 Health",
   "❤️ +50 Leben": "❤️ +50 Health",
   "🛡️ +25 Rüstung": "🛡️ +25 Armor",
-  "🛡️ +3 Rüstung": "🛡️ +3 Armor"
+  "🛡️ +3 Rüstung": "🛡️ +3 Armor",
+  "Wegwerfen": "Throw away",
+  "🗑️ Weggeworfen: ": "🗑️ Thrown away: "
 };
 function ue(s){
   if(sprache !== "en" || typeof s !== "string") return s;
@@ -1542,6 +1547,19 @@ function nimmMaterial(id, anz){
 function besitz(){ return REIHENFOLGE.filter(id => habe(id) > 0); }
 /* Legt von jedem Block einen vollen Stapel in den Rucksack - zum Bauen,
    ohne vorher alles zusammensuchen zu müssen.                          */
+/* Einen Stapel wegwerfen. Was gerade im Handwerksgitter liegt, bleibt
+   liegen - sonst waere es plötzlich weg, ohne dass man es sieht.      */
+function wegwerfen(id){
+  const imGebrauch = imGitter(id);
+  if(habe(id) - imGebrauch <= 0) return;
+  if(handMaterial === id) handMaterial = 0;
+  if(imGebrauch > 0) s.inventar[id] = imGebrauch; else delete s.inventar[id];
+  if(id >= 100 && s.sachen) delete s.sachen[id];
+  gurtBauen();
+  if(typeof bastelZeichnen === "function") bastelZeichnen();
+  speichern();
+  meldung(ue("🗑️ Weggeworfen: ") + dingName(id), "c-dim");
+}
 function alleBloeckeGeben(){
   REIHENFOLGE.forEach(id => { if(habe(id) < 999) s.inventar[id] = 999; });
   gurtBauen();
@@ -3883,7 +3901,9 @@ function bastelZeichnen(){
       const uebrig = habe(id) - imGitter(id);
       h += '<div class="zelle' + (handMaterial === id ? " gewaehlt" : "") + (uebrig <= 0 ? " leerbestand" : "")
         + '" onclick="materialWaehlen(' + id + ')"><img src="' + symbolBild(id) + '">'
-        + "<span>" + dingName(id) + "</span><b>" + habe(id) + "</b></div>";
+        + "<span>" + dingName(id) + "</span><b>" + habe(id) + "</b>"
+        + '<i class="wegwerf" title="' + ue("Wegwerfen") + '" onclick="event.stopPropagation(); wegwerfen('
+        + id + ')">✕</i></div>';
     });
     h += "</div>";
   }
