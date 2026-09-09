@@ -1354,7 +1354,14 @@ const REIHENFOLGE = [B_GRAS, B_BLUETENBODEN, B_MYZEL, B_ERDE, B_SUMPFERDE, B_SAN
                      B_DSCHUNGELLAUB, B_PILZHUT, B_KAKTUS, B_BRETTER, B_WERKBANK, B_GLUT, B_KRISTALL,
                      B_OBSIDIAN, B_SMARAGD, B_PECH, B_EIS, B_SPORE,
                      B_SCHWEFEL, B_SCHWEFELSTEIN, B_SEELENSAND, B_KNOCHEN, B_SEELENKRISTALL,
-                     B_SCHATTENHOLZ, B_SCHATTENLAUB, B_MOOSBODEN, B_ROTFELS];
+                     B_SCHATTENHOLZ, B_SCHATTENLAUB, B_MOOSBODEN, B_ROTFELS,
+                     B_SCULK, B_SCULKADER, B_TIEFENSCHIEFER, B_SCULKAUGE];
+/* Sicherheitsnetz: was sich abbauen lässt, muss auch im Gürtel auftauchen.
+   Sonst landet ein neuer Block zwar im Rucksack, ist aber unsichtbar. */
+for(let i = 1; i < BLOECKE.length; i++){
+  const d = BLOECKE[i];
+  if(d && d.fest && !d.unzerstoerbar && REIHENFOLGE.indexOf(i) < 0) REIHENFOLGE.push(i);
+}
 
 /* Baupläne fürs Handwerksgitter.
    form  = Muster, Zeile für Zeile ("" = leeres Feld) – zählt wie im Original die Anordnung
