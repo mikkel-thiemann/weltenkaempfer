@@ -887,7 +887,8 @@ const EN = {
   "Tiefenschiefer": "Deepslate",
   "Tiefes Dunkel": "Deep Dark",
   "Warden": "Warden",
-  "💠 Sculkherz": "💠 Sculk Heart"
+  "💠 Sculkherz": "💠 Sculk Heart",
+  "📥 Spielstand aus dem Link übernommen ✓": "📥 Save taken from the link ✓"
 };
 function ue(s){
   if(sprache !== "en" || typeof s !== "string") return s;
@@ -4578,7 +4579,24 @@ galerieZeichnen();
    angeklickt hat - dann läuft das Video stumm und ein Knopf schaltet den
    Ton dazu.                                                              */
 let vorspannFertig = false;
+/* Steht hinter der Adresse ein #stand=..., wird dieser Spielstand einmal
+   uebernommen. Danach wird der Link wieder sauber gemacht, damit er beim
+   naechsten Laden nicht noch einmal eingelesen wird.                      */
+function standAusLink(){
+  const h = location.hash || "";
+  if(h.indexOf("#stand=") !== 0) return false;
+  let text;
+  try{
+    const roh = atob(h.slice(7).replace(/-/g, "+").replace(/_/g, "/"));
+    text = new TextDecoder().decode(Uint8Array.from(roh, c => c.charCodeAt(0)));
+  }catch(e){ return false; }
+  try{ history.replaceState(null, "", location.pathname + location.search); }catch(e){}
+  const ok = sicherungEinlesen(text);
+  if(ok) meldung(ue("📥 Spielstand aus dem Link übernommen ✓"), "c-gold");
+  return ok;
+}
 function startBildschirmZeigen(){
+  standAusLink();
   if(nameLaden()){
     nameAnzeigen();
     weltlisteZeichnen();
