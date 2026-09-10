@@ -938,7 +938,7 @@ const EN = {
   "Sammle 28 Wolkenfedern": "Collect 28 cloud feathers",
   "Sonnengeist": "Sun Spirit",
   "Steinwächter": "Stone Sentry",
-  "Verwehe 18 Zephyre": "Scatter 18 zephyrs",
+  "Verjage 18 fliegende Kühe": "Chase off 18 flying cows",
   "Wolke": "Aercloud",
   "Zanit": "Zanite",
   "Zanitaxt": "Zanite Axe",
@@ -946,7 +946,7 @@ const EN = {
   "Zanitrüstung": "Zanite Armor",
   "Zanitschwert": "Zanite Sword",
   "Zanitspitzhacke": "Zanite Pickaxe",
-  "Zephyr": "Zephyr",
+  "Fliegende Kuh": "Flying Cow",
   "Über den Wolken. Heller Stein, schwebende Inseln, blendendes Licht – und Wächter, die hier oben keine Fremden dulden.": "Above the clouds. Pale stone, floating islands, blinding light – and guardians who tolerate no strangers up here.",
   "🪶 Wolkenfeder": "🪶 Cloud Feather"
 };
@@ -1177,6 +1177,11 @@ const dicht = id => id > 0 && BLOECKE[id].dicht;
 /* =====================================================================
    WELTEN
    ===================================================================== */
+/* Die fliegende Kuh trägt eine echte Minecraft-Textur statt eines Emojis.
+   Für das Bild in der Welt und im Kampf wird der Kopf herausgeschnitten -
+   der sitzt im Standard-Kuhbild vorne bei (6,6) und ist 8×8 Pixel groß. */
+const KUH_BILD = "data:image/png;base64,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";
+
 const WELTEN = [
   {
     name:"Grünwald", emoji:"🌲", saat:1337,
@@ -1416,14 +1421,14 @@ const WELTEN = [
     portalRahmen:B_LEUCHTSTEIN,
     beschreibung:"Über den Wolken. Heller Stein, schwebende Inseln, blendendes Licht – und Wächter, die hier oben keine Fremden dulden.",
     gegner:[
-      {id:"zephyr",  name:"Zephyr",       emoji:"🌬️", hp:15000, atk:2324, def:720,  xp:150000, gold:90000,  tempo:5.0},
+      {id:"zephyr",  name:"Fliegende Kuh", emoji:"🐄", bild:KUH_BILD, hp:15000, atk:2324, def:720, xp:150000, gold:90000, tempo:5.0},
       {id:"kobold",  name:"Kobold",       emoji:"🐓", hp:19000, atk:2054, def:860,  xp:160000, gold:95000,  tempo:3.4},
       {id:"waechter",name:"Steinwächter", emoji:"🗿", hp:26000, atk:2084, def:1100, xp:175000, gold:105000, tempo:2.2}
     ],
     boss:{id:"sonnengeist", name:"Sonnengeist", emoji:"☀️", hp:26000, atk:2660, def:1300, xp:4000000, gold:7000000},
     item:{id:"wolkenfeder", name:"🪶 Wolkenfeder", emoji:"🪶"},
     quests:[
-      {id:"w12q1", typ:"kill",    ziel:"zephyr",      anz:18, text:"Verwehe 18 Zephyre",        xp:1000000, gold:600000},
+      {id:"w12q1", typ:"kill",    ziel:"zephyr",      anz:18, text:"Verjage 18 fliegende Kühe",        xp:1000000, gold:600000},
       {id:"w12q2", typ:"sammeln", ziel:"wolkenfeder", anz:28, text:"Sammle 28 Wolkenfedern",    xp:1100000, gold:700000},
       {id:"w12q3", typ:"boss",    ziel:"sonnengeist", anz:1,  text:"Bezwinge den Sonnengeist",  xp:2500000, gold:4000000}
     ]
@@ -1829,6 +1834,7 @@ function werkbankNah(){
 }
 const gesAtk = () => s.atk + WAFFEN[s.waffe].atk;
 const gesDef = () => s.def + RUESTUNGEN[s.ruestung].def;
+
 
 /* =====================================================================
    WELTDATEN
@@ -2388,6 +2394,29 @@ function kachelBild(nr, groesse){
   g.imageSmoothingEnabled = false;
   g.drawImage(atlas, (nr%AN)*32, Math.floor(nr/AN)*32, 32, 32, 0, 0, groesse, groesse);
   return c;
+}
+/* Aus einer Mob-Textur den Kopf herausschneiden und gross zeichnen.
+   Nearest-Neighbour, damit die Pixel scharf bleiben.                  */
+const bildCache = {};
+function wesenBildTextur(gl, quelle){
+  if(bildCache[quelle]) return bildCache[quelle];
+  const G = 128, c = document.createElement("canvas");
+  c.width = c.height = G;
+  const g = c.getContext("2d");
+  g.imageSmoothingEnabled = false;
+  const tex = texturVon(gl, c);
+  bildCache[quelle] = tex;
+  const bild = new Image();
+  bild.onload = () => {
+    g.clearRect(0, 0, G, G);
+    g.imageSmoothingEnabled = false;
+    g.drawImage(bild, 6, 6, 8, 8, 0, 0, G, G);      // Kopf, vorne
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, c);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+  };
+  bild.src = quelle;
+  return tex;
 }
 const emojiCache = {};
 function emojiTextur(gl, emoji){
@@ -3021,7 +3050,7 @@ function zeichneWesen(mvp){
     gl.vertexAttribPointer(A.pos, 3, gl.FLOAT, false, 24, 0);
     gl.vertexAttribPointer(A.uv, 2, gl.FLOAT, false, 24, 12);
     gl.vertexAttribPointer(A.licht, 1, gl.FLOAT, false, 24, 20);
-    gl.bindTexture(gl.TEXTURE_2D, emojiTextur(gl, o.emoji));
+    gl.bindTexture(gl.TEXTURE_2D, o.bild ? wesenBildTextur(gl, o.bild) : emojiTextur(gl, o.emoji));
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
   if(kameraModus > 0) zeichneHeld();
@@ -4255,8 +4284,22 @@ function kampfStarten(o){
   $("kampflog").innerHTML = "";
   $("kampfort").textContent = WELTEN[s.welt].name + ue(" · Kampf");
   $("figurP").src = heldBild();
-  $("figurG").textContent = o.emoji;
-  $("figurG").style.fontSize = o.boss ? "84px" : "58px";
+  const gf = $("figurG");
+  if(o.bild){
+    // Kopfausschnitt als Hintergrund: 8×8 Pixel aus einem 64×32 großen Bild
+    const gr = o.boss ? 84 : 58, f = gr/8;
+    gf.textContent = "";
+    gf.style.width = gr + "px"; gf.style.height = gr + "px";
+    gf.style.backgroundImage = "url(" + o.bild + ")";
+    gf.style.backgroundSize = (64*f) + "px " + (32*f) + "px";
+    gf.style.backgroundPosition = (-6*f) + "px " + (-6*f) + "px";
+    gf.style.imageRendering = "pixelated";
+  } else {
+    gf.textContent = o.emoji;
+    gf.style.width = ""; gf.style.height = "";
+    gf.style.backgroundImage = "";
+    gf.style.fontSize = o.boss ? "84px" : "58px";
+  }
   $("nameG").textContent = o.name + (o.boss ? " 👑" : "");
   $("nameP").textContent = spielerName + ue(" (Stufe ") + s.level + ")";
   kampflog((o.boss ? "⚠️ " : "⚔️ ") + o.name + ue(" stellt sich dir!"), o.boss ? "c-bad" : "");
