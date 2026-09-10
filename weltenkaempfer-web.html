@@ -2388,22 +2388,99 @@ function kachelBild(nr, groesse){
   g.drawImage(atlas, (nr%AN)*32, Math.floor(nr/AN)*32, 32, 32, 0, 0, groesse, groesse);
   return c;
 }
-/* Aus einer Mob-Textur den Kopf herausschneiden und gross zeichnen.
-   Nearest-Neighbour, damit die Pixel scharf bleiben.                  */
-const bildCache = {};
-function wesenBildTextur(gl, quelle){
-  if(bildCache[quelle]) return bildCache[quelle];
-  const G = 128, c = document.createElement("canvas");
-  c.width = c.height = G;
-  const g = c.getContext("2d");
-  g.imageSmoothingEnabled = false;
+/* ---------- Wesen als echtes 3D-Modell ----------
+   Wie beim Spielerskin, nur für einen Mob: mehrere Kästen, jede Seite mit
+   ihrem Stück aus der Textur. Die Maße sind die des Minecraft-Kuhmodells,
+   gerechnet in Textur-Pixeln, Ursprung zwischen den Vorderhufen.
+   Der Rumpf liegt im Original um 90° gekippt - deshalb bekommt er seine
+   Seiten einzeln zugewiesen, mit gedrehtem Bildausschnitt an den Flanken. */
+const MOB_EINHEIT = 1 / 16;            // ein Texturpixel in Blöcken, wie im Original
+const MOB_BREIT = 64, MOB_HOCH = 32;   // Größe der Kuhtextur
+
+// Eine Fläche: vier Ecken gegen den Uhrzeigersinn, Bildausschnitt, Helligkeit
+function mobFlaeche(aus, ecken, uv, licht, drehen){
+  const [ux, uy, ub, uh] = uv, r = 0.002;
+  const eckenUV = drehen
+    ? [[ux+r,uy+r],[ux+r,uy+uh-r],[ux+ub-r,uy+uh-r],[ux+ub-r,uy+r]]
+    : [[ux+r,uy+uh-r],[ux+ub-r,uy+uh-r],[ux+ub-r,uy+r],[ux+r,uy+r]];
+  const v = [];
+  for(let i=0; i<4; i++)
+    v.push([ecken[i][0]*MOB_EINHEIT, ecken[i][1]*MOB_EINHEIT, ecken[i][2]*MOB_EINHEIT,
+            eckenUV[i][0]/MOB_BREIT, eckenUV[i][1]/MOB_HOCH, licht]);
+  for(const e of [v[0],v[1],v[2], v[0],v[2],v[3]]) for(let i=0; i<6; i++) aus.push(e[i]);
+}
+
+/* Ein Kasten, dessen Seiten wie üblich aus (u,v) aufgeklappt werden.
+   w/h/d sind die Maße im Bild, x0/y0/z0 die Ecke in der Welt.          */
+function mobKasten(aus, x0, y0, z0, w, h, d, u, v){
+  const x1 = x0+w, y1 = y0+h, z1 = z0+d;
+  const s = {
+    oben:   [u+d,     v,     w, d],
+    unten:  [u+d+w,   v,     w, d],
+    rechts: [u,       v+d,   d, h],
+    vorne:  [u+d,     v+d,   w, h],
+    links:  [u+d+w,   v+d,   d, h],
+    hinten: [u+d+w+d, v+d,   w, h]
+  };
+  mobFlaeche(aus, [[x0,y1,z0],[x0,y1,z1],[x1,y1,z1],[x1,y1,z0]], s.oben,   1.00, true);
+  mobFlaeche(aus, [[x0,y0,z1],[x0,y0,z0],[x1,y0,z0],[x1,y0,z1]], s.unten,  0.45, true);
+  mobFlaeche(aus, [[x0,y0,z0],[x0,y0,z1],[x0,y1,z1],[x0,y1,z0]], s.links,  0.72);
+  mobFlaeche(aus, [[x1,y0,z1],[x1,y0,z0],[x1,y1,z0],[x1,y1,z1]], s.rechts, 0.72);
+  mobFlaeche(aus, [[x1,y0,z0],[x0,y0,z0],[x0,y1,z0],[x1,y1,z0]], s.vorne,  0.92);
+  mobFlaeche(aus, [[x0,y0,z1],[x1,y0,z1],[x1,y1,z1],[x0,y1,z1]], s.hinten, 0.62);
+}
+
+/* Der liegende Rumpf: im Bild ist er 12 breit, 18 hoch, 10 tief, in der
+   Welt aber 12 breit, 10 hoch, 18 lang. Rücken und Bauch bekommen darum
+   die Flächen "vorne"/"hinten", Brust und Hinterteil die von oben/unten,
+   und die Flanken werden gedreht aufgelegt.                            */
+function mobRumpf(aus, x0, y0, z0, u, v){
+  const w = 12, h = 18, d = 10;
+  const x1 = x0+w, y1 = y0+d, z1 = z0+h;
+  const oben   = [u+d,     v+d,   w, h];   // Rücken
+  const unten  = [u+d+w+d, v+d,   w, h];   // Bauch
+  const vorne  = [u+d,     v,     w, d];   // Brust
+  const hinten = [u+d+w,   v,     w, d];   // Hinterteil
+  const links  = [u,       v+d,   d, h];
+  const rechts = [u+d+w,   v+d,   d, h];
+  mobFlaeche(aus, [[x0,y1,z0],[x0,y1,z1],[x1,y1,z1],[x1,y1,z0]], oben,   1.00);
+  mobFlaeche(aus, [[x0,y0,z1],[x0,y0,z0],[x1,y0,z0],[x1,y0,z1]], unten,  0.45);
+  mobFlaeche(aus, [[x1,y0,z0],[x0,y0,z0],[x0,y1,z0],[x1,y1,z0]], vorne,  0.92, true);
+  mobFlaeche(aus, [[x0,y0,z1],[x1,y0,z1],[x1,y1,z1],[x0,y1,z1]], hinten, 0.62, true);
+  mobFlaeche(aus, [[x0,y0,z0],[x0,y0,z1],[x0,y1,z1],[x0,y1,z0]], links,  0.72, true);
+  mobFlaeche(aus, [[x1,y0,z1],[x1,y0,z0],[x1,y1,z0],[x1,y1,z1]], rechts, 0.72, true);
+}
+
+// Das Kuhmodell, Maße wie im Original
+function kuhNetzBauen(){
+  const aus = [];
+  mobRumpf(aus, -6, 12, -8, 18, 4);                  // Rumpf, liegend
+  mobKasten(aus, -4, 16, -14,  8,  8,  6,  0,  0);   // Kopf
+  mobKasten(aus, -5, 22, -12,  1,  3,  1, 22,  0);   // Horn links
+  mobKasten(aus,  4, 22, -12,  1,  3,  1, 22,  0);   // Horn rechts
+  for(const [bx, bz] of [[-5, 5], [1, 5], [-5, -7], [1, -7]])
+    mobKasten(aus, bx, 0, bz, 4, 12, 4, 0, 16);      // vier Beine
+  return new Float32Array(aus);
+}
+const mobNetze = {};                                  // je Textur ein fertiges Netz
+function mobNetz(art){
+  if(!mobNetze[art]) mobNetze[art] = kuhNetzBauen();
+  return mobNetze[art];
+}
+// Die Textur unverändert, damit jedes Stück an seiner Stelle sitzt
+const mobTexturen = {};
+function mobTextur(gl, quelle){
+  if(mobTexturen[quelle]) return mobTexturen[quelle];
+  const c = document.createElement("canvas");
+  c.width = MOB_BREIT; c.height = MOB_HOCH;
   const tex = texturVon(gl, c);
-  bildCache[quelle] = tex;
+  mobTexturen[quelle] = tex;
   const bild = new Image();
   bild.onload = () => {
-    g.clearRect(0, 0, G, G);
+    const g = c.getContext("2d");
     g.imageSmoothingEnabled = false;
-    g.drawImage(bild, 6, 6, 8, 8, 0, 0, G, G);      // Kopf, vorne
+    g.clearRect(0, 0, MOB_BREIT, MOB_HOCH);
+    g.drawImage(bild, 0, 0);
     gl.bindTexture(gl.TEXTURE_2D, tex);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, c);
     gl.bindTexture(gl.TEXTURE_2D, null);
@@ -2411,6 +2488,29 @@ function wesenBildTextur(gl, quelle){
   bild.src = quelle;
   return tex;
 }
+// Das Wesen an seinen Platz drehen und zeichnen
+function zeichneMob(o){
+  const netz = mobNetz(o.bild);
+  const bx = o.x - pos.x, bz = o.z - pos.z;
+  const blick = Math.atan2(bx, bz);            // schaut zum Spieler
+  const co = Math.cos(blick), si = Math.sin(blick);
+  const daten = new Float32Array(netz.length);
+  for(let i=0; i<netz.length; i+=6){
+    const x = netz[i], y = netz[i+1], z = netz[i+2];
+    daten[i]   = o.x + x*co + z*si;
+    daten[i+1] = o.y + y;
+    daten[i+2] = o.z - x*si + z*co;
+    daten[i+3] = netz[i+3]; daten[i+4] = netz[i+4]; daten[i+5] = netz[i+5];
+  }
+  gl.bindBuffer(gl.ARRAY_BUFFER, bbBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, daten, gl.DYNAMIC_DRAW);
+  gl.vertexAttribPointer(A.pos, 3, gl.FLOAT, false, 24, 0);
+  gl.vertexAttribPointer(A.uv, 2, gl.FLOAT, false, 24, 12);
+  gl.vertexAttribPointer(A.licht, 1, gl.FLOAT, false, 24, 20);
+  gl.bindTexture(gl.TEXTURE_2D, mobTextur(gl, o.bild));
+  gl.drawArrays(gl.TRIANGLES, 0, daten.length/6);
+}
+
 const emojiCache = {};
 function emojiTextur(gl, emoji){
   if(emojiCache[emoji]) return emojiCache[emoji];
@@ -3029,6 +3129,7 @@ function zeichneWesen(mvp){
   for(const o of wesen){
     const d = Math.hypot(o.x-pos.x, o.z-pos.z);
     if(d > sichtWeite) continue;
+    if(o.bild){ zeichneMob(o); continue; }        // eigenes Modell statt Bildtafel
     const g = o.gross, hg = g*1.1;
     const daten = [];
     const ecken = [[-1,0],[1,0],[1,1],[-1,1]];
@@ -3043,7 +3144,7 @@ function zeichneWesen(mvp){
     gl.vertexAttribPointer(A.pos, 3, gl.FLOAT, false, 24, 0);
     gl.vertexAttribPointer(A.uv, 2, gl.FLOAT, false, 24, 12);
     gl.vertexAttribPointer(A.licht, 1, gl.FLOAT, false, 24, 20);
-    gl.bindTexture(gl.TEXTURE_2D, o.bild ? wesenBildTextur(gl, o.bild) : emojiTextur(gl, o.emoji));
+    gl.bindTexture(gl.TEXTURE_2D, emojiTextur(gl, o.emoji));
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
   if(kameraModus > 0) zeichneHeld();
