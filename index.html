@@ -271,7 +271,7 @@
     <div style="font-size:52px">⛏️</div>
     <h2>WELTENKÄMPFER · BLOCKWELT</h2>
     <p class="c-dim" style="margin-top:0">Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.</p>
-    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 15 · Fliegende Kuh in 3D</p>
+    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 16 · Kuh mit Beinen</p>
     <p style="margin:0 0 4px">Willkommen, <b id="grussName" class="c-gold">Held</b>
       <button onclick="nameAendern()" style="padding:4px 10px; font-size:12px; margin-left:8px">✏️ Name &amp; Skin</button>
       <button onclick="uebertragZeigen()" style="padding:4px 10px; font-size:12px; margin-left:4px">💾 Spielstand übertragen</button></p>
@@ -499,7 +499,7 @@ const EN = {
   "Eisschwert": "Ice Sword",
   "Eisspitzhacke": "Ice Pickaxe",
   "Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.": "Thirteen open block worlds. Build, dig, fight – and find the portal.",
-  "Ausgabe 15 · Fliegende Kuh in 3D": "Build 15 · Flying cow in 3D",
+  "Ausgabe 16 · Kuh mit Beinen": "Build 16 · Cow with legs",
   "Endlose Dünen. Und die Kakteen hier stehen nicht nur herum – sie laufen.": "Endless dunes. And the cacti here don't just stand around – they walk.",
   "Erde": "Dirt",
   "Erlege 14 Schattenriesen": "Slay 14 shadow giants",
@@ -2406,8 +2406,10 @@ function kachelBild(nr, groesse){
 const MOB_EINHEIT = 1 / 16;            // ein Texturpixel in Blöcken, wie im Original
 const MOB_BREIT = 64, MOB_HOCH = 32;   // Größe der Kuhtextur
 
-// Eine Fläche: vier Ecken gegen den Uhrzeigersinn, Bildausschnitt, Helligkeit
-function mobFlaeche(aus, ecken, uv, licht, drehen){
+/* Eine Fläche: vier Ecken gegen den Uhrzeigersinn, Bildausschnitt, Helligkeit.
+   Die letzte Zahl sagt, zu welchem Teil die Ecke gehört: 0 steht still,
+   1 und 2 sind die beiden Beinpaare, die beim Laufen gegengleich schwingen. */
+function mobFlaeche(aus, ecken, uv, licht, drehen, teil){
   const [ux, uy, ub, uh] = uv, r = 0.002;
   const eckenUV = drehen
     ? [[ux+r,uy+r],[ux+r,uy+uh-r],[ux+ub-r,uy+uh-r],[ux+ub-r,uy+r]]
@@ -2415,13 +2417,13 @@ function mobFlaeche(aus, ecken, uv, licht, drehen){
   const v = [];
   for(let i=0; i<4; i++)
     v.push([ecken[i][0]*MOB_EINHEIT, ecken[i][1]*MOB_EINHEIT, ecken[i][2]*MOB_EINHEIT,
-            eckenUV[i][0]/MOB_BREIT, eckenUV[i][1]/MOB_HOCH, licht]);
-  for(const e of [v[0],v[1],v[2], v[0],v[2],v[3]]) for(let i=0; i<6; i++) aus.push(e[i]);
+            eckenUV[i][0]/MOB_BREIT, eckenUV[i][1]/MOB_HOCH, licht, teil || 0]);
+  for(const e of [v[0],v[1],v[2], v[0],v[2],v[3]]) for(let i=0; i<7; i++) aus.push(e[i]);
 }
 
 /* Ein Kasten, dessen Seiten wie üblich aus (u,v) aufgeklappt werden.
    w/h/d sind die Maße im Bild, x0/y0/z0 die Ecke in der Welt.          */
-function mobKasten(aus, x0, y0, z0, w, h, d, u, v){
+function mobKasten(aus, x0, y0, z0, w, h, d, u, v, teil){
   const x1 = x0+w, y1 = y0+h, z1 = z0+d;
   const s = {
     oben:   [u+d,     v,     w, d],
@@ -2431,12 +2433,12 @@ function mobKasten(aus, x0, y0, z0, w, h, d, u, v){
     links:  [u+d+w,   v+d,   d, h],
     hinten: [u+d+w+d, v+d,   w, h]
   };
-  mobFlaeche(aus, [[x0,y1,z0],[x0,y1,z1],[x1,y1,z1],[x1,y1,z0]], s.oben,   1.00, true);
-  mobFlaeche(aus, [[x0,y0,z1],[x0,y0,z0],[x1,y0,z0],[x1,y0,z1]], s.unten,  0.45, true);
-  mobFlaeche(aus, [[x0,y0,z0],[x0,y0,z1],[x0,y1,z1],[x0,y1,z0]], s.links,  0.72);
-  mobFlaeche(aus, [[x1,y0,z1],[x1,y0,z0],[x1,y1,z0],[x1,y1,z1]], s.rechts, 0.72);
-  mobFlaeche(aus, [[x1,y0,z0],[x0,y0,z0],[x0,y1,z0],[x1,y1,z0]], s.vorne,  0.92);
-  mobFlaeche(aus, [[x0,y0,z1],[x1,y0,z1],[x1,y1,z1],[x0,y1,z1]], s.hinten, 0.62);
+  mobFlaeche(aus, [[x0,y1,z0],[x0,y1,z1],[x1,y1,z1],[x1,y1,z0]], s.oben,   1.00, true,  teil);
+  mobFlaeche(aus, [[x0,y0,z1],[x0,y0,z0],[x1,y0,z0],[x1,y0,z1]], s.unten,  0.45, true,  teil);
+  mobFlaeche(aus, [[x0,y0,z0],[x0,y0,z1],[x0,y1,z1],[x0,y1,z0]], s.links,  0.72, false, teil);
+  mobFlaeche(aus, [[x1,y0,z1],[x1,y0,z0],[x1,y1,z0],[x1,y1,z1]], s.rechts, 0.72, false, teil);
+  mobFlaeche(aus, [[x1,y0,z0],[x0,y0,z0],[x0,y1,z0],[x1,y1,z0]], s.vorne,  0.92, false, teil);
+  mobFlaeche(aus, [[x0,y0,z1],[x1,y0,z1],[x1,y1,z1],[x0,y1,z1]], s.hinten, 0.62, false, teil);
 }
 
 /* Der liegende Rumpf: im Bild ist er 12 breit, 18 hoch, 10 tief, in der
@@ -2467,8 +2469,9 @@ function kuhNetzBauen(){
   mobKasten(aus, -4, 16, -14,  8,  8,  6,  0,  0);   // Kopf
   mobKasten(aus, -5, 22, -12,  1,  3,  1, 22,  0);   // Horn links
   mobKasten(aus,  4, 22, -12,  1,  3,  1, 22,  0);   // Horn rechts
-  for(const [bx, bz] of [[-5, 5], [1, 5], [-5, -7], [1, -7]])
-    mobKasten(aus, bx, 0, bz, 4, 12, 4, 0, 16);      // vier Beine
+  // Beine über Kreuz: vorne links schwingt mit hinten rechts, wie bei einer echten Kuh
+  for(const [bx, bz, paar] of [[-5, -7, 1], [1, 5, 1], [1, -7, 2], [-5, 5, 2]])
+    mobKasten(aus, bx, 0, bz, 4, 12, 4, 0, 16, paar);
   return new Float32Array(aus);
 }
 const mobNetze = {};                                  // je Textur ein fertiges Netz
@@ -2537,18 +2540,28 @@ function mobFigurBild(quelle, fertig){
 }
 
 // Das Wesen an seinen Platz drehen und zeichnen
+const MOB_BEIN_Y = 12 * MOB_EINHEIT;         // Drehpunkt der Beine, oben an der Schulter
 function zeichneMob(o){
   const netz = mobNetz(o.bild);
   const bx = o.x - pos.x, bz = o.z - pos.z;
   const blick = Math.atan2(bx, bz);            // schaut zum Spieler
   const co = Math.cos(blick), si = Math.sin(blick);
-  const daten = new Float32Array(netz.length);
-  for(let i=0; i<netz.length; i+=6){
-    const x = netz[i], y = netz[i+1], z = netz[i+2];
-    daten[i]   = o.x + x*co + z*si;
-    daten[i+1] = o.y + y;
-    daten[i+2] = o.z - x*si + z*co;
-    daten[i+3] = netz[i+3]; daten[i+4] = netz[i+4]; daten[i+5] = netz[i+5];
+  // Die beiden Beinpaare kippen gegengleich um die Schulter
+  const takt = Math.sin(o.schritt || 0) * 0.9 * (o.schwung || 0);
+  const dreh = [null, [Math.cos(takt), Math.sin(takt)], [Math.cos(takt), -Math.sin(takt)]];
+  const daten = new Float32Array(netz.length/7*6);
+  for(let i=0, j=0; i<netz.length; i+=7, j+=6){
+    let x = netz[i], y = netz[i+1], z = netz[i+2];
+    const d = dreh[netz[i+6]];
+    if(d){                                     // um den Drehpunkt nach vorn/hinten kippen
+      const dy = y - MOB_BEIN_Y;
+      y = MOB_BEIN_Y + dy*d[0] - z*d[1];
+      z =              dy*d[1] + z*d[0];
+    }
+    daten[j]   = o.x + x*co + z*si;
+    daten[j+1] = o.y + y;
+    daten[j+2] = o.z - x*si + z*co;
+    daten[j+3] = netz[i+3]; daten[j+4] = netz[i+4]; daten[j+5] = netz[i+5];
   }
   gl.bindBuffer(gl.ARRAY_BUFFER, bbBuf);
   gl.bufferData(gl.ARRAY_BUFFER, daten, gl.DYNAMIC_DRAW);
@@ -3048,6 +3061,13 @@ function wesenAktualisieren(dt){
     }
     o.x = klemm(o.x, 2, WX-2); o.z = klemm(o.z, 2, WZ-2);
     o.y += (bodenHoehe(o.x, o.z) - o.y) * Math.min(1, dt*8);
+    // Schritt-Takt: läuft mit der zurückgelegten Strecke, ebbt im Stehen ab
+    const weg = Math.hypot(o.x - (o.altX === undefined ? o.x : o.altX),
+                           o.z - (o.altZ === undefined ? o.z : o.altZ));
+    o.altX = o.x; o.altZ = o.z;
+    o.schritt = ((o.schritt || 0) + weg * 2.2) % (Math.PI*2);
+    o.schwung = (o.schwung || 0) + (Math.min(weg/Math.max(dt,0.001)/3, 1) - (o.schwung || 0))
+                                  * Math.min(1, dt*6);
     if(ab < (o.boss ? 2.4 : 1.3) && Math.abs(pos.y - o.y) < 3) kampfStarten(o);
   }
 }
