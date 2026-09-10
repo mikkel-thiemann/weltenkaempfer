@@ -2495,6 +2495,45 @@ function mobTextur(gl, quelle){
   bild.src = quelle;
   return tex;
 }
+/* Für den Kampf: die Kuh von der Seite, aus denselben Textur-Stücken wie das
+   Modell. So sieht sie im Kampf genauso aus wie draußen in der Welt.
+   Gerechnet wird in Texturpixeln, x = Länge (Kopf links), y = Höhe von oben. */
+const mobFiguren = {};
+function mobFigurBild(quelle, fertig){
+  if(mobFiguren[quelle]) return mobFiguren[quelle];
+  const BX = 25, BY = 26, E = 6;          // Figurgröße in Pixeln, E = Vergrößerung
+  const c = document.createElement("canvas");
+  c.width = BX*E; c.height = BY*E;
+  const g = c.getContext("2d");
+  g.imageSmoothingEnabled = false;
+  mobFiguren[quelle] = c.toDataURL();
+  const bild = new Image();
+  bild.onload = () => {
+    // teil: [Textur-x, Textur-y, Breite, Höhe, Figur-x, Figur-y, gedreht]
+    const teile = [
+      [18, 14, 10, 18,  6,  3, true],     // Rumpf, liegend (darum gedreht)
+      [14,  6,  6,  8,  0,  1, false],    // Kopf von der Seite
+      [24,  1,  1,  3,  2,  0, false],    // Horn
+      [ 8, 20,  4, 12,  7, 13, false],    // Vorderbein
+      [ 8, 20,  4, 12, 19, 13, false]     // Hinterbein
+    ];
+    for(const [tx, ty, tw, th, fx, fy, gedreht] of teile){
+      if(!gedreht){ g.drawImage(bild, tx, ty, tw, th, fx*E, fy*E, tw*E, th*E); continue; }
+      // Gedreht: am Rumpf steht das Bild hochkant in der Textur. Nach der
+      // Vierteldrehung liegt es richtig - genau wie am Modell in der Welt.
+      g.save();
+      g.translate(fx*E, (fy + tw)*E);
+      g.rotate(-Math.PI/2);
+      g.drawImage(bild, tx, ty, tw, th, 0, 0, tw*E, th*E);
+      g.restore();
+    }
+    mobFiguren[quelle] = c.toDataURL();
+    if(fertig) fertig(mobFiguren[quelle]);
+  };
+  bild.src = quelle;
+  return mobFiguren[quelle];
+}
+
 // Das Wesen an seinen Platz drehen und zeichnen
 function zeichneMob(o){
   const netz = mobNetz(o.bild);
@@ -4387,17 +4426,22 @@ function kampfStarten(o){
   $("figurP").src = heldBild();
   const gf = $("figurG");
   if(o.bild){
-    // Kopfausschnitt als Hintergrund: 8×8 Pixel aus einem 64×32 großen Bild
-    const gr = o.boss ? 84 : 58, f = gr/8;
+    // Die ganze Figur von der Seite, aus denselben Stücken wie das Modell
+    const hoch = o.boss ? 118 : 92, breit = Math.round(hoch * 25/26);
     gf.textContent = "";
-    gf.style.width = gr + "px"; gf.style.height = gr + "px";
-    gf.style.backgroundImage = "url(" + o.bild + ")";
-    gf.style.backgroundSize = (64*f) + "px " + (32*f) + "px";
-    gf.style.backgroundPosition = (-6*f) + "px " + (-6*f) + "px";
+    gf.style.width = breit + "px"; gf.style.height = hoch + "px";
+    gf.style.backgroundSize = breit + "px " + hoch + "px";
+    gf.style.backgroundPosition = "center";
+    gf.style.backgroundRepeat = "no-repeat";
     gf.style.imageRendering = "pixelated";
+    gf.style.display = "block";
+    gf.style.margin = "0 auto 4px";
+    gf.style.backgroundImage = "url(" + mobFigurBild(o.bild, url => {
+      gf.style.backgroundImage = "url(" + url + ")";
+    }) + ")";
   } else {
     gf.textContent = o.emoji;
-    gf.style.width = ""; gf.style.height = "";
+    gf.style.width = ""; gf.style.height = ""; gf.style.display = ""; gf.style.margin = "";
     gf.style.backgroundImage = "";
     gf.style.fontSize = o.boss ? "84px" : "58px";
   }
