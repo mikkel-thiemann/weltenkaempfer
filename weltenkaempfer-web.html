@@ -920,7 +920,28 @@ const EN = {
   "<br><br>Wenn du ihn trägst, springst du <b>2 Blöcke</b> hoch statt einen.": "<br><br>While you wear it you jump <b>2 blocks</b> high instead of one.",
   "springt 2 Blöcke": "jumps 2 blocks",
   "2 Blöcke hoch springen": "jump 2 blocks high",
-  "<br><br>Ab jetzt springst du <b>2 Blöcke</b> hoch statt einen.": "<br><br>From now on you jump <b>2 blocks</b> high instead of one."
+  "<br><br>Ab jetzt springst du <b>2 Blöcke</b> hoch statt einen.": "<br><br>From now on you jump <b>2 blocks</b> high instead of one.",
+  "Aether": "Aether",
+  "Bezwinge den Sonnengeist": "Overcome the Sun Spirit",
+  "Heiligstein": "Holystone",
+  "Himmelsholz": "Skyroot",
+  "Himmelslaub": "Skyroot Leaves",
+  "Kobold": "Cockatrice",
+  "Leuchtstein": "Glowstone",
+  "Sammle 28 Wolkenfedern": "Collect 28 cloud feathers",
+  "Sonnengeist": "Sun Spirit",
+  "Steinwächter": "Stone Sentry",
+  "Verwehe 18 Zephyre": "Scatter 18 zephyrs",
+  "Wolke": "Aercloud",
+  "Zanit": "Zanite",
+  "Zanitaxt": "Zanite Axe",
+  "Zanitklinge": "Zanite Blade",
+  "Zanitrüstung": "Zanite Armor",
+  "Zanitschwert": "Zanite Sword",
+  "Zanitspitzhacke": "Zanite Pickaxe",
+  "Zephyr": "Zephyr",
+  "Über den Wolken. Heller Stein, schwebende Inseln, blendendes Licht – und Wächter, die hier oben keine Fremden dulden.": "Above the clouds. Pale stone, floating islands, blinding light – and guardians who tolerate no strangers up here.",
+  "🪶 Wolkenfeder": "🪶 Cloud Feather"
 };
 function ue(s){
   if(sprache !== "en" || typeof s !== "string") return s;
@@ -1023,7 +1044,9 @@ const K = {gras:0, grasSeite:1, erde:2, stein:3, sand:4, wasser:5, holz:6, holzO
            pilzHut:32, pilzStiel:33, myzel:34,
            schwefel:35, schwefelStein:36, seelenSand:37, seelenFeuer:38,
            knochen:39, seelenKristall:40, dunkelHolz:41, schattenLaub:42, moosBoden:43, rotFels:44, hoehlenWasser:45,
-           sculk:46, sculkAder:47, tiefenschiefer:48, sculkAuge:49};
+           sculk:46, sculkAder:47, tiefenschiefer:48, sculkAuge:49,
+           heiligstein:50, wolke:51, himmelsholz:52, himmelsholzOben:53, himmelslaub:54, zanit:55,
+           leuchtstein:56};
 // [oben, unten, seite] · haerte = Sekunden mit bloßen Händen · gibt = was beim Abbau herausfällt
 const BLOECKE = [
   null,
@@ -1074,7 +1097,18 @@ const BLOECKE = [
   {name:"Tiefenschiefer",kacheln:[K.tiefenschiefer,K.tiefenschiefer,K.tiefenschiefer],
                       fest:true, dicht:true, haerte:7.5, gibt:44, werkzeug:"hacke"},
   {name:"Sculkauge",  kacheln:[K.sculkAuge,K.sculkAuge,K.sculkAuge], fest:true, dicht:true,
-                      leuchtet:true, haerte:20, gibt:45, werkzeug:"hacke"}
+                      leuchtet:true, haerte:20, gibt:45, werkzeug:"hacke"},
+  {name:"Heiligstein",kacheln:[K.heiligstein,K.heiligstein,K.heiligstein], fest:true, dicht:true,
+                      haerte:8.5, gibt:46, werkzeug:"hacke"},
+  {name:"Wolke",      kacheln:[K.wolke,K.wolke,K.wolke], fest:true, dicht:true, haerte:0.6, gibt:47},
+  {name:"Himmelsholz",kacheln:[K.himmelsholzOben,K.himmelsholzOben,K.himmelsholz], fest:true, dicht:true,
+                      haerte:3.2, gibt:48, werkzeug:"axt"},
+  {name:"Himmelslaub",kacheln:[K.himmelslaub,K.himmelslaub,K.himmelslaub], fest:true, dicht:true,
+                      haerte:0.5, gibt:49},
+  {name:"Zanit",      kacheln:[K.zanit,K.zanit,K.zanit], fest:true, dicht:true,
+                      leuchtet:true, haerte:24, gibt:50, werkzeug:"hacke"},
+  {name:"Leuchtstein",kacheln:[K.leuchtstein,K.leuchtstein,K.leuchtstein], fest:true, dicht:true,
+                      leuchtet:true, haerte:5.0, gibt:51, werkzeug:"hacke"}
 ];
 const B_LUFT=0, B_GRAS=1, B_ERDE=2, B_STEIN=3, B_SAND=4, B_WASSER=5, B_HOLZ=6,
       B_LAUB=7, B_BRETTER=8, B_GLUT=9, B_OBSIDIAN=10, B_PORTAL=11, B_LAVA=12,
@@ -1084,7 +1118,9 @@ const B_LUFT=0, B_GRAS=1, B_ERDE=2, B_STEIN=3, B_SAND=4, B_WASSER=5, B_HOLZ=6,
       B_PILZSTIEL=29, B_MYZEL=30, B_SCHWEFEL=31, B_SCHWEFELSTEIN=32,
       B_SEELENSAND=33, B_SEELENFEUER=34, B_KNOCHEN=35, B_SEELENKRISTALL=36,
       B_SCHATTENHOLZ=37, B_SCHATTENLAUB=38, B_MOOSBODEN=39, B_ROTFELS=40, B_HOEHLENWASSER=41,
-      B_SCULK=42, B_SCULKADER=43, B_TIEFENSCHIEFER=44, B_SCULKAUGE=45;
+      B_SCULK=42, B_SCULKADER=43, B_TIEFENSCHIEFER=44, B_SCULKAUGE=45,
+      B_HEILIGSTEIN=46, B_WOLKE=47, B_HIMMELSHOLZ=48, B_HIMMELSLAUB=49, B_ZANIT=50,
+      B_LEUCHTSTEIN=51;
 
 // Gegenstände (keine Blöcke – kann man nicht setzen). IDs ab 100.
 const I_STOCK = 100;
@@ -1104,7 +1140,8 @@ const HACKEN = [
   {name:"Dornenspitzhacke",   bonus:7.8}, {name:"Smaragdspitzhacke",  bonus:9.8},
   {name:"Pechspitzhacke",     bonus:12},  {name:"Eisspitzhacke",      bonus:15},
   {name:"Sporenspitzhacke",   bonus:19}, {name:"Schwefelspitzhacke", bonus:24},
-  {name:"Seelenspitzhacke",   bonus:30}, {name:"Sculkspitzhacke",    bonus:38}
+  {name:"Seelenspitzhacke",   bonus:30}, {name:"Sculkspitzhacke",    bonus:38},
+  {name:"Zanitspitzhacke",    bonus:48}
 ];
 const AEXTE = [
   {name:"keine Axt",   bonus:0},   {name:"Holzaxt",     bonus:0.9},
@@ -1113,7 +1150,8 @@ const AEXTE = [
   {name:"Dornenaxt",   bonus:7.8}, {name:"Smaragdaxt",  bonus:9.8},
   {name:"Pechaxt",     bonus:12},  {name:"Eisaxt",      bonus:15},
   {name:"Sporenaxt",   bonus:19}, {name:"Schwefelaxt", bonus:24},
-  {name:"Seelenaxt",   bonus:30}, {name:"Sculkaxt",    bonus:38}
+  {name:"Seelenaxt",   bonus:30}, {name:"Sculkaxt",    bonus:38},
+  {name:"Zanitaxt",    bonus:48}
 ];
 // Aus diesen Stoffen lassen sich Schwert, Axt und Spitzhacke bauen
 const WERKSTOFFE = [
@@ -1123,7 +1161,8 @@ const WERKSTOFFE = [
   {name:"Smaragd",  b:B_SMARAGD,  stufe:7},   {name:"Pech",     b:B_PECH,     stufe:8},
   {name:"Eis",      b:B_EIS,      stufe:9},   {name:"Sporen",   b:B_SPORE,    stufe:10},
   {name:"Schwefel", b:B_SCHWEFEL, stufe:11},  {name:"Seelen",   b:B_SEELENKRISTALL, stufe:12},
-  {name:"Sculk",    b:B_SCULK,     stufe:13}
+  {name:"Sculk",    b:B_SCULK,     stufe:13},
+  {name:"Zanit",    b:B_ZANIT,     stufe:14}
 ];
 const fest  = id => id > 0 && BLOECKE[id].fest;
 const dicht = id => id > 0 && BLOECKE[id].dicht;
@@ -1360,6 +1399,26 @@ const WELTEN = [
       {id:"w11q2", typ:"sammeln", ziel:"sculkherz", anz:24, text:"Sammle 24 Sculkherzen",    xp:450000, gold:280000},
       {id:"w11q3", typ:"boss",    ziel:"warden",    anz:1,  text:"Bezwinge den Warden",      xp:900000, gold:1500000}
     ]
+  },
+  {
+    name:"Aether", emoji:"☁️", saat:70707,
+    himmelOben:"#4aa8ee", himmelUnten:"#dff0ff", nebel:[0.85,0.93,1.0],
+    oben:B_HEILIGSTEIN, unter:B_HEILIGSTEIN, tief:B_HEILIGSTEIN, strand:B_WOLKE, erz:B_ZANIT,
+    fluessig:B_WASSER, seehoehe:7, grund:16, hoehe:8, bewuchs:"himmelsbaum", dichte:0.008,
+    portalRahmen:B_LEUCHTSTEIN,
+    beschreibung:"Über den Wolken. Heller Stein, schwebende Inseln, blendendes Licht – und Wächter, die hier oben keine Fremden dulden.",
+    gegner:[
+      {id:"zephyr",  name:"Zephyr",       emoji:"🌬️", hp:15000, atk:3250, def:820,  xp:150000, gold:90000,  tempo:5.0},
+      {id:"kobold",  name:"Kobold",       emoji:"🐓", hp:19000, atk:3150, def:980,  xp:160000, gold:95000,  tempo:3.4},
+      {id:"waechter",name:"Steinwächter", emoji:"🗿", hp:26000, atk:3050, def:1250, xp:175000, gold:105000, tempo:2.2}
+    ],
+    boss:{id:"sonnengeist", name:"Sonnengeist", emoji:"☀️", hp:26000, atk:2660, def:1300, xp:4000000, gold:7000000},
+    item:{id:"wolkenfeder", name:"🪶 Wolkenfeder", emoji:"🪶"},
+    quests:[
+      {id:"w12q1", typ:"kill",    ziel:"zephyr",      anz:18, text:"Verwehe 18 Zephyre",        xp:1000000, gold:600000},
+      {id:"w12q2", typ:"sammeln", ziel:"wolkenfeder", anz:28, text:"Sammle 28 Wolkenfedern",    xp:1100000, gold:700000},
+      {id:"w12q3", typ:"boss",    ziel:"sonnengeist", anz:1,  text:"Bezwinge den Sonnengeist",  xp:2500000, gold:4000000}
+    ]
   }
 ];
 
@@ -1370,7 +1429,8 @@ const WAFFEN = [
   {name:"Pechschwert",atk:200,preis:70000},{name:"Eisschwert",atk:280,preis:150000},
   {name:"Sporenklinge",atk:400,preis:320000},
   {name:"Schwefelklinge",atk:560,preis:700000},{name:"Seelenklinge",atk:800,preis:1500000},
-  {name:"Sculkklinge",atk:1150,preis:3200000}
+  {name:"Sculkklinge",atk:1150,preis:3200000},
+  {name:"Zanitklinge",atk:1650,preis:7000000}
 ];
 const RUESTUNGEN = [
   {name:"Stofffetzen",def:0,preis:0},{name:"Lederrüstung",def:4,preis:80},{name:"Kettenhemd",def:9,preis:260},
@@ -1379,7 +1439,8 @@ const RUESTUNGEN = [
   {name:"Pechrüstung",def:150,preis:66000},{name:"Eispanzer",def:210,preis:140000},
   {name:"Sporenrüstung",def:300,preis:300000},
   {name:"Schwefelrüstung",def:420,preis:650000},{name:"Seelenrüstung",def:600,preis:1400000},
-  {name:"Sculkrüstung",def:860,preis:3000000}
+  {name:"Sculkrüstung",def:860,preis:3000000},
+  {name:"Zanitrüstung",def:1250,preis:6500000}
 ];
 // Reihenfolge der Materialien in der Leiste (nur was du wirklich besitzt, wird gezeigt)
 const REIHENFOLGE = [B_GRAS, B_BLUETENBODEN, B_MYZEL, B_ERDE, B_SUMPFERDE, B_SAND, B_SCHNEE, B_STEIN,
@@ -1971,7 +2032,18 @@ function platzSuchen(zx, zz, w, wuerfel){
   }
   return {x:zx, y:hoehen[zz*WX+zx], z:zz};
 }
+// Schlanker heller Baum mit rundem, blassgrünem Schopf
+function himmelsbaumSetzen(x, h, z){
+  const hoch = 5 + Math.floor(Math.random()*4);
+  for(let y=h; y<h+hoch; y++) setzeBlock(x, y, z, B_HIMMELSHOLZ);
+  const k = h + hoch;
+  for(let dx=-2; dx<=2; dx++) for(let dz=-2; dz<=2; dz++) for(let dy=-1; dy<=1; dy++){
+    if(dx*dx + dz*dz + dy*dy*2 > 6) continue;
+    if(block(x+dx, k+dy, z+dz) === B_LUFT) setzeBlock(x+dx, k+dy, z+dz, B_HIMMELSLAUB);
+  }
+}
 const BEWUCHS = {
+  himmelsbaum: himmelsbaumSetzen,
   kaktus: kaktusSetzen, dschungel: dschungelbaumSetzen, sumpf: sumpfbaumSetzen,
   fichte: fichteSetzen, pilz: riesenpilzSetzen,
   schwefel: schwefelSetzen, knochenbaum: knochenbaumSetzen, schattenbaum: schattenbaumSetzen
@@ -2120,11 +2192,15 @@ function lagerBauen(o){
     for(let y=o.y; y<o.y+3; y++) setzeBlock(o.x+d[0], y, o.z+d[1], B_HOLZ);
   }
 }
+/* Der Rahmen ist normalerweise aus Obsidian - im Aether aus Leuchtstein,
+   so wie das Himmelsportal im Original.                                */
+function portalRahmenBlock(w){ return (w && w.portalRahmen) || B_OBSIDIAN; }
 function portalBauen(o){
-  ebnen(o, 3, B_OBSIDIAN);
+  const rahmenBlock = portalRahmenBlock(WELTEN[s.welt]);
+  ebnen(o, 3, rahmenBlock);
   for(let y=0; y<5; y++) for(let dx=-2; dx<=2; dx++){
     const rahmen = (y === 0 || y === 4 || dx === -2 || dx === 2);
-    setzeBlock(o.x+dx, o.y+y, o.z, rahmen ? B_OBSIDIAN : B_PORTAL);
+    setzeBlock(o.x+dx, o.y+y, o.z, rahmen ? rahmenBlock : B_PORTAL);
   }
 }
 function arenaBauen(o){
@@ -2265,6 +2341,30 @@ function atlasBauen(){
                                  g.fillStyle="#0e5f5c"; g.beginPath(); g.arc(m,m,T*0.34,0,6.3); g.fill();
                                  g.fillStyle="#35f0d2"; g.beginPath(); g.arc(m,m,T*0.19,0,6.3); g.fill();
                                  g.fillStyle="#d8fff8"; g.beginPath(); g.arc(m,m,T*0.08,0,6.3); g.fill(); });
+  // Aether: heller Stein, Wolken zum Anfassen, blassgrünes Laub, violetter Zanit
+  kachel(K.heiligstein, (g,T)=>{ grund(g,T,"#ded6c2"); rauschen(g,T,["#e9e2d0","#cdc4ae","#f3ecdc"],.75);
+                                 g.fillStyle="#bfb59c"; for(let i=0;i<6;i++)
+                                   g.fillRect(Math.random()*T, Math.random()*T, 3+Math.random()*6, 2); });
+  kachel(K.wolke,       (g,T)=>{ grund(g,T,"#f4f9ff"); rauschen(g,T,["#ffffff","#dfeaf7","#eaf3ff"],.55);
+                                 g.fillStyle="#ffffff";
+                                 for(let i=0;i<7;i++){ const x=Math.random()*T, y=Math.random()*T;
+                                   g.beginPath(); g.arc(x,y,3+Math.random()*4,0,6.3); g.fill(); } });
+  kachel(K.himmelsholz, (g,T)=>{ grund(g,T,"#a98f63"); rauschen(g,T,["#b99e70","#967d55"],.7);
+                                 g.fillStyle="#7f684a"; for(let i=0;i<5;i++)
+                                   g.fillRect(Math.random()*T, 0, 2, T); });
+  kachel(K.himmelsholzOben,(g,T)=>{ grund(g,T,"#c3ab80"); rauschen(g,T,["#d2bb90","#ac9469"],.7);
+                                 g.strokeStyle="#8d7551"; g.lineWidth=1.4;
+                                 for(let r=4;r<T/2;r+=4){ g.beginPath(); g.arc(T/2,T/2,r,0,6.3); g.stroke(); } });
+  kachel(K.himmelslaub, (g,T)=>{ grund(g,T,"#7fc4a4"); rauschen(g,T,["#94d6b6","#69ad8d","#a8e6c8"],.9);
+                                 g.fillStyle="#5f9e81"; for(let i=0;i<12;i++)
+                                   g.fillRect(Math.random()*T, Math.random()*T, 2, 2); });
+  kachel(K.zanit,       (g,T)=>{ grund(g,T,"#ded6c2"); rauschen(g,T,["#e9e2d0","#cdc4ae"],.7);
+                                 for(let i=0;i<5;i++){ const x=Math.random()*(T-8)+4, y=Math.random()*(T-8)+4;
+                                   g.fillStyle="#6b3fa0"; g.beginPath(); g.arc(x,y,3.2,0,6.3); g.fill();
+                                   g.fillStyle="#b98ce6"; g.beginPath(); g.arc(x-0.8,y-0.8,1.4,0,6.3); g.fill(); } });
+  kachel(K.leuchtstein, (g,T)=>{ grund(g,T,"#e8b74a"); rauschen(g,T,["#f6ce68","#d29a30","#ffe293"],.8);
+                                 for(let i=0;i<9;i++){ const x=Math.random()*T, y=Math.random()*T;
+                                   g.fillStyle="#fff3c4"; g.beginPath(); g.arc(x,y,1.6+Math.random()*1.8,0,6.3); g.fill(); } });
   kachel(K.hoehlenWasser,      (g,T)=>{ grund(g,T,"#2fb89a"); rauschen(g,T,["#48d6b4","#1e9c82","#7ff0d8"],.7);
                                  g.fillStyle="#b6ffee"; for(let i=0;i<5;i++){ const x=Math.random()*T,y=Math.random()*T;
                                    g.beginPath(); g.arc(x,y,1.5+Math.random()*2,0,6.3); g.fill(); } });
@@ -2629,7 +2729,7 @@ function abbauSchritt(dt){
   const z = strahl(6);
   if(!z){ abbauZiel = null; abbauFortschritt = 0; return; }
   const def = BLOECKE[z.block];
-  const geschuetzt = (z.block === B_OBSIDIAN && naheOrt(portalOrt, 7));
+  const geschuetzt = (z.block === portalRahmenBlock(WELTEN[s.welt]) && naheOrt(portalOrt, 7));
   if(def.unzerstoerbar || geschuetzt){
     abbauZiel = null; abbauFortschritt = 0;
     if(performance.now() - letzteWarnung > 2000){
@@ -3329,7 +3429,8 @@ const BAUPLAN_WELT = {
   "Pilzland":         [["pilzkoloss",1]],
   "Schwefelhöhle":    [["spitzen",8],["ruine",4]],
   "Seelengarten":     [["prachtbaum",7],["ruine",5],["spitzen",4]],
-  "Tiefes Dunkel":    [["ruine",7],["spitzen",9],["turm",3]]
+  "Tiefes Dunkel":    [["ruine",7],["spitzen",9],["turm",3]],
+  "Aether":           [["wolkeninsel",16],["turm",3],["ruine",3]]
 };
 function bauplatz(wuerfel, w, radius, schonBelegt){
   for(let versuch=0; versuch<400; versuch++){
@@ -3366,6 +3467,24 @@ function platzRaeumen(o, r, hoehe, boden){
         if(block(x, y, z) === B_LUFT) setzeBlock(x, y, z, boden);
     }
 }
+/* Eine Insel aus Wolken, die frei über dem Boden hängt - dazwischen
+   bleibt Luft, damit man wirklich hinaufspringen muss.               */
+function wolkeninsel(o, wuerfel){
+  const hoehe = o.y + 7 + Math.floor(wuerfel()*9);
+  const r = 3 + Math.floor(wuerfel()*3);
+  for(let dx=-r; dx<=r; dx++) for(let dz=-r; dz<=r; dz++){
+    const d = Math.sqrt(dx*dx + dz*dz);
+    if(d > r) continue;
+    const dick = 1 + Math.round((1 - d/r) * 2);
+    for(let dy=0; dy<dick; dy++) setzeBlock(o.x+dx, hoehe-dy, o.z+dz, B_WOLKE);
+  }
+  // Auf größeren Inseln wächst ein Baum, manchmal blitzt Zanit hervor
+  if(r >= 4){
+    setzeBlock(o.x, hoehe+1, o.z, B_HEILIGSTEIN);
+    himmelsbaumSetzen(o.x, hoehe+2, o.z);
+  }
+  if(wuerfel() < 0.45) setzeBlock(o.x + (r-1), hoehe, o.z, B_ZANIT);
+}
 function bauwerkeSetzen(w, wuerfel){
   const plan = BAUPLAN_WELT[w.nameDe];
   if(!plan) return;
@@ -3400,6 +3519,7 @@ function bauwerkeSetzen(w, wuerfel){
                                     : (w.nameDe === "Seelengarten" ? B_SEELENKRISTALL : B_KRISTALL)), wuerfel);
       else if(art === "pilzriese") pilzriese(o, wuerfel);
       else if(art === "pilzkoloss") pilzkoloss(o, wuerfel);
+      else if(art === "wolkeninsel") wolkeninsel(o, wuerfel);
     }
   }
 }
