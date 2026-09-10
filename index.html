@@ -271,7 +271,7 @@
     <div style="font-size:52px">⛏️</div>
     <h2>WELTENKÄMPFER · BLOCKWELT</h2>
     <p class="c-dim" style="margin-top:0">Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.</p>
-    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 17 · Werfen, Zähmen, Reiten</p>
+    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 18 · Mehr Kühe, Sachen bleiben liegen</p>
     <p style="margin:0 0 4px">Willkommen, <b id="grussName" class="c-gold">Held</b>
       <button onclick="nameAendern()" style="padding:4px 10px; font-size:12px; margin-left:8px">✏️ Name &amp; Skin</button>
       <button onclick="uebertragZeigen()" style="padding:4px 10px; font-size:12px; margin-left:4px">💾 Spielstand übertragen</button></p>
@@ -503,7 +503,7 @@ const EN = {
   "Eisschwert": "Ice Sword",
   "Eisspitzhacke": "Ice Pickaxe",
   "Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.": "Thirteen open block worlds. Build, dig, fight – and find the portal.",
-  "Ausgabe 17 · Werfen, Zähmen, Reiten": "Build 17 · Throw, tame, ride",
+  "Ausgabe 18 · Mehr Kühe, Sachen bleiben liegen": "Build 18 · More cows, dropped things stay",
   "Endlose Dünen. Und die Kakteen hier stehen nicht nur herum – sie laufen.": "Endless dunes. And the cacti here don't just stand around – they walk.",
   "Erde": "Dirt",
   "Erlege 14 Schattenriesen": "Slay 14 shadow giants",
@@ -966,7 +966,10 @@ const EN = {
   "Wirf einer <b>fliegenden Kuh</b> im Aether mit <b>M</b> fünf <b>Himmelslaub</b> hin, dann ist sie zahm und folgt dir. Steh neben sie und drück <b>I</b>: du sitzt auf ihr und fliegst.": "In the Aether, throw a <b>flying cow</b> five lots of <b>sky leaves</b> with <b>M</b>, then it is tame and follows you. Stand next to it and press <b>I</b>: you sit on it and fly.",
   "auf ein gezähmtes Tier steigen": "ride a tamed animal",
   "oder": "or",
-  "werfen": "throw"
+  "werfen": "throw",
+  "[I] absteigen": "[I] get off",
+  "[I] aufsteigen und fliegen": "[I] climb on and fly",
+  "[M] Himmelslaub werfen zum Zähmen": "[M] throw sky leaves to tame"
 };
 function ue(s){
   if(sprache !== "en" || typeof s !== "string") return s;
@@ -3006,9 +3009,24 @@ const naheOrt = (o, r) => o && Math.hypot(pos.x-o.x, pos.z-o.z) < r;
    MONSTER, GEGENSTÄNDE, ORTE
    ===================================================================== */
 let wesen = [];
+const KUEHE_MIN = 2, KUEHE_MAX = 6;
+// Der zähmbare Gegner einer Welt - das ist der mit eigener Textur
+function zaehmbarerGegner(w){ return w.gegner.find(g => g.bild); }
 function gegnerSetzen(){
   const w = WELTEN[s.welt];
-  const v = w.gegner[rnd(0, w.gegner.length-1)];
+  let v = w.gegner[rnd(0, w.gegner.length-1)];
+  /* Von den fliegenden Kühen sollen immer mindestens zwei wilde herumlaufen,
+     aber nie mehr als sechs Stück insgesamt - sonst wimmelt die Welt.       */
+  const kuh = zaehmbarerGegner(w);
+  if(kuh){
+    let wild = 0, alle = 0;
+    for(const o of wesen) if(o.art === "gegner" && o.id === kuh.id){ alle++; if(!o.zahm) wild++; }
+    if(wild < KUEHE_MIN) v = kuh;
+    else if(alle >= KUEHE_MAX && v.id === kuh.id){
+      const andere = w.gegner.filter(g => g.id !== kuh.id);
+      if(andere.length) v = andere[rnd(0, andere.length-1)];
+    }
+  }
   for(let i=0; i<60; i++){
     const x = rnd(6, WX-7), z = rnd(6, WZ-7);
     if(Math.hypot(x-pos.x, z-pos.z) < 18) continue;
@@ -3061,38 +3079,67 @@ function werfen(){
   gurtBauen();
   const v = vorne();
   wuerfe.push({id:id, x:pos.x + v.x*0.7, y:pos.y + AUGE - 0.3 + v.y*0.7, z:pos.z + v.z*0.7,
-               vx:v.x*17, vy:v.y*17 + 3.5, vz:v.z*17, leben:4});
+               vx:v.x*17, vy:v.y*17 + 3.5, vz:v.z*17, leben:20});
   speichern();
 }
+const LIEGT_MAX = 80;                    // so viele Sachen dürfen höchstens herumliegen
 function wuerfeAktualisieren(dt){
   for(let i = wuerfe.length-1; i >= 0; i--){
     const p = wuerfe[i];
+    if(p.liegt){                         // liegt schon: nur noch aufsammeln
+      p.wippe += dt;
+      if(Math.hypot(p.x - pos.x, p.z - pos.z) < 1.5 && Math.abs(p.y - pos.y - 0.5) < 2){
+        gibMaterial(p.id, 1);
+        meldung(ue("Aufgesammelt: ") + BLOECKE[p.id].name + " (" + habe(p.id) + ")", "c-gold");
+        speichern();
+        wuerfe.splice(i, 1);
+      }
+      continue;
+    }
+    const ax = p.x, ay = p.y, az = p.z;  // wo es eben noch frei war
     p.vy -= 24*dt;
     p.x += p.vx*dt; p.y += p.vy*dt; p.z += p.vz*dt;
     p.leben -= dt;
-    let weg = p.leben <= 0 || fest(block(Math.floor(p.x), Math.floor(p.y), Math.floor(p.z)));
-    if(!weg) for(const o of wesen){
+    // Ein Tier gefüttert? Dann ist das Blatt gefressen und weg.
+    let gefressen = false;
+    for(const o of wesen){
       if(o.art !== "gegner" || o === reittier) continue;
       if(Math.hypot(o.x - p.x, o.z - p.z) > 1.0) continue;
       if(p.y < o.y - 0.3 || p.y > o.y + 2.0) continue;
-      fuettern(o, p.id);
-      weg = true;
+      if(fuettern(o, p.id)) gefressen = true;
       break;
     }
-    if(weg) wuerfe.splice(i, 1);
+    if(gefressen){ wuerfe.splice(i, 1); continue; }
+    // Auf einen Block getroffen oder ausgeflogen: es bleibt liegen
+    if(p.leben <= 0 || fest(block(Math.floor(p.x), Math.floor(p.y), Math.floor(p.z)))){
+      p.x = ax; p.y = ay; p.z = az;
+      // Sanft auf den Boden setzen, sonst schwebt es einen halben Block zu hoch
+      const boden = bodenHoehe(p.x, p.z);
+      if(p.y > boden && p.y < boden + 2) p.y = boden + 0.2;
+      p.liegt = true; p.wippe = Math.random()*6;
+      p.vx = p.vy = p.vz = 0;
+      liegendeBegrenzen();
+    }
   }
+}
+// Damit nie zu viel herumliegt, verschwindet das Älteste zuerst
+function liegendeBegrenzen(){
+  let zuviel = wuerfe.filter(p => p.liegt).length - LIEGT_MAX;
+  for(let i = 0; i < wuerfe.length && zuviel > 0; i++)
+    if(wuerfe[i].liegt){ wuerfe.splice(i, 1); i--; zuviel--; }
 }
 // Nur Wesen mit eigenem Modell lassen sich füttern - und nur mit dem richtigen Blatt
 function fuettern(o, id){
-  if(o.zahm || !o.bild || o.boss || id !== FUTTER_BLOCK) return;
+  if(o.zahm || !o.bild || o.boss || id !== FUTTER_BLOCK) return false;
   o.futter = (o.futter || 0) + 1;
   if(o.futter < FUTTER_NOETIG){
     meldung("🌿 " + o.name + ": " + o.futter + "/" + FUTTER_NOETIG, "c-good");
-    return;
+    return true;
   }
   o.zahm = true; o.ruhe = 0; o.hp = o.maxHp;
   infoZeigen("💚", ue("Gezähmt!"),
     ue("Die fliegende Kuh gehört jetzt dir und folgt dir überallhin.<br>Stell dich neben sie und drücke <b>I</b> – dann fliegst du auf ihr.<br>Mit <b>Leertaste</b> steigst du höher, mit <b>Shift</b> sinkst du, mit <b>I</b> steigst du ab."));
+  return true;
 }
 function aufsteigen(){
   if(reittier){ absteigen(); return true; }
@@ -3158,6 +3205,17 @@ function reiten(dt){
   schrittPhase = 0; schrittStaerke = 0;
 }
 
+// Ist der Boss dieser Welt schon gefallen?
+function bossBesiegt(){
+  const bq = WELTEN[s.welt].quests.find(q => q.typ === "boss");
+  return !!(bq && s.fertig[bq.id]);
+}
+/* Zahm ist zahm. Und wer den Boss gelegt hat, den greifen die Kühe
+   überhaupt nicht mehr an - sie haben Respekt.                      */
+function friedlich(o){
+  return !!o.zahm || (!!o.bild && !o.boss && bossBesiegt());
+}
+
 function wesenAktualisieren(dt){
   for(let i = wesen.length-1; i >= 0; i--){
     const o = wesen[i];
@@ -3183,7 +3241,7 @@ function wesenAktualisieren(dt){
         const v = o.tempo*0.9*dt;
         o.x += dx/ab*v; o.z += dz/ab*v;
       }
-    } else if(ab < 26){                           // jagt dich
+    } else if(!friedlich(o) && ab < 26){          // jagt dich
       const v = o.tempo*dt;
       const nx = o.x + dx/ab*v, nz = o.z + dz/ab*v;
       const hn = bodenHoehe(nx, nz);
@@ -3208,7 +3266,7 @@ function wesenAktualisieren(dt){
     o.schritt = ((o.schritt || 0) + weg * 2.2) % (Math.PI*2);
     o.schwung = (o.schwung || 0) + (Math.min(weg/Math.max(dt,0.001)/3, 1) - (o.schwung || 0))
                                   * Math.min(1, dt*6);
-    if(!o.zahm && ab < (o.boss ? 2.4 : 1.3) && Math.abs(pos.y - o.y) < 3) kampfStarten(o);
+    if(!friedlich(o) && ab < (o.boss ? 2.4 : 1.3) && Math.abs(pos.y - o.y) < 3) kampfStarten(o);
   }
 }
 
@@ -3332,10 +3390,12 @@ function zeichnen(){
 // Was durch die Luft fliegt, ist ein kleiner Würfel mit dem Bild des Blocks
 function zeichneWuerfe(){
   if(!wuerfe.length) return;
-  const daten = [], g = 0.32;
+  const daten = [];
   for(const p of wuerfe){
     const def = BLOECKE[p.id];
     if(!def) continue;
+    const g = p.liegt ? 0.26 : 0.32;
+    const hoch = p.liegt ? 0.16 + Math.sin(p.wippe*2)*0.05 : 0;   // wippt sanft
     for(let f=0; f<6; f++){
       const S = SEITEN[f];
       const kachel = def.kacheln[S.kachel];
@@ -3343,7 +3403,7 @@ function zeichneWuerfe(){
       const q = [];
       for(let e=0; e<4; e++){
         const E = S.ecken[e];
-        q.push([p.x + (E[0]-0.5)*g, p.y + (E[1]-0.5)*g, p.z + (E[2]-0.5)*g,
+        q.push([p.x + (E[0]-0.5)*g, p.y + (E[1]-0.5)*g + hoch, p.z + (E[2]-0.5)*g,
                 ku + UVE[e][0]*UVW + 0.0008, kv + UVE[e][1]*UVW + 0.0008, S.licht]);
       }
       for(const v of [q[0],q[1],q[2], q[0],q[2],q[3]]) for(let i=0; i<6; i++) daten.push(v[i]);
@@ -4040,6 +4100,19 @@ function hinweisPruefen(){
     if(!WELTEN[s.welt].quests.every(q => s.fertig[q.id])) t = ue("🔒 Portal verschlossen – erst alle Quests");
     else if(s.welt + 1 < WELTEN.length && s.welt + 1 > s.freigeschaltet) t = ue("[E] Portal nach ") + WELTEN[s.welt+1].name;
     else t = ue("[E] Portal – Welt wechseln");
+  }
+  else if(reittier) t = ue("[I] absteigen");
+  else {
+    // Steht eine Kuh in der Nähe, sagen wir gleich, was zu tun ist
+    let zahm = null, wild = null;
+    for(const o of wesen){
+      if(o.art !== "gegner" || !o.bild || o.boss) continue;
+      if(Math.hypot(o.x-pos.x, o.z-pos.z) > 5.5) continue;
+      if(o.zahm){ zahm = o; break; }
+      if(!wild) wild = o;
+    }
+    if(zahm) t = ue("[I] aufsteigen und fliegen");
+    else if(wild) t = ue("[M] Himmelslaub werfen zum Zähmen") + "  " + (wild.futter || 0) + "/" + FUTTER_NOETIG;
   }
   $("hinweis").classList.toggle("hidden", !t);
   $("hinweis").textContent = t;
