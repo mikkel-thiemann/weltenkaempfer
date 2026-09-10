@@ -271,7 +271,7 @@
     <div style="font-size:52px">⛏️</div>
     <h2>WELTENKÄMPFER · BLOCKWELT</h2>
     <p class="c-dim" style="margin-top:0">Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.</p>
-    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 16 · Kuh mit Beinen</p>
+    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 17 · Werfen, Zähmen, Reiten</p>
     <p style="margin:0 0 4px">Willkommen, <b id="grussName" class="c-gold">Held</b>
       <button onclick="nameAendern()" style="padding:4px 10px; font-size:12px; margin-left:8px">✏️ Name &amp; Skin</button>
       <button onclick="uebertragZeigen()" style="padding:4px 10px; font-size:12px; margin-left:4px">💾 Spielstand übertragen</button></p>
@@ -279,10 +279,14 @@
       <span class="taste">W A S D</span> laufen &nbsp; <span class="taste">Leertaste</span> springen &nbsp; <span class="taste">Shift</span> rennen<br>
       <span class="taste">Maus</span> umsehen &nbsp; <span class="taste">Linke Maustaste halten</span> Block abbauen<br>
       <span class="taste">Rechtsklick</span> Block setzen &nbsp; <span class="taste">1–9</span> Material wählen &nbsp; <span class="taste">R</span> Kamera<br>
-      <span class="taste">E</span> benutzen &nbsp; <span class="taste">Q</span> Quests &nbsp; <span class="taste">I</span> Inventar &amp; Herstellen &nbsp; <span class="taste">Esc</span> Maus frei
+      <span class="taste">E</span> benutzen &nbsp; <span class="taste">Q</span> Quests &nbsp; <span class="taste">I</span> oder <span class="taste">B</span> Inventar &amp; Herstellen &nbsp; <span class="taste">Esc</span> Maus frei<br>
+      <span class="taste">M</span> werfen &nbsp; <span class="taste">I</span> auf ein gezähmtes Tier steigen
       <div class="c-dim" style="line-height:1.6; margin-top:8px">
         Du fängst mit leeren Händen an. Halte die linke Maustaste auf einen Block, bis er zerbricht –
         dann wandert er in dein Inventar. Setzen kannst du nur, was du hast.<br>
+        Wirf einer <b>fliegenden Kuh</b> im Aether mit <b>M</b> fünf <b>Himmelslaub</b> hin, dann ist
+        sie zahm und folgt dir. Steh neben sie und drück <b>I</b>: du sitzt auf ihr und fliegst.
+        <br><br>
         Bau dir aus Holz zuerst eine <b>Werkbank</b>, stell sie hin und geh mit <b>E</b> ran: dort legst du
         im 3×3-Gitter Muster für <b>Schwert, Axt und Spitzhacke</b>. Die Axt fällt Holz, die Spitzhacke
         bricht Stein, das Schwert schlägt im Kampf zu.
@@ -499,7 +503,7 @@ const EN = {
   "Eisschwert": "Ice Sword",
   "Eisspitzhacke": "Ice Pickaxe",
   "Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.": "Thirteen open block worlds. Build, dig, fight – and find the portal.",
-  "Ausgabe 16 · Kuh mit Beinen": "Build 16 · Cow with legs",
+  "Ausgabe 17 · Werfen, Zähmen, Reiten": "Build 17 · Throw, tame, ride",
   "Endlose Dünen. Und die Kakteen hier stehen nicht nur herum – sie laufen.": "Endless dunes. And the cacti here don't just stand around – they walk.",
   "Erde": "Dirt",
   "Erlege 14 Schattenriesen": "Slay 14 shadow giants",
@@ -950,7 +954,19 @@ const EN = {
   "Zanitspitzhacke": "Zanite Pickaxe",
   "Fliegende Kuh": "Flying Cow",
   "Über den Wolken. Heller Stein, schwebende Inseln, blendendes Licht – und Wächter, die hier oben keine Fremden dulden.": "Above the clouds. Pale stone, floating islands, blinding light – and guardians who tolerate no strangers up here.",
-  "🪶 Wolkenfeder": "🪶 Cloud Feather"
+  "🪶 Wolkenfeder": "🪶 Cloud Feather",
+  "Abgestiegen.": "Off you get.",
+  "Aufgestiegen – Leertaste hoch, Shift runter, I zum Absteigen.": "You are riding – spacebar up, shift down, I to get off.",
+  "B": "B",
+  "Die fliegende Kuh gehört jetzt dir und folgt dir überallhin.<br>Stell dich neben sie und drücke <b>I</b> – dann fliegst du auf ihr.<br>Mit <b>Leertaste</b> steigst du höher, mit <b>Shift</b> sinkst du, mit <b>I</b> steigst du ab.": "The flying cow is yours now and follows you everywhere.<br>Stand next to it and press <b>I</b> – then you ride it through the air.<br><b>Spacebar</b> takes you up, <b>Shift</b> takes you down, <b>I</b> gets you off.",
+  "Du hast nichts zum Werfen – bau erst etwas ab.": "You have nothing to throw – mine something first.",
+  "Gezähmt!": "Tamed!",
+  "Inventar & Herstellen": "Inventory & Crafting",
+  "M": "M",
+  "Wirf einer <b>fliegenden Kuh</b> im Aether mit <b>M</b> fünf <b>Himmelslaub</b> hin, dann ist sie zahm und folgt dir. Steh neben sie und drück <b>I</b>: du sitzt auf ihr und fliegst.": "In the Aether, throw a <b>flying cow</b> five lots of <b>sky leaves</b> with <b>M</b>, then it is tame and follows you. Stand next to it and press <b>I</b>: you sit on it and fly.",
+  "auf ein gezähmtes Tier steigen": "ride a tamed animal",
+  "oder": "or",
+  "werfen": "throw"
 };
 function ue(s){
   if(sprache !== "en" || typeof s !== "string") return s;
@@ -2544,7 +2560,7 @@ const MOB_BEIN_Y = 12 * MOB_EINHEIT;         // Drehpunkt der Beine, oben an der
 function zeichneMob(o){
   const netz = mobNetz(o.bild);
   const bx = o.x - pos.x, bz = o.z - pos.z;
-  const blick = Math.atan2(bx, bz);            // schaut zum Spieler
+  const blick = (o.blick === undefined) ? Math.atan2(bx, bz) : o.blick;   // sonst zum Spieler
   const co = Math.cos(blick), si = Math.sin(blick);
   // Die beiden Beinpaare kippen gegengleich um die Schulter
   const takt = Math.sin(o.schritt || 0) * 0.9 * (o.schwung || 0);
@@ -2796,6 +2812,7 @@ function stecktFest(x,y,z){
   return false;
 }
 function bewegen(dt){
+  if(reittier){ reiten(dt); return; }        // auf der Kuh gelten andere Regeln
   const w = WELTEN[s.welt];
   const startX = pos.x, startZ = pos.z;      // fürs Schwingen der Beine
   let vor = 0, seit = 0;
@@ -3028,6 +3045,119 @@ function bossSetzen(melden){
       + ue("Er wartet in der <b>Arena</b>, dem Steinring auf der Karte (großer oranger Punkt).<br><br>")
       + "<b>" + b.hp + ue(" Leben · ") + b.atk + ue(" Angriff.</b> Rüste dich vorher aus!"));
 }
+/* ---------- Werfen, Zähmen, Reiten ----------
+   Mit M wirfst du, was gerade im Gurt gewählt ist. Trifft ein Aetherblatt
+   eine fliegende Kuh, frisst sie es. Nach fünf Blättern ist sie zahm,
+   folgt dir überallhin, und mit I setzt du dich auf sie und fliegst. */
+const FUTTER_BLOCK = B_HIMMELSLAUB;      // Aetherblätter
+const FUTTER_NOETIG = 5;
+let wuerfe = [];                         // was gerade durch die Luft fliegt
+let reittier = null;                     // das Wesen, auf dem du sitzt
+
+function werfen(){
+  const id = besitz()[gewaehlt];
+  if(!id){ meldung(ue("Du hast nichts zum Werfen – bau erst etwas ab."), "c-dim"); return; }
+  nimmMaterial(id, 1);
+  gurtBauen();
+  const v = vorne();
+  wuerfe.push({id:id, x:pos.x + v.x*0.7, y:pos.y + AUGE - 0.3 + v.y*0.7, z:pos.z + v.z*0.7,
+               vx:v.x*17, vy:v.y*17 + 3.5, vz:v.z*17, leben:4});
+  speichern();
+}
+function wuerfeAktualisieren(dt){
+  for(let i = wuerfe.length-1; i >= 0; i--){
+    const p = wuerfe[i];
+    p.vy -= 24*dt;
+    p.x += p.vx*dt; p.y += p.vy*dt; p.z += p.vz*dt;
+    p.leben -= dt;
+    let weg = p.leben <= 0 || fest(block(Math.floor(p.x), Math.floor(p.y), Math.floor(p.z)));
+    if(!weg) for(const o of wesen){
+      if(o.art !== "gegner" || o === reittier) continue;
+      if(Math.hypot(o.x - p.x, o.z - p.z) > 1.0) continue;
+      if(p.y < o.y - 0.3 || p.y > o.y + 2.0) continue;
+      fuettern(o, p.id);
+      weg = true;
+      break;
+    }
+    if(weg) wuerfe.splice(i, 1);
+  }
+}
+// Nur Wesen mit eigenem Modell lassen sich füttern - und nur mit dem richtigen Blatt
+function fuettern(o, id){
+  if(o.zahm || !o.bild || o.boss || id !== FUTTER_BLOCK) return;
+  o.futter = (o.futter || 0) + 1;
+  if(o.futter < FUTTER_NOETIG){
+    meldung("🌿 " + o.name + ": " + o.futter + "/" + FUTTER_NOETIG, "c-good");
+    return;
+  }
+  o.zahm = true; o.ruhe = 0; o.hp = o.maxHp;
+  infoZeigen("💚", ue("Gezähmt!"),
+    ue("Die fliegende Kuh gehört jetzt dir und folgt dir überallhin.<br>Stell dich neben sie und drücke <b>I</b> – dann fliegst du auf ihr.<br>Mit <b>Leertaste</b> steigst du höher, mit <b>Shift</b> sinkst du, mit <b>I</b> steigst du ab."));
+}
+function aufsteigen(){
+  if(reittier){ absteigen(); return true; }
+  let naechste = null, nah = 4;
+  for(const o of wesen){
+    if(!o.zahm) continue;
+    const d = Math.hypot(o.x - pos.x, o.z - pos.z);
+    if(d < nah){ nah = d; naechste = o; }
+  }
+  if(!naechste) return false;
+  reittier = naechste;
+  geschw.x = geschw.y = geschw.z = 0;
+  meldung("🐄 " + ue("Aufgestiegen – Leertaste hoch, Shift runter, I zum Absteigen."), "c-gold");
+  return true;
+}
+function absteigen(){
+  if(!reittier) return;
+  reittier.ruhe = 0.5;
+  reittier.blick = undefined;            // schaut wieder von selbst zu dir
+  reittier = null;
+  geschw.y = 0;
+  meldung(ue("Abgestiegen."), "c-dim");
+}
+/* Fliegen statt Laufen: keine Schwerkraft, dafür hoch und runter.
+   Blöcke halten dich trotzdem auf, sonst säßest du gleich im Berg.   */
+function reiten(dt){
+  let vor = 0, seit = 0;
+  if(tasten["w"]) vor += 1;
+  if(tasten["s"]) vor -= 1;
+  if(tasten["a"]) seit -= 1;
+  if(tasten["d"]) seit += 1;
+  if(tasten["pfeilL"] || tasten["ArrowLeft"])  gier += 2.2*dt;
+  if(tasten["pfeilR"] || tasten["ArrowRight"]) gier -= 2.2*dt;
+  if(tasten["ArrowUp"])   nick = klemm(nick + 1.6*dt, -1.5, 1.5);
+  if(tasten["ArrowDown"]) nick = klemm(nick - 1.6*dt, -1.5, 1.5);
+
+  const tempo = 10.5;
+  const sinG = Math.sin(gier), cosG = Math.cos(gier);
+  let wx = 0, wz = 0;
+  if(vor || seit){
+    const l = Math.hypot(vor, seit);
+    wx = (-sinG*vor + cosG*seit)/l;
+    wz = (-cosG*vor - sinG*seit)/l;
+  }
+  let wy = 0;
+  if(tasten[" "]) wy += 1;
+  if(tasten["Shift"]) wy -= 1;
+
+  const nx = pos.x + wx*tempo*dt;   if(!stecktFest(nx, pos.y, pos.z)) pos.x = nx;
+  const nz = pos.z + wz*tempo*dt;   if(!stecktFest(pos.x, pos.y, nz)) pos.z = nz;
+  const ny = pos.y + wy*tempo*0.85*dt; if(!stecktFest(pos.x, ny, pos.z)) pos.y = ny;
+
+  pos.x = klemm(pos.x, 0.4, WX-0.4);
+  pos.z = klemm(pos.z, 0.4, WZ-0.4);
+  pos.y = klemm(pos.y, 1, WY-4);
+  geschw.x = geschw.y = geschw.z = 0;
+
+  // Die Kuh trägt dich: sie sitzt unter dir und schaut, wohin du schaust
+  reittier.x = pos.x; reittier.z = pos.z; reittier.y = pos.y - 1.45;
+  reittier.blick = gier;
+  reittier.schritt = ((reittier.schritt || 0) + Math.hypot(wx, wz)*tempo*dt*2.2) % (Math.PI*2);
+  reittier.schwung = (vor || seit) ? 1 : 0;
+  schrittPhase = 0; schrittStaerke = 0;
+}
+
 function wesenAktualisieren(dt){
   for(let i = wesen.length-1; i >= 0; i--){
     const o = wesen[i];
@@ -3046,7 +3176,14 @@ function wesenAktualisieren(dt){
       continue;
     }
     if(o.ruhe > 0){ o.ruhe -= dt; continue; }
-    if(ab < 26){                                  // jagt dich
+    if(o === reittier) continue;                  // du sitzt drauf, sie folgt dir nicht
+    if(o.zahm){                                   // gezähmt: bleibt in deiner Nähe
+      // Sie fliegt - Hügel und Bäume halten sie nicht auf
+      if(ab > 2.6){
+        const v = o.tempo*0.9*dt;
+        o.x += dx/ab*v; o.z += dz/ab*v;
+      }
+    } else if(ab < 26){                           // jagt dich
       const v = o.tempo*dt;
       const nx = o.x + dx/ab*v, nz = o.z + dz/ab*v;
       const hn = bodenHoehe(nx, nz);
@@ -3060,7 +3197,10 @@ function wesenAktualisieren(dt){
       if(nx > 2 && nz > 2 && nx < WX-2 && nz < WZ-2 && bodenHoehe(nx,nz) - o.y <= 1.2){ o.x = nx; o.z = nz; }
     }
     o.x = klemm(o.x, 2, WX-2); o.z = klemm(o.z, 2, WZ-2);
-    o.y += (bodenHoehe(o.x, o.z) - o.y) * Math.min(1, dt*8);
+    // Gezähmte schweben auf deine Höhe, alle anderen bleiben am Boden
+    const zielY = o.zahm ? klemm(pos.y, bodenHoehe(o.x, o.z), bodenHoehe(o.x, o.z) + 14)
+                         : bodenHoehe(o.x, o.z);
+    o.y += (zielY - o.y) * Math.min(1, dt*(o.zahm ? 4 : 8));
     // Schritt-Takt: läuft mit der zurückgelegten Strecke, ebbt im Stehen ab
     const weg = Math.hypot(o.x - (o.altX === undefined ? o.x : o.altX),
                            o.z - (o.altZ === undefined ? o.z : o.altZ));
@@ -3068,7 +3208,7 @@ function wesenAktualisieren(dt){
     o.schritt = ((o.schritt || 0) + weg * 2.2) % (Math.PI*2);
     o.schwung = (o.schwung || 0) + (Math.min(weg/Math.max(dt,0.001)/3, 1) - (o.schwung || 0))
                                   * Math.min(1, dt*6);
-    if(ab < (o.boss ? 2.4 : 1.3) && Math.abs(pos.y - o.y) < 3) kampfStarten(o);
+    if(!o.zahm && ab < (o.boss ? 2.4 : 1.3) && Math.abs(pos.y - o.y) < 3) kampfStarten(o);
   }
 }
 
@@ -3189,10 +3329,39 @@ function zeichnen(){
   gl.disable(gl.BLEND);
 }
 
+// Was durch die Luft fliegt, ist ein kleiner Würfel mit dem Bild des Blocks
+function zeichneWuerfe(){
+  if(!wuerfe.length) return;
+  const daten = [], g = 0.32;
+  for(const p of wuerfe){
+    const def = BLOECKE[p.id];
+    if(!def) continue;
+    for(let f=0; f<6; f++){
+      const S = SEITEN[f];
+      const kachel = def.kacheln[S.kachel];
+      const ku = (kachel%AN)/AN, kv = Math.floor(kachel/AN)/AN;
+      const q = [];
+      for(let e=0; e<4; e++){
+        const E = S.ecken[e];
+        q.push([p.x + (E[0]-0.5)*g, p.y + (E[1]-0.5)*g, p.z + (E[2]-0.5)*g,
+                ku + UVE[e][0]*UVW + 0.0008, kv + UVE[e][1]*UVW + 0.0008, S.licht]);
+      }
+      for(const v of [q[0],q[1],q[2], q[0],q[2],q[3]]) for(let i=0; i<6; i++) daten.push(v[i]);
+    }
+  }
+  gl.bindBuffer(gl.ARRAY_BUFFER, bbBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(daten), gl.DYNAMIC_DRAW);
+  gl.vertexAttribPointer(A.pos, 3, gl.FLOAT, false, 24, 0);
+  gl.vertexAttribPointer(A.uv, 2, gl.FLOAT, false, 24, 12);
+  gl.vertexAttribPointer(A.licht, 1, gl.FLOAT, false, 24, 20);
+  gl.bindTexture(gl.TEXTURE_2D, atlasTex);
+  gl.drawArrays(gl.TRIANGLES, 0, daten.length/6);
+}
 function zeichneWesen(mvp){
   const v = vorne();
   let rx = -v.z, rz = v.x;                       // Rechtsvektor (waagerecht)
   const l = Math.hypot(rx, rz) || 1; rx /= l; rz /= l;
+  zeichneWuerfe();
   gl.enable(gl.BLEND);
   for(const o of wesen){
     const d = Math.hypot(o.x-pos.x, o.z-pos.z);
@@ -4576,6 +4745,7 @@ function sieg(){
   setTimeout(() => { kampfEnde(); xpGeben(g.xp); questsPruefen(); speichern(); }, 700);
 }
 function sterben(wo){
+  reittier = null;                       // vom Tier fällt man herunter
   const verlust = Math.floor(s.gold*0.25);
   s.gold -= verlust;
   s.hp = Math.round(s.maxHp*0.4); s.mp = Math.round(s.maxMp*0.5);
@@ -4712,7 +4882,7 @@ function weltLaden(){
   $("ladebalken").style.width = "10%";
   weltErzeugen();
   chunksAnlegen();
-  wesen = [];
+  wesen = []; wuerfe = []; reittier = null;
   pos.x = startOrt.x + 0.5; pos.z = startOrt.z + 0.5;
   pos.y = bodenHoehe(startOrt.x, startOrt.z) + 1;
   geschw = {x:0,y:0,z:0};
@@ -4748,7 +4918,10 @@ addEventListener("keydown", e => {
     meldung(ue("🎥 Kamera: ") + ue(KAMERA_NAMEN[kameraModus]), "c-mag");
   }
   if(k === "q") tafelZeigen("quests");
-  if(k === "i") tafelZeigen("tasche");
+  if(k === "m") werfen();
+  // I setzt dich auf ein gezähmtes Tier - steht keines da, öffnet es die Tasche
+  if(k === "i" && !aufsteigen()) tafelZeigen("tasche");
+  if(k === "b") tafelZeigen("tasche");
   if(k === " " || k.indexOf("Arrow") === 0) e.preventDefault();
 });
 addEventListener("keyup", e => { tasten[e.key.length === 1 ? e.key.toLowerCase() : e.key] = false; });
@@ -4844,6 +5017,7 @@ function schleife(zeit){
   if(modus === "welt"){
     bewegen(dt);
     wesenAktualisieren(dt);
+    wuerfeAktualisieren(dt);
     if(grabend || tasten["abbau"]) abbauSchritt(dt);
     else if(abbauZiel) abbauEnde();
     hinweisPruefen();
