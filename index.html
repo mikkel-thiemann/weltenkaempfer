@@ -203,7 +203,8 @@
     <span>💰 <b id="agold">30</b></span><span>🧪 <b id="atrank">3</b></span>
   </div>
   <div class="zeile" style="font-size:11px"><span id="koord">x 0 · y 0 · z 0</span><span id="fps">–</span>
-    <span style="pointer-events:auto"><a href="#" id="listeKnopf" onclick="zurueckZurListe();return false;">🌍 Welten</a></span></div>
+    <span style="pointer-events:auto"><a href="#" id="listeKnopf" onclick="zurueckZurListe();return false;">🌍 Welten</a></span>
+    <span style="pointer-events:auto; cursor:pointer" id="tonKnopf" title="Ton an/aus" onclick="tonUmschalten()">🔊</span></div>
 </div>
 
 <div class="hud" id="hudRechts">
@@ -277,7 +278,7 @@
     <div style="font-size:52px">⛏️</div>
     <h2>WELTENKÄMPFER · BLOCKWELT</h2>
     <p class="c-dim" style="margin-top:0">Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.</p>
-    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 21 · Sitzen und Namen geben</p>
+    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 22 · Das Spiel hat jetzt Töne</p>
     <p style="margin:0 0 4px">Willkommen, <b id="grussName" class="c-gold">Held</b>
       <button onclick="nameAendern()" style="padding:4px 10px; font-size:12px; margin-left:8px">✏️ Name &amp; Skin</button>
       <button onclick="uebertragZeigen()" style="padding:4px 10px; font-size:12px; margin-left:4px">💾 Spielstand übertragen</button></p>
@@ -287,7 +288,8 @@
       <span class="taste">Rechtsklick</span> Block setzen &nbsp; <span class="taste">1–9</span> Material wählen &nbsp; <span class="taste">R</span> Kamera<br>
       <span class="taste">E</span> benutzen &nbsp; <span class="taste">Q</span> Quests &nbsp; <span class="taste">I</span> oder <span class="taste">B</span> Inventar &amp; Herstellen &nbsp; <span class="taste">Esc</span> Maus frei<br>
       <span class="taste">M</span> werfen &nbsp; <span class="taste">I</span> auf ein gezähmtes Tier steigen &nbsp;
-      <span class="taste">G</span> sitzen bleiben &nbsp; <span class="taste">N</span> Namen geben
+      <span class="taste">G</span> sitzen bleiben &nbsp; <span class="taste">N</span> Namen geben<br>
+      Oben links neben „🌍 Welten“ schaltet 🔊 den Ton an und aus.
       <div class="c-dim" style="line-height:1.6; margin-top:8px">
         Du fängst mit leeren Händen an. Halte die linke Maustaste auf einen Block, bis er zerbricht –
         dann wandert er in dein Inventar. Setzen kannst du nur, was du hast.<br>
@@ -510,7 +512,7 @@ const EN = {
   "Eisschwert": "Ice Sword",
   "Eisspitzhacke": "Ice Pickaxe",
   "Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.": "Thirteen open block worlds. Build, dig, fight – and find the portal.",
-  "Ausgabe 21 · Sitzen und Namen geben": "Build 21 · Sitting and naming",
+  "Ausgabe 22 · Das Spiel hat jetzt Töne": "Build 22 · The game has sound now",
   "Endlose Dünen. Und die Kakteen hier stehen nicht nur herum – sie laufen.": "Endless dunes. And the cacti here don't just stand around – they walk.",
   "Erde": "Dirt",
   "Erlege 14 Schattenriesen": "Slay 14 shadow giants",
@@ -990,7 +992,8 @@ const EN = {
   "[I] fliegen · [G] sitzen · [N] Name": "[I] fly · [G] sit · [N] name",
   "folgt dir wieder.": "is following you again.",
   "sitzen bleiben": "stay sitting",
-  "sitzt jetzt hier und wartet.": "is sitting here and waiting."
+  "sitzt jetzt hier und wartet.": "is sitting here and waiting.",
+  "Oben links neben „🌍 Welten“ schaltet 🔊 den Ton an und aus.": "Top left, next to “🌍 Worlds”, 🔊 turns the sound on and off."
 };
 function ue(s){
   if(sprache !== "en" || typeof s !== "string") return s;
@@ -2873,7 +2876,7 @@ function bewegen(dt){
   geschw.y -= (imWasser ? 9 : 29) * dt;
   if(imWasser) geschw.y = Math.max(geschw.y, -3.2);
   if(tasten[" "]){
-    if(amBoden) geschw.y = wardenSkinAn() ? SPRUNG_WARDEN : SPRUNG_NORMAL;
+    if(amBoden){ geschw.y = wardenSkinAn() ? SPRUNG_WARDEN : SPRUNG_NORMAL; tonSprung(); }
     else if(imWasser) geschw.y = 4.2;          // im Wasser paddelst du nach oben
   }
   geschw.y = Math.max(geschw.y, -55);
@@ -2888,10 +2891,14 @@ function bewegen(dt){
   else if(!stecktFest(pos.x, pos.y+1, nz) && amBoden && geschw.y >= 0){ pos.z = nz; pos.y += 1; }
 
   const ny = pos.y + geschw.y*dt;
+  const fallTempo = geschw.y;
   amBoden = false;
   if(!stecktFest(pos.x, ny, pos.z)) pos.y = ny;
   else {
-    if(geschw.y < 0){ amBoden = true; pos.y = Math.floor(pos.y) + 0.0001; }
+    if(geschw.y < 0){
+      amBoden = true; pos.y = Math.floor(pos.y) + 0.0001;
+      if(fallTempo < -7) tonLanden();          // nur ein echter Aufprall, nicht jeder Schritt
+    }
     geschw.y = 0;
   }
   pos.x = klemm(pos.x, 0.4, WX-0.4);
@@ -2900,7 +2907,11 @@ function bewegen(dt){
 
   // Nur die wirklich zurückgelegte Strecke zählt: an einer Wand strampelt niemand
   const gelaufen = Math.hypot(pos.x - startX, pos.z - startZ);
+  const vorherPhase = schrittPhase;
   schrittPhase = (schrittPhase + gelaufen*2.7) % (Math.PI*2);
+  // Bei jedem halben Takt setzt ein Fuß auf
+  if(amBoden && schrittStaerke > 0.4
+     && Math.floor(vorherPhase/Math.PI) !== Math.floor(schrittPhase/Math.PI)) tonSchritt();
   const laeuft = (dt > 0 && gelaufen/dt > 0.6) ? 1 : 0;
   schrittStaerke += (laeuft - schrittStaerke) * Math.min(1, dt*11);
 
@@ -2981,12 +2992,14 @@ function abbauSchritt(dt){
     abbauFortschritt = 0;
   }
   abbauFortschritt += dt / abbauDauer(def);
+  tonHacken(def);
   $("abbaubalken").style.width = klemm(abbauFortschritt*100, 0, 100) + "%";
   $("abbaubox").classList.remove("hidden");
   if(abbauFortschritt < 1) return;
 
   // geschafft
   setzeBlock(z.x, z.y, z.z, B_LUFT, true);
+  tonBruch(def);
   blockUmgebungNeu(z.x, z.z);
   const beute = def.gibt !== undefined ? def.gibt : z.block;
   if(beute){
@@ -3020,6 +3033,7 @@ function setzen(){
   if(dx < 0.85 && dz < 0.85 && y >= Math.floor(pos.y) - 0.2 && y <= pos.y + HOCH) return;
   if(!nimmMaterial(id, 1)) return;
   setzeBlock(x, y, zz, id, true);
+  tonLegen(BLOECKE[id]);
   blockUmgebungNeu(x, zz);
   speichern();
 }
@@ -3082,6 +3096,7 @@ function bossSetzen(melden){
   wesen.push({art:"gegner", boss:true, id:b.id, name:b.name, emoji:b.emoji, bild:b.bild,
               x:bossOrt.x+0.5, y:bodenHoehe(bossOrt.x, bossOrt.z), z:bossOrt.z+0.5,
               hp:b.hp, maxHp:b.hp, atk:b.atk, def:b.def, xp:b.xp, gold:b.gold, tempo:1.9, gross:3.2, ruhe:0});
+  tonBoss();
   meldung(b.emoji + " " + b.name + ue(" ist in der Arena erschienen – der große orange Punkt auf der Karte!"), "c-bad");
   if(melden)
     infoZeigen(b.emoji, b.name + ue(" erwacht!"), ue("Die anderen Quests sind erledigt – jetzt zeigt sich der Boss.<br>")
@@ -3099,12 +3114,13 @@ let reittier = null;                     // das Wesen, auf dem du sitzt
 
 function werfen(){
   const id = besitz()[gewaehlt];
-  if(!id){ meldung(ue("Du hast nichts zum Werfen – bau erst etwas ab."), "c-dim"); return; }
+  if(!id){ tonFehler(); meldung(ue("Du hast nichts zum Werfen – bau erst etwas ab."), "c-dim"); return; }
   nimmMaterial(id, 1);
   gurtBauen();
   const v = vorne();
   wuerfe.push({id:id, x:pos.x + v.x*0.7, y:pos.y + AUGE - 0.3 + v.y*0.7, z:pos.z + v.z*0.7,
                vx:v.x*17, vy:v.y*17 + 3.5, vz:v.z*17, leben:20});
+  tonWurf();
   speichern();
 }
 const LIEGT_MAX = 80;                    // so viele Sachen dürfen höchstens herumliegen
@@ -3115,6 +3131,7 @@ function wuerfeAktualisieren(dt){
       p.wippe += dt;
       if(Math.hypot(p.x - pos.x, p.z - pos.z) < 1.5 && Math.abs(p.y - pos.y - 0.5) < 2){
         gibMaterial(p.id, 1);
+        tonAufsammeln();
         meldung(ue("Aufgesammelt: ") + BLOECKE[p.id].name + " (" + habe(p.id) + ")", "c-gold");
         speichern();
         wuerfe.splice(i, 1);
@@ -3158,10 +3175,12 @@ function fuettern(o, id){
   if(o.zahm || !o.bild || o.boss || id !== FUTTER_BLOCK) return false;
   o.futter = (o.futter || 0) + 1;
   if(o.futter < FUTTER_NOETIG){
+    tonFuettern(o.futter);
     meldung("🌿 " + o.name + ": " + o.futter + "/" + FUTTER_NOETIG, "c-good");
     return true;
   }
   o.zahm = true; o.ruhe = 0; o.hp = o.maxHp;
+  tonZahm();
   begleiterMerken(o);
   infoZeigen("💚", ue("Gezähmt!"),
     ue("Die fliegende Kuh gehört jetzt dir und folgt dir überallhin.<br>Stell dich neben sie und drücke <b>I</b> – dann fliegst du auf ihr.<br>Mit <b>Leertaste</b> steigst du höher, mit <b>Shift</b> sinkst du, mit <b>I</b> steigst du ab.<br>Sie bleibt bei dir, auch wenn du durch ein Portal in eine andere Welt gehst."));
@@ -3201,7 +3220,7 @@ function tierName(o){ return o.eigenName || o.name; }
    andere Welt gehst und wiederkommst. Nochmal G, dann folgt es wieder. */
 function sitzenSagen(){
   const o = tierNah();
-  if(!o){ meldung(ue("Kein gezähmtes Tier in der Nähe."), "c-dim"); return; }
+  if(!o){ tonFehler(); meldung(ue("Kein gezähmtes Tier in der Nähe."), "c-dim"); return; }
   if(o === reittier) absteigen();
   o.sitzt = !o.sitzt;
   const b = begleiterVon(o);
@@ -3210,13 +3229,14 @@ function sitzenSagen(){
     b.ortWelt = s.welt; b.x = o.x; b.y = o.y; b.z = o.z;
     speichern();
   }
+  klang("sine", o.sitzt ? 330 : 495, 0.14, 0.13, o.sitzt ? 247 : 660);
   meldung(tierName(o) + ": " + (o.sitzt ? ue("sitzt jetzt hier und wartet.")
                                         : ue("folgt dir wieder.")), "c-gold");
 }
 // N: dem Tier einen Namen geben - der steht dann über ihm
 function tierBenennen(){
   const o = tierNah();
-  if(!o){ meldung(ue("Kein gezähmtes Tier in der Nähe."), "c-dim"); return; }
+  if(!o){ tonFehler(); meldung(ue("Kein gezähmtes Tier in der Nähe."), "c-dim"); return; }
   if(document.pointerLockElement) document.exitPointerLock();
   const wie = prompt(ue("Wie soll dein Tier heißen?"), o.eigenName || "");
   if(wie === null) return;
@@ -3259,12 +3279,14 @@ function aufsteigen(){
   }
   if(!naechste) return false;
   reittier = naechste;
+  tonAufsteigen();
   geschw.x = geschw.y = geschw.z = 0;
   meldung("🐄 " + ue("Aufgestiegen – Leertaste hoch, Shift runter, I zum Absteigen."), "c-gold");
   return true;
 }
 function absteigen(){
   if(!reittier) return;
+  tonAbsteigen();
   reittier.ruhe = 0.5;
   reittier.blick = undefined;            // schaut wieder von selbst zu dir
   reittier = null;
@@ -4885,18 +4907,21 @@ function aktion(art){
     let dmg = Math.max(1, gesAtk() + rnd(0,4) - Math.floor(gegner.def/2));
     if(krit) dmg = Math.round(dmg*1.9);
     gegner.hp -= dmg;
+    tonTreffer(krit);
     setTimeout(() => animiere("figurG","treffer"), 110);
     kampflog(ue("Du triffst für <b>") + dmg + ue("</b> Schaden.") + (krit?" 💥 KRITISCH!":""), krit?"c-gold":"");
   } else if(art === "feuer"){
     s.mp -= 8; animiere("figurP","schlagA");
     const dmg = Math.max(1, Math.round(s.mag*2.1) + rnd(0,6) - Math.floor(gegner.def/4));
     gegner.hp -= dmg;
+    tonZauber();
     setTimeout(() => animiere("figurG","treffer"), 110);
     kampflog(ue("🔥 Feuerball für <b>") + dmg + ue("</b> Schaden."), "c-mag");
   } else if(art === "heil"){
     s.mp -= 10;
     const h = 25 + s.mag*2;
     s.hp = Math.min(s.maxHp, s.hp+h);
+    tonHeilung();
     kampflog(ue("💚 Heilung: +") + h + ue(" Leben."), "c-good");
   } else if(art === "trank"){
     s.traenke--;
@@ -4933,6 +4958,7 @@ function gegnerZug(){
     }
   }
   s.hp -= dmg;
+  tonWehTun();
   setTimeout(() => animiere("figurP","treffer"), 110);
   kampflog(gegner.name + ue(" trifft dich für <b>") + dmg + ue("</b> Schaden.") + (wucht?" 💢 WUCHTSCHLAG!":""), "c-bad");
   kampfZeichnen();
@@ -4942,6 +4968,7 @@ function gegnerZug(){
 function sieg(){
   if(!gegner) return;
   const g = gegner;
+  tonSieg();
   kampflog("🎉 " + g.name + " besiegt! +" + g.xp + " XP, +" + g.gold + " 💰", "c-good");
   meldung("🎉 " + g.name + ue(" besiegt (+") + g.xp + " XP, +" + g.gold + " 💰)", "c-good");
   s.gold += g.gold;
@@ -4964,6 +4991,7 @@ function sieg(){
   setTimeout(() => { kampfEnde(); xpGeben(g.xp); questsPruefen(); speichern(); }, 700);
 }
 function sterben(wo){
+  tonNiederlage();
   reittier = null;                       // vom Tier fällt man herunter
   const verlust = Math.floor(s.gold*0.25);
   s.gold -= verlust;
@@ -4993,6 +5021,7 @@ function xpGeben(x){
     s.maxMp += 4;  s.mp = s.maxMp;
     s.atk += 2; s.def += 1; s.mag += 2;
     offeneStufen++;
+    tonStufe();
     meldung(ue("🌟 Stufe ") + s.level + ue(" erreicht!"), "c-gold");
   }
   hudZeichnen();
@@ -5098,6 +5127,7 @@ function reiseFenster(){
    WELT LADEN
    ===================================================================== */
 function weltLaden(){
+  tonPortal();
   $("ladebalken").style.width = "10%";
   weltErzeugen();
   chunksAnlegen();
@@ -5117,11 +5147,145 @@ function weltLaden(){
   hudZeichnen();
 }
 
+
+/* =====================================================================
+   TÖNE
+   Alles wird im Browser selbst erzeugt - keine einzige Tondatei, damit
+   das Spiel eine Datei bleibt und auch ohne Netz klingt.
+
+   Zwei Bausteine reichen für alles: ein Schwingkreis für Töne mit
+   Tonhöhe und ein Rauschen durch ein Filter für alles Körnige wie
+   Schritte, Hacken und Zerbrechen. Jeder Klang bekommt eine kurze
+   Hüllkurve, sonst knackst es an den Rändern.
+
+   Browser dürfen erst Ton machen, wenn der Mensch etwas angefasst hat -
+   darum wacht die Tonmaschine beim ersten Klick oder Tastendruck auf.
+   ===================================================================== */
+const TON_KEY = "wkTon";
+const TON_LAUT = 1.7;                  // Gesamtlautstärke, vom Kompressor gebändigt
+let tonAn = true;
+try{ tonAn = localStorage.getItem(TON_KEY) !== "aus"; }catch(e){}
+let tonRaum = null, tonMeister = null, rauschVorrat = null;
+
+function tonWecken(){
+  if(tonRaum){ if(tonRaum.state === "suspended") tonRaum.resume(); return; }
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if(!AC) return;
+  try{ tonRaum = new AC(); }catch(e){ return; }
+  tonMeister = tonRaum.createGain();
+  tonMeister.gain.value = tonAn ? TON_LAUT : 0;
+  // Der Kompressor fängt ab, wenn mehrere Klänge gleichzeitig kommen
+  const druck = tonRaum.createDynamicsCompressor();
+  druck.threshold.value = -18; druck.ratio.value = 8;
+  tonMeister.connect(druck);
+  druck.connect(tonRaum.destination);
+  // Ein Stück Rauschen auf Vorrat, das für alle körnigen Klänge reicht
+  const laenge = Math.floor(tonRaum.sampleRate * 1.4);
+  rauschVorrat = tonRaum.createBuffer(1, laenge, tonRaum.sampleRate);
+  const d = rauschVorrat.getChannelData(0);
+  for(let i=0; i<laenge; i++) d[i] = Math.random()*2 - 1;
+}
+function tonUmschalten(){
+  tonAn = !tonAn;
+  try{ localStorage.setItem(TON_KEY, tonAn ? "an" : "aus"); }catch(e){}
+  tonWecken();
+  if(tonMeister) tonMeister.gain.value = tonAn ? TON_LAUT : 0;
+  const k = $("tonKnopf"); if(k) k.textContent = tonAn ? "🔊" : "🔇";
+  if(tonAn) klang("sine", 660, 0.12, 0.18);
+}
+function tonBereit(){ return tonRaum && tonAn && tonMeister; }
+
+/* Ein Ton mit Tonhöhe. gleit ist die Endfrequenz, wenn er rutschen soll. */
+function klang(art, hz, dauer, laut, gleit, wann){
+  if(!tonBereit()) return;
+  const t0 = tonRaum.currentTime + (wann || 0);
+  const o = tonRaum.createOscillator();
+  const g = tonRaum.createGain();
+  o.type = art;
+  o.frequency.setValueAtTime(hz, t0);
+  if(gleit) o.frequency.exponentialRampToValueAtTime(Math.max(20, gleit), t0 + dauer);
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(laut, t0 + Math.min(0.012, dauer*0.3));
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dauer);
+  o.connect(g); g.connect(tonMeister);
+  o.start(t0); o.stop(t0 + dauer + 0.02);
+}
+/* Rauschen durch ein Bandfilter - je höher das Filter, desto heller. */
+function rauschen2(dauer, laut, hz, guete, wann){
+  if(!tonBereit()) return;
+  const t0 = tonRaum.currentTime + (wann || 0);
+  const q = tonRaum.createBufferSource();
+  q.buffer = rauschVorrat;
+  q.playbackRate.value = 0.8 + Math.random()*0.4;
+  const f = tonRaum.createBiquadFilter();
+  f.type = "bandpass"; f.frequency.value = hz; f.Q.value = guete || 1.2;
+  const g = tonRaum.createGain();
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(laut, t0 + 0.006);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dauer);
+  q.connect(f); f.connect(g); g.connect(tonMeister);
+  q.start(t0, Math.random()*0.3); q.stop(t0 + Math.min(dauer, 1.0) + 0.02);
+}
+// Eine kleine Folge von Tönen, in Halbtönen ab einem Grundton
+function melodie(halbtoene, grund, art, schritt, laut){
+  halbtoene.forEach((h, i) =>
+    klang(art || "triangle", grund * Math.pow(2, h/12), schritt*1.7, laut || 0.16, 0, i*schritt));
+}
+
+/* ---------- Die Klänge des Spiels ----------
+   Der Klang eines Blocks richtet sich nach seiner Härte: weiches Laub
+   raschelt hoch und kurz, harter Stein schlägt tief und trocken.      */
+function blockKlangHoehe(def){
+  const h = def ? def.haerte || 1 : 1;
+  return 1500 / (1 + Math.min(h, 24)*0.09);
+}
+let letzterHack = 0;
+function tonHacken(def){
+  const jetzt = performance.now();
+  if(jetzt - letzterHack < 190) return;          // nicht bei jedem Bild
+  letzterHack = jetzt;
+  rauschen2(0.07, 0.30, blockKlangHoehe(def) * (0.9 + Math.random()*0.2), 1.0);
+}
+function tonBruch(def){
+  const hz = blockKlangHoehe(def);
+  rauschen2(0.20, 0.40, hz, 0.8);
+  klang("triangle", hz*0.45, 0.16, 0.16, hz*0.28);
+}
+function tonLegen(def){
+  const hz = blockKlangHoehe(def);
+  rauschen2(0.10, 0.34, hz*0.8, 0.9);
+  klang("sine", hz*0.35, 0.10, 0.12);
+}
+function tonSchritt(){ rauschen2(0.07, 0.26, 380 + Math.random()*260, 0.9); }
+function tonSprung(){ klang("sine", 300, 0.13, 0.10, 520); }
+function tonLanden(){ rauschen2(0.09, 0.10, 260, 0.8); }
+function tonWurf(){ rauschen2(0.20, 0.09, 900, 0.6); klang("sine", 700, 0.18, 0.06, 300); }
+function tonAufsammeln(){ klang("square", 880, 0.06, 0.09); klang("square", 1320, 0.09, 0.08, 0, 0.06); }
+function tonFuettern(n){ klang("triangle", 520 * Math.pow(2, n/12), 0.12, 0.14); rauschen2(0.09, 0.07, 1800, 1.4); }
+function tonZahm(){ melodie([0, 4, 7, 12], 523.25, "triangle", 0.11, 0.17); }
+function tonAufsteigen(){ rauschen2(0.26, 0.10, 500, 0.5); klang("sine", 260, 0.28, 0.10, 520); }
+function tonAbsteigen(){ klang("sine", 500, 0.20, 0.09, 240); }
+function tonTreffer(stark){
+  rauschen2(stark ? 0.22 : 0.13, stark ? 0.26 : 0.17, stark ? 220 : 340, 0.8);
+  klang("square", stark ? 150 : 210, 0.10, 0.10, stark ? 70 : 110);
+}
+function tonWehTun(){ klang("sawtooth", 240, 0.22, 0.14, 90); rauschen2(0.14, 0.12, 300, 0.7); }
+function tonZauber(){ klang("sawtooth", 380, 0.34, 0.13, 1500); rauschen2(0.30, 0.09, 2200, 0.8); }
+function tonHeilung(){ melodie([0, 7, 12], 659.25, "sine", 0.09, 0.13); }
+function tonTrank(){ klang("sine", 400, 0.16, 0.11, 900); }
+function tonSieg(){ melodie([0, 4, 7, 12, 16], 523.25, "triangle", 0.10, 0.18); }
+function tonNiederlage(){ melodie([0, -3, -7, -12], 392, "sawtooth", 0.17, 0.14); }
+function tonStufe(){ melodie([0, 5, 9, 12, 17], 523.25, "square", 0.09, 0.13); }
+function tonPortal(){ klang("sine", 120, 0.9, 0.14, 900); rauschen2(0.9, 0.07, 700, 0.4); }
+function tonBoss(){ klang("sawtooth", 90, 0.8, 0.18, 45); rauschen2(0.7, 0.12, 160, 0.6); }
+function tonFehler(){ klang("square", 180, 0.14, 0.10, 120); }
+
 /* =====================================================================
    EINGABE
    ===================================================================== */
 addEventListener("keydown", e => {
   const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+  tonWecken();                                 // Browser erlauben Ton erst nach einer Eingabe
   tasten[k] = true;
   if(modus === "menue"){                       // offene Fenster mit Esc / I / Q schliessen
     if(k === "Escape" || k === "i" || k === "q"){
@@ -5153,6 +5317,8 @@ addEventListener("keydown", e => {          // Enter im Namensfeld bestätigt
      && document.activeElement && document.activeElement.id === "neuSaat") neueWelt();
 });
 addEventListener("blur", () => { for(const k in tasten) tasten[k] = false; });
+addEventListener("pointerdown", tonWecken);
+addEventListener("touchstart", tonWecken, {passive:true});
 addEventListener("resize", groesseAnpassen);
 
 function mausFangen(){
@@ -5160,6 +5326,7 @@ function mausFangen(){
 }
 let grabend = false;
 leinwand.addEventListener("mousedown", e => {
+  tonWecken();
   if(modus !== "welt") return;
   // Erster Klick fängt die Maus – soll aber trotzdem schon graben
   if(document.pointerLockElement !== leinwand && !document.body.classList.contains("touch")) mausFangen();
@@ -5594,6 +5761,7 @@ function vorspannStarten(){
 window.addEventListener("keydown", e => {
   if(!vorspannFertig && (e.key === "Escape" || e.key === " " || e.key === "Enter")) vorspannEnde();
 });
+{ const k = $("tonKnopf"); if(k) k.textContent = tonAn ? "🔊" : "🔇"; }
 vorspannStarten();
 requestAnimationFrame(schleife);
 </script>
