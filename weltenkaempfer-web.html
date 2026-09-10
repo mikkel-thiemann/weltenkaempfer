@@ -264,7 +264,7 @@
     <div style="font-size:52px">⛏️</div>
     <h2>WELTENKÄMPFER · BLOCKWELT</h2>
     <p class="c-dim" style="margin-top:0">Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.</p>
-    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 14 · Fliegende Kuh in 3D</p>
+    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 15 · Fliegende Kuh in 3D</p>
     <p style="margin:0 0 4px">Willkommen, <b id="grussName" class="c-gold">Held</b>
       <button onclick="nameAendern()" style="padding:4px 10px; font-size:12px; margin-left:8px">✏️ Name &amp; Skin</button>
       <button onclick="uebertragZeigen()" style="padding:4px 10px; font-size:12px; margin-left:4px">💾 Spielstand übertragen</button></p>
@@ -492,7 +492,7 @@ const EN = {
   "Eisschwert": "Ice Sword",
   "Eisspitzhacke": "Ice Pickaxe",
   "Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.": "Thirteen open block worlds. Build, dig, fight – and find the portal.",
-  "Ausgabe 14 · Fliegende Kuh in 3D": "Build 14 · Flying cow in 3D",
+  "Ausgabe 15 · Fliegende Kuh in 3D": "Build 15 · Flying cow in 3D",
   "Endlose Dünen. Und die Kakteen hier stehen nicht nur herum – sie laufen.": "Endless dunes. And the cacti here don't just stand around – they walk.",
   "Erde": "Dirt",
   "Erlege 14 Schattenriesen": "Slay 14 shadow giants",
@@ -2978,7 +2978,7 @@ function gegnerSetzen(){
     const y = bodenHoehe(x,z);
     if(y <= WELTEN[s.welt].seehoehe) continue;
     const f = 0.9 + Math.random()*0.25;
-    wesen.push({art:"gegner", id:v.id, name:v.name, emoji:v.emoji, x:x+0.5, y:y, z:z+0.5,
+    wesen.push({art:"gegner", id:v.id, name:v.name, emoji:v.emoji, bild:v.bild, x:x+0.5, y:y, z:z+0.5,
                 hp:Math.round(v.hp*f), maxHp:Math.round(v.hp*f), atk:v.atk, def:v.def,
                 xp:v.xp, gold:v.gold, tempo:v.tempo, gross:1.5, ruhe:0});
     return;
@@ -2999,7 +2999,7 @@ function bossSetzen(melden){
   const bq = w.quests.find(q => q.typ === "boss");
   if(s.fertig[bq.id] || wesen.some(o => o.boss)) return;
   const b = w.boss;
-  wesen.push({art:"gegner", boss:true, id:b.id, name:b.name, emoji:b.emoji,
+  wesen.push({art:"gegner", boss:true, id:b.id, name:b.name, emoji:b.emoji, bild:b.bild,
               x:bossOrt.x+0.5, y:bodenHoehe(bossOrt.x, bossOrt.z), z:bossOrt.z+0.5,
               hp:b.hp, maxHp:b.hp, atk:b.atk, def:b.def, xp:b.xp, gold:b.gold, tempo:1.9, gross:3.2, ruhe:0});
   meldung(b.emoji + " " + b.name + ue(" ist in der Arena erschienen – der große orange Punkt auf der Karte!"), "c-bad");
