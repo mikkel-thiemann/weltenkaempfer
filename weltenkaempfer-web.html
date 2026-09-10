@@ -2446,7 +2446,9 @@ function glStarten(){
     "void main(){" +
     "  vec4 c = uFlach > 0.5 ? uFarbe : texture2D(uTex, vUV);" +
     "  if(uFlach < 0.5 && c.a < 0.35) discard;" +
-    "  c.rgb *= vLicht;" +
+    // Heller machen, ohne die hellen Flächen auszubrennen: erst die Schatten
+    // anheben, dann eine sanfte Kurve - dunkle Töne gewinnen viel, helle wenig.
+    "  c.rgb = pow(min(c.rgb * mix(vLicht, 1.0, 0.5), vec3(1.0)), vec3(0.78));" +
     "  float n = clamp((vDist - uSicht*0.55)/(uSicht*0.45), 0.0, 1.0);" +
     "  gl_FragColor = vec4(mix(c.rgb, uNebel, n), c.a);" +
     "}"
@@ -2555,7 +2557,7 @@ function netzBauen(c){
           const kachel = def.kacheln[S.kachel];
           const ku = (kachel%AN)/AN, kv = Math.floor(kachel/AN)/AN;
           let licht = def.leuchtet ? 1.15 : S.licht;
-          if(!def.leuchtet && y < sonne-1) licht *= 0.72;
+          if(!def.leuchtet && y < sonne-1) licht *= 0.82;   // Untergrund heller
           const p = [];
           for(let e=0; e<4; e++){
             const E = S.ecken[e];
