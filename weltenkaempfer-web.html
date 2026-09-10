@@ -271,7 +271,7 @@
     <div style="font-size:52px">⛏️</div>
     <h2>WELTENKÄMPFER · BLOCKWELT</h2>
     <p class="c-dim" style="margin-top:0">Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.</p>
-    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 22 · Das Spiel hat jetzt Töne</p>
+    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 23 · Neue Schritte</p>
     <p style="margin:0 0 4px">Willkommen, <b id="grussName" class="c-gold">Held</b>
       <button onclick="nameAendern()" style="padding:4px 10px; font-size:12px; margin-left:8px">✏️ Name &amp; Skin</button>
       <button onclick="uebertragZeigen()" style="padding:4px 10px; font-size:12px; margin-left:4px">💾 Spielstand übertragen</button></p>
@@ -505,7 +505,7 @@ const EN = {
   "Eisschwert": "Ice Sword",
   "Eisspitzhacke": "Ice Pickaxe",
   "Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.": "Thirteen open block worlds. Build, dig, fight – and find the portal.",
-  "Ausgabe 22 · Das Spiel hat jetzt Töne": "Build 22 · The game has sound now",
+  "Ausgabe 23 · Neue Schritte": "Build 23 · New footsteps",
   "Endlose Dünen. Und die Kakteen hier stehen nicht nur herum – sie laufen.": "Endless dunes. And the cacti here don't just stand around – they walk.",
   "Erde": "Dirt",
   "Erlege 14 Schattenriesen": "Slay 14 shadow giants",
@@ -5249,7 +5249,32 @@ function tonLegen(def){
   rauschen2(0.10, 0.34, hz*0.8, 0.9);
   klang("sine", hz*0.35, 0.10, 0.12);
 }
-function tonSchritt(){ rauschen2(0.07, 0.26, 380 + Math.random()*260, 0.9); }
+/* Ein Schritt klingt nach dem Boden, auf dem du stehst: weiches Gras,
+   Laub oder Sand raschelt hell und kurz, auf Stein wird ein trockener
+   Tritt daraus, mit einem kleinen tiefen Schlag darunter.
+   Ein Tiefpass statt eines Bandfilters - das klingt nach Boden, nicht
+   nach Zischen.                                                       */
+function tonSchritt(){
+  if(!tonBereit()) return;
+  const unten = BLOECKE[block(Math.floor(pos.x), Math.floor(pos.y - 0.3), Math.floor(pos.z))];
+  const weich = !unten || (unten.haerte || 1) < 1.4;
+  const t0 = tonRaum.currentTime;
+  const dauer = weich ? 0.075 : 0.105;
+  const q = tonRaum.createBufferSource();
+  q.buffer = rauschVorrat;
+  q.playbackRate.value = (weich ? 1.5 : 0.75) * (0.9 + Math.random()*0.2);
+  const f = tonRaum.createBiquadFilter();
+  f.type = "lowpass";
+  f.frequency.value = (weich ? 2400 : 850) * (0.85 + Math.random()*0.3);
+  f.Q.value = 0.7;
+  const g = tonRaum.createGain();
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(weich ? 0.14 : 0.20, t0 + 0.004);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dauer);
+  q.connect(f); f.connect(g); g.connect(tonMeister);
+  q.start(t0, Math.random()*0.5); q.stop(t0 + dauer + 0.02);
+  if(!weich) klang("sine", 88 + Math.random()*22, 0.07, 0.085, 55);
+}
 function tonSprung(){ klang("sine", 300, 0.13, 0.10, 520); }
 function tonLanden(){ rauschen2(0.09, 0.10, 260, 0.8); }
 function tonWurf(){ rauschen2(0.20, 0.09, 900, 0.6); klang("sine", 700, 0.18, 0.06, 300); }
