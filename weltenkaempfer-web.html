@@ -264,7 +264,7 @@
     <div style="font-size:52px">⛏️</div>
     <h2>WELTENKÄMPFER · BLOCKWELT</h2>
     <p class="c-dim" style="margin-top:0">Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.</p>
-    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 19 · Auf der Kuh sitzen</p>
+    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 20 · Die Kuh kommt in jede Welt mit</p>
     <p style="margin:0 0 4px">Willkommen, <b id="grussName" class="c-gold">Held</b>
       <button onclick="nameAendern()" style="padding:4px 10px; font-size:12px; margin-left:8px">✏️ Name &amp; Skin</button>
       <button onclick="uebertragZeigen()" style="padding:4px 10px; font-size:12px; margin-left:4px">💾 Spielstand übertragen</button></p>
@@ -496,7 +496,7 @@ const EN = {
   "Eisschwert": "Ice Sword",
   "Eisspitzhacke": "Ice Pickaxe",
   "Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.": "Thirteen open block worlds. Build, dig, fight – and find the portal.",
-  "Ausgabe 19 · Auf der Kuh sitzen": "Build 19 · Sitting on the cow",
+  "Ausgabe 20 · Die Kuh kommt in jede Welt mit": "Build 20 · The cow comes to every world",
   "Endlose Dünen. Und die Kakteen hier stehen nicht nur herum – sie laufen.": "Endless dunes. And the cacti here don't just stand around – they walk.",
   "Erde": "Dirt",
   "Erlege 14 Schattenriesen": "Slay 14 shadow giants",
@@ -962,7 +962,9 @@ const EN = {
   "werfen": "throw",
   "[I] absteigen": "[I] get off",
   "[I] aufsteigen und fliegen": "[I] climb on and fly",
-  "[M] Himmelslaub werfen zum Zähmen": "[M] throw sky leaves to tame"
+  "[M] Himmelslaub werfen zum Zähmen": "[M] throw sky leaves to tame",
+  "Die fliegende Kuh gehört jetzt dir und folgt dir überallhin.<br>Stell dich neben sie und drücke <b>I</b> – dann fliegst du auf ihr.<br>Mit <b>Leertaste</b> steigst du höher, mit <b>Shift</b> sinkst du, mit <b>I</b> steigst du ab.<br>Sie bleibt bei dir, auch wenn du durch ein Portal in eine andere Welt gehst.": "The flying cow is yours now and follows you everywhere.<br>Stand next to it and press <b>I</b> – then you ride it through the air.<br><b>Spacebar</b> takes you up, <b>Shift</b> takes you down, <b>I</b> gets you off.<br>It stays with you even when you walk through a portal into another world.",
+  "Mehr Tiere kannst du nicht mitnehmen.": "You cannot take any more animals with you."
 };
 function ue(s){
   if(sprache !== "en" || typeof s !== "string") return s;
@@ -1534,7 +1536,7 @@ let s;
 function neuerStand(){
   return {id:null, name:ue("Welt"), saat:0, level:1, xp:0, xpNext:30, hp:70, maxHp:70, mp:25, maxMp:25, atk:9, def:3, mag:7,
           gold:30, traenke:3, welt:0, freigeschaltet:0, waffe:0, ruestung:0, hacke:0, axt:0, kills:{}, sachen:{}, gesammelt:{},
-          fertig:{}, gewonnen:false, aenderungen:{}, inventar:{}, version:2};
+          fertig:{}, gewonnen:false, aenderungen:{}, inventar:{}, begleiter:[], version:2};
 }
 /* ---------- Mehrere Spielwelten nebeneinander ----------
    "wkListe"        = Übersicht aller Welten
@@ -3130,9 +3132,40 @@ function fuettern(o, id){
     return true;
   }
   o.zahm = true; o.ruhe = 0; o.hp = o.maxHp;
+  begleiterMerken(o);
   infoZeigen("💚", ue("Gezähmt!"),
-    ue("Die fliegende Kuh gehört jetzt dir und folgt dir überallhin.<br>Stell dich neben sie und drücke <b>I</b> – dann fliegst du auf ihr.<br>Mit <b>Leertaste</b> steigst du höher, mit <b>Shift</b> sinkst du, mit <b>I</b> steigst du ab."));
+    ue("Die fliegende Kuh gehört jetzt dir und folgt dir überallhin.<br>Stell dich neben sie und drücke <b>I</b> – dann fliegst du auf ihr.<br>Mit <b>Leertaste</b> steigst du höher, mit <b>Shift</b> sinkst du, mit <b>I</b> steigst du ab.<br>Sie bleibt bei dir, auch wenn du durch ein Portal in eine andere Welt gehst."));
   return true;
+}
+/* Gezähmte Tiere gehören dir, nicht der Welt: sie stehen im Spielstand
+   und werden in jeder Welt neu neben dir aufgestellt. Gespeichert wird
+   nur, aus welcher Welt das Tier stammt - das Bild holen wir uns von dort. */
+const BEGLEITER_MAX = 6;
+function begleiter(){
+  if(!Array.isArray(s.begleiter)) s.begleiter = [];
+  return s.begleiter;
+}
+function begleiterMerken(o){
+  const l = begleiter();
+  if(l.length >= BEGLEITER_MAX){
+    meldung(ue("Mehr Tiere kannst du nicht mitnehmen."), "c-dim");
+    return;
+  }
+  l.push({welt: s.welt, id: o.id});
+  speichern();
+}
+function begleiterSetzen(){
+  for(const b of begleiter()){
+    const w = WELTEN[b.welt];
+    const v = w && w.gegner.find(g => g.id === b.id);
+    if(!v) continue;
+    const x = klemm(pos.x + (Math.random()-0.5)*4, 2, WX-2);
+    const z = klemm(pos.z + (Math.random()-0.5)*4, 2, WZ-2);
+    wesen.push({art:"gegner", id:v.id, name:v.name, emoji:v.emoji, bild:v.bild, zahm:true,
+                futter:FUTTER_NOETIG, x:x, y:bodenHoehe(x,z), z:z,
+                hp:v.hp, maxHp:v.hp, atk:v.atk, def:v.def, xp:v.xp, gold:v.gold,
+                tempo:v.tempo, gross:1.5, ruhe:0});
+  }
 }
 function aufsteigen(){
   if(reittier){ absteigen(); return true; }
@@ -4959,6 +4992,7 @@ function weltLaden(){
   pos.x = startOrt.x + 0.5; pos.z = startOrt.z + 0.5;
   pos.y = bodenHoehe(startOrt.x, startOrt.z) + 1;
   geschw = {x:0,y:0,z:0};
+  begleiterSetzen();                      // deine Tiere kommen mit
   for(let i=0; i<10; i++) gegnerSetzen();
   for(let i=0; i<8; i++) itemSetzen();
   const w = WELTEN[s.welt];
