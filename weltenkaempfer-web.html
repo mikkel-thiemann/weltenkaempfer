@@ -34,6 +34,11 @@
   .qz.ok{color:var(--xp)}
   .bosszeile{margin-top:6px; padding-top:6px; border-top:1px solid var(--rahmen); line-height:1.45}
 
+  #namen{inset:0}
+  #namen span{position:absolute; transform:translate(-50%,-100%); white-space:nowrap;
+              font-size:12px; color:#fff; text-shadow:0 1px 3px #000;
+              background:rgba(8,12,20,.55); border:1px solid var(--rahmen);
+              border-radius:7px; padding:1px 7px}
   #meldungen{left:12px; bottom:96px; width:340px; font-size:12.5px; line-height:1.5; text-shadow:0 2px 5px #000}
   #hinweis{left:50%; transform:translateX(-50%); bottom:120px; font-size:15px; background:var(--glas);
            border:1px solid var(--gold); border-radius:10px; padding:7px 14px; color:var(--gold)}
@@ -199,6 +204,7 @@
   <div id="questbox"></div>
 </div>
 
+<div class="hud" id="namen"></div>
 <div class="hud" id="meldungen"></div>
 <div class="hud hidden" id="hinweis"></div>
 <div class="hud" id="gurt"></div>
@@ -264,7 +270,7 @@
     <div style="font-size:52px">⛏️</div>
     <h2>WELTENKÄMPFER · BLOCKWELT</h2>
     <p class="c-dim" style="margin-top:0">Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.</p>
-    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 20 · Die Kuh kommt in jede Welt mit</p>
+    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 21 · Sitzen und Namen geben</p>
     <p style="margin:0 0 4px">Willkommen, <b id="grussName" class="c-gold">Held</b>
       <button onclick="nameAendern()" style="padding:4px 10px; font-size:12px; margin-left:8px">✏️ Name &amp; Skin</button>
       <button onclick="uebertragZeigen()" style="padding:4px 10px; font-size:12px; margin-left:4px">💾 Spielstand übertragen</button></p>
@@ -273,7 +279,8 @@
       <span class="taste">Maus</span> umsehen &nbsp; <span class="taste">Linke Maustaste halten</span> Block abbauen<br>
       <span class="taste">Rechtsklick</span> Block setzen &nbsp; <span class="taste">1–9</span> Material wählen &nbsp; <span class="taste">R</span> Kamera<br>
       <span class="taste">E</span> benutzen &nbsp; <span class="taste">Q</span> Quests &nbsp; <span class="taste">I</span> oder <span class="taste">B</span> Inventar &amp; Herstellen &nbsp; <span class="taste">Esc</span> Maus frei<br>
-      <span class="taste">M</span> werfen &nbsp; <span class="taste">I</span> auf ein gezähmtes Tier steigen
+      <span class="taste">M</span> werfen &nbsp; <span class="taste">I</span> auf ein gezähmtes Tier steigen &nbsp;
+      <span class="taste">G</span> sitzen bleiben &nbsp; <span class="taste">N</span> Namen geben
       <div class="c-dim" style="line-height:1.6; margin-top:8px">
         Du fängst mit leeren Händen an. Halte die linke Maustaste auf einen Block, bis er zerbricht –
         dann wandert er in dein Inventar. Setzen kannst du nur, was du hast.<br>
@@ -496,7 +503,7 @@ const EN = {
   "Eisschwert": "Ice Sword",
   "Eisspitzhacke": "Ice Pickaxe",
   "Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.": "Thirteen open block worlds. Build, dig, fight – and find the portal.",
-  "Ausgabe 20 · Die Kuh kommt in jede Welt mit": "Build 20 · The cow comes to every world",
+  "Ausgabe 21 · Sitzen und Namen geben": "Build 21 · Sitting and naming",
   "Endlose Dünen. Und die Kakteen hier stehen nicht nur herum – sie laufen.": "Endless dunes. And the cacti here don't just stand around – they walk.",
   "Erde": "Dirt",
   "Erlege 14 Schattenriesen": "Slay 14 shadow giants",
@@ -964,7 +971,19 @@ const EN = {
   "[I] aufsteigen und fliegen": "[I] climb on and fly",
   "[M] Himmelslaub werfen zum Zähmen": "[M] throw sky leaves to tame",
   "Die fliegende Kuh gehört jetzt dir und folgt dir überallhin.<br>Stell dich neben sie und drücke <b>I</b> – dann fliegst du auf ihr.<br>Mit <b>Leertaste</b> steigst du höher, mit <b>Shift</b> sinkst du, mit <b>I</b> steigst du ab.<br>Sie bleibt bei dir, auch wenn du durch ein Portal in eine andere Welt gehst.": "The flying cow is yours now and follows you everywhere.<br>Stand next to it and press <b>I</b> – then you ride it through the air.<br><b>Spacebar</b> takes you up, <b>Shift</b> takes you down, <b>I</b> gets you off.<br>It stays with you even when you walk through a portal into another world.",
-  "Mehr Tiere kannst du nicht mitnehmen.": "You cannot take any more animals with you."
+  "Mehr Tiere kannst du nicht mitnehmen.": "You cannot take any more animals with you.",
+  "Dein Tier heißt jetzt ": "Your animal is now called ",
+  "Der Name ist weg.": "The name is gone.",
+  "G": "G",
+  "Kein gezähmtes Tier in der Nähe.": "No tamed animal nearby.",
+  "N": "N",
+  "Namen geben": "give a name",
+  "Wie soll dein Tier heißen?": "What should your animal be called?",
+  "[G] mitkommen": "[G] come along",
+  "[I] fliegen · [G] sitzen · [N] Name": "[I] fly · [G] sit · [N] name",
+  "folgt dir wieder.": "is following you again.",
+  "sitzen bleiben": "stay sitting",
+  "sitzt jetzt hier und wartet.": "is sitting here and waiting."
 };
 function ue(s){
   if(sprache !== "en" || typeof s !== "string") return s;
@@ -2560,9 +2579,13 @@ function zeichneMob(o){
   const bx = o.x - pos.x, bz = o.z - pos.z;
   const blick = (o.blick === undefined) ? Math.atan2(bx, bz) : o.blick;   // sonst zum Spieler
   const co = Math.cos(blick), si = Math.sin(blick);
-  // Die beiden Beinpaare kippen gegengleich um die Schulter
-  const takt = Math.sin(o.schritt || 0) * 0.9 * (o.schwung || 0);
-  const dreh = [null, [Math.cos(takt), Math.sin(takt)], [Math.cos(takt), -Math.sin(takt)]];
+  /* Die beiden Beinpaare kippen gegengleich um die Schulter.
+     Sitzt das Tier, klappen beide Paare nach vorn und es geht tiefer. */
+  const takt = o.sitzt ? 1.35 : Math.sin(o.schritt || 0) * 0.9 * (o.schwung || 0);
+  const dreh = o.sitzt
+    ? [null, [Math.cos(takt), Math.sin(takt)], [Math.cos(takt), Math.sin(takt)]]
+    : [null, [Math.cos(takt), Math.sin(takt)], [Math.cos(takt), -Math.sin(takt)]];
+  const tiefer = o.sitzt ? 0.55 : 0;
   const daten = new Float32Array(netz.length/7*6);
   for(let i=0, j=0; i<netz.length; i+=7, j+=6){
     let x = netz[i], y = netz[i+1], z = netz[i+2];
@@ -2573,7 +2596,7 @@ function zeichneMob(o){
       z =              dy*d[1] + z*d[0];
     }
     daten[j]   = o.x + x*co + z*si;
-    daten[j+1] = o.y + y;
+    daten[j+1] = o.y + y - tiefer;
     daten[j+2] = o.z - x*si + z*co;
     daten[j+3] = netz[i+3]; daten[j+4] = netz[i+4]; daten[j+5] = netz[i+5];
   }
@@ -3151,18 +3174,70 @@ function begleiterMerken(o){
     meldung(ue("Mehr Tiere kannst du nicht mitnehmen."), "c-dim");
     return;
   }
+  o.nr = l.length;
   l.push({welt: s.welt, id: o.id});
   speichern();
 }
+function begleiterVon(o){ return o.nr === undefined ? null : begleiter()[o.nr]; }
+// Das nächste gezähmte Tier in Rufweite
+function tierNah(){
+  let nah = 6, treffer = null;
+  for(const o of wesen){
+    if(!o.zahm) continue;
+    const d = Math.hypot(o.x - pos.x, o.z - pos.z);
+    if(d < nah){ nah = d; treffer = o; }
+  }
+  return treffer;
+}
+function tierName(o){ return o.eigenName || o.name; }
+/* G: das Tier setzt sich hin und bleibt genau da - auch wenn du in eine
+   andere Welt gehst und wiederkommst. Nochmal G, dann folgt es wieder. */
+function sitzenSagen(){
+  const o = tierNah();
+  if(!o){ meldung(ue("Kein gezähmtes Tier in der Nähe."), "c-dim"); return; }
+  if(o === reittier) absteigen();
+  o.sitzt = !o.sitzt;
+  const b = begleiterVon(o);
+  if(b){
+    b.sitzt = o.sitzt;
+    b.ortWelt = s.welt; b.x = o.x; b.y = o.y; b.z = o.z;
+    speichern();
+  }
+  meldung(tierName(o) + ": " + (o.sitzt ? ue("sitzt jetzt hier und wartet.")
+                                        : ue("folgt dir wieder.")), "c-gold");
+}
+// N: dem Tier einen Namen geben - der steht dann über ihm
+function tierBenennen(){
+  const o = tierNah();
+  if(!o){ meldung(ue("Kein gezähmtes Tier in der Nähe."), "c-dim"); return; }
+  if(document.pointerLockElement) document.exitPointerLock();
+  const wie = prompt(ue("Wie soll dein Tier heißen?"), o.eigenName || "");
+  if(wie === null) return;
+  o.eigenName = wie.trim().slice(0, 16) || null;
+  const b = begleiterVon(o);
+  if(b){ b.name = o.eigenName; speichern(); }
+  meldung(o.eigenName ? ue("Dein Tier heißt jetzt ") + o.eigenName + "."
+                      : ue("Der Name ist weg."), "c-gold");
+}
 function begleiterSetzen(){
-  for(const b of begleiter()){
+  const liste = begleiter();
+  for(let i = 0; i < liste.length; i++){
+    const b = liste[i];
     const w = WELTEN[b.welt];
     const v = w && w.gegner.find(g => g.id === b.id);
     if(!v) continue;
-    const x = klemm(pos.x + (Math.random()-0.5)*4, 2, WX-2);
-    const z = klemm(pos.z + (Math.random()-0.5)*4, 2, WZ-2);
+    let x, y, z;
+    if(b.sitzt){
+      if(b.ortWelt !== s.welt) continue;      // es wartet in einer anderen Welt
+      x = b.x; z = b.z; y = b.y;
+    } else {
+      x = klemm(pos.x + (Math.random()-0.5)*4, 2, WX-2);
+      z = klemm(pos.z + (Math.random()-0.5)*4, 2, WZ-2);
+      y = bodenHoehe(x, z);
+    }
     wesen.push({art:"gegner", id:v.id, name:v.name, emoji:v.emoji, bild:v.bild, zahm:true,
-                futter:FUTTER_NOETIG, x:x, y:bodenHoehe(x,z), z:z,
+                nr:i, sitzt:!!b.sitzt, eigenName:b.name || null,
+                futter:FUTTER_NOETIG, x:x, y:y, z:z,
                 hp:v.hp, maxHp:v.hp, atk:v.atk, def:v.def, xp:v.xp, gold:v.gold,
                 tempo:v.tempo, gross:1.5, ruhe:0});
   }
@@ -3263,7 +3338,7 @@ function wesenAktualisieren(dt){
     if(o === reittier) continue;                  // du sitzt drauf, sie folgt dir nicht
     if(o.zahm){                                   // gezähmt: bleibt in deiner Nähe
       // Sie fliegt - Hügel und Bäume halten sie nicht auf
-      if(ab > 2.6){
+      if(!o.sitzt && ab > 2.6){
         const v = o.tempo*0.9*dt;
         o.x += dx/ab*v; o.z += dz/ab*v;
       }
@@ -3282,8 +3357,9 @@ function wesenAktualisieren(dt){
     }
     o.x = klemm(o.x, 2, WX-2); o.z = klemm(o.z, 2, WZ-2);
     // Gezähmte schweben auf deine Höhe, alle anderen bleiben am Boden
-    const zielY = o.zahm ? klemm(pos.y, bodenHoehe(o.x, o.z), bodenHoehe(o.x, o.z) + 14)
-                         : bodenHoehe(o.x, o.z);
+    const zielY = (o.zahm && !o.sitzt)
+      ? klemm(pos.y, bodenHoehe(o.x, o.z), bodenHoehe(o.x, o.z) + 14)
+      : bodenHoehe(o.x, o.z);
     o.y += (zielY - o.y) * Math.min(1, dt*(o.zahm ? 4 : 8));
     // Schritt-Takt: läuft mit der zurückgelegten Strecke, ebbt im Stehen ab
     const weg = Math.hypot(o.x - (o.altX === undefined ? o.x : o.altX),
@@ -3443,6 +3519,34 @@ function zeichneWuerfe(){
   gl.bindTexture(gl.TEXTURE_2D, atlasTex);
   gl.drawArrays(gl.TRIANGLES, 0, daten.length/6);
 }
+/* Einen Punkt der Welt auf den Bildschirm rechnen - für die Namensschilder.
+   Was hinter der Kamera oder weit daneben liegt, fällt weg.            */
+function aufSchirm(mvp, x, y, z){
+  const w = mvp[3]*x + mvp[7]*y + mvp[11]*z + mvp[15];
+  if(w <= 0.05) return null;
+  const cx = (mvp[0]*x + mvp[4]*y + mvp[8]*z + mvp[12]) / w;
+  const cy = (mvp[1]*x + mvp[5]*y + mvp[9]*z + mvp[13]) / w;
+  if(cx < -1.1 || cx > 1.1 || cy < -1.1 || cy > 1.1) return null;
+  return {x:(cx*0.5 + 0.5)*innerWidth, y:(1 - (cy*0.5 + 0.5))*innerHeight};
+}
+const namenFelder = [];
+function namenZeichnen(mvp){
+  let n = 0;
+  for(const o of wesen){
+    if(!o.eigenName || o === reittier) continue;
+    if(Math.hypot(o.x - pos.x, o.z - pos.z) > 40) continue;
+    const p = aufSchirm(mvp, o.x, o.y + (o.sitzt ? 1.25 : 1.8), o.z);
+    if(!p) continue;
+    let feld = namenFelder[n];
+    if(!feld){ feld = document.createElement("span"); $("namen").appendChild(feld); namenFelder[n] = feld; }
+    feld.textContent = o.eigenName;
+    feld.style.left = p.x + "px";
+    feld.style.top  = p.y + "px";
+    feld.hidden = false;
+    n++;
+  }
+  for(let i = n; i < namenFelder.length; i++) namenFelder[i].hidden = true;
+}
 function zeichneWesen(mvp){
   const v = vorne();
   let rx = -v.z, rz = v.x;                       // Rechtsvektor (waagerecht)
@@ -3473,6 +3577,7 @@ function zeichneWesen(mvp){
   if(kameraModus > 0) zeichneHeld();
   gl.disable(gl.BLEND);
   gl.bindTexture(gl.TEXTURE_2D, atlasTex);
+  namenZeichnen(mvp);
 }
 /* ---------- Der Held als echtes 3D-Modell ----------
    Wie in Minecraft: sechs Kästen (Kopf, Rumpf, zwei Arme, zwei Beine), jede
@@ -4144,7 +4249,8 @@ function hinweisPruefen(){
       if(o.zahm){ zahm = o; break; }
       if(!wild) wild = o;
     }
-    if(zahm) t = ue("[I] aufsteigen und fliegen");
+    if(zahm) t = (zahm.eigenName ? zahm.eigenName + " · " : "")
+               + (zahm.sitzt ? ue("[G] mitkommen") : ue("[I] fliegen · [G] sitzen · [N] Name"));
     else if(wild) t = ue("[M] Himmelslaub werfen zum Zähmen") + "  " + (wild.futter || 0) + "/" + FUTTER_NOETIG;
   }
   $("hinweis").classList.toggle("hidden", !t);
@@ -5026,6 +5132,8 @@ addEventListener("keydown", e => {
   }
   if(k === "q") tafelZeigen("quests");
   if(k === "m") werfen();
+  if(k === "g") sitzenSagen();
+  if(k === "n") tierBenennen();
   // I setzt dich auf ein gezähmtes Tier - steht keines da, öffnet es die Tasche
   if(k === "i" && !aufsteigen()) tafelZeigen("tasche");
   if(k === "b") tafelZeigen("tasche");
