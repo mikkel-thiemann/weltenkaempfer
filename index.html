@@ -271,7 +271,7 @@
     <div style="font-size:52px">⛏️</div>
     <h2>WELTENKÄMPFER · BLOCKWELT</h2>
     <p class="c-dim" style="margin-top:0">Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.</p>
-    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 18 · Mehr Kühe, Sachen bleiben liegen</p>
+    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 19 · Auf der Kuh sitzen</p>
     <p style="margin:0 0 4px">Willkommen, <b id="grussName" class="c-gold">Held</b>
       <button onclick="nameAendern()" style="padding:4px 10px; font-size:12px; margin-left:8px">✏️ Name &amp; Skin</button>
       <button onclick="uebertragZeigen()" style="padding:4px 10px; font-size:12px; margin-left:4px">💾 Spielstand übertragen</button></p>
@@ -503,7 +503,7 @@ const EN = {
   "Eisschwert": "Ice Sword",
   "Eisspitzhacke": "Ice Pickaxe",
   "Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.": "Thirteen open block worlds. Build, dig, fight – and find the portal.",
-  "Ausgabe 18 · Mehr Kühe, Sachen bleiben liegen": "Build 18 · More cows, dropped things stay",
+  "Ausgabe 19 · Auf der Kuh sitzen": "Build 19 · Sitting on the cow",
   "Endlose Dünen. Und die Kakteen hier stehen nicht nur herum – sie laufen.": "Endless dunes. And the cacti here don't just stand around – they walk.",
   "Erde": "Dirt",
   "Erlege 14 Schattenriesen": "Slay 14 shadow giants",
@@ -3605,9 +3605,16 @@ function zeichneHeld(){
 
   const co = Math.cos(gier), si = Math.sin(gier);
 
-  // Arme und Beine schwingen gegengleich, der Kopf schaut mit
+  /* Arme und Beine schwingen gegengleich, der Kopf schaut mit.
+     Auf dem Reittier sitzt du: beide Beine klappen nach vorn, die Arme
+     greifen leicht vor, und die ganze Figur rutscht so weit nach unten,
+     dass der Po wirklich auf dem Rücken der Kuh liegt.               */
+  const sitzt = !!reittier;
   const takt = Math.sin(schrittPhase) * 0.85 * schrittStaerke;
-  const winkel = [0, takt, -takt, -takt, takt, klemm(nick*0.6, -0.5, 0.5)];
+  const winkel = sitzt
+    ? [0, 0.32, 0.32, 1.30, 1.30, klemm(nick*0.6, -0.5, 0.5)]
+    : [0, takt, -takt, -takt, takt, klemm(nick*0.6, -0.5, 0.5)];
+  const tiefer = sitzt ? 0.40 : 0;
   const dreh = [];
   for(let k=0; k<6; k++)
     dreh.push([Math.cos(winkel[k]), Math.sin(winkel[k]), DREH_Y[k]*SKIN_EINHEIT]);
@@ -3622,7 +3629,7 @@ function zeichneHeld(){
       z =        dy*d[1] + z*d[0];
     }
     daten[j]   = pos.x + x*co + z*si;
-    daten[j+1] = pos.y + y;
+    daten[j+1] = pos.y + y - tiefer;
     daten[j+2] = pos.z - x*si + z*co;
     daten[j+3] = heldNetz[i+3];
     daten[j+4] = heldNetz[i+4];
