@@ -278,7 +278,7 @@
     <div style="font-size:52px">⛏️</div>
     <h2>WELTENKÄMPFER · BLOCKWELT</h2>
     <p class="c-dim" style="margin-top:0">Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.</p>
-    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 24 · Laufen ist wieder leise</p>
+    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 25 · Der Held hält etwas in der Hand</p>
     <p style="margin:0 0 4px">Willkommen, <b id="grussName" class="c-gold">Held</b>
       <button onclick="nameAendern()" style="padding:4px 10px; font-size:12px; margin-left:8px">✏️ Name &amp; Skin</button>
       <button onclick="uebertragZeigen()" style="padding:4px 10px; font-size:12px; margin-left:4px">💾 Spielstand übertragen</button></p>
@@ -512,7 +512,7 @@ const EN = {
   "Eisschwert": "Ice Sword",
   "Eisspitzhacke": "Ice Pickaxe",
   "Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.": "Thirteen open block worlds. Build, dig, fight – and find the portal.",
-  "Ausgabe 24 · Laufen ist wieder leise": "Build 24 · Walking is quiet again",
+  "Ausgabe 25 · Der Held hält etwas in der Hand": "Build 25 · The hero holds something",
   "Endlose Dünen. Und die Kakteen hier stehen nicht nur herum – sie laufen.": "Endless dunes. And the cacti here don't just stand around – they walk.",
   "Erde": "Dirt",
   "Erlege 14 Schattenriesen": "Slay 14 shadow giants",
@@ -3599,7 +3599,7 @@ function zeichneWesen(mvp){
     gl.bindTexture(gl.TEXTURE_2D, emojiTextur(gl, o.emoji));
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
-  if(kameraModus > 0) zeichneHeld();
+  if(kameraModus > 0) zeichneHeld(); else handDingVorn();
   gl.disable(gl.BLEND);
   gl.bindTexture(gl.TEXTURE_2D, atlasTex);
   namenZeichnen(mvp);
@@ -3753,6 +3753,90 @@ function standardSkinBauen(){
   heldNetz = null;
 }
 // Den Helden zeichnen: Modell um die Blickrichtung drehen und an seinen Platz setzen
+/* ---------- Was der Held in der Hand hält ----------
+   Ein kleiner Würfel mit dem Bild des gewählten Blocks. In der
+   Schulteransicht steckt er in der Faust und schwingt mit dem Arm mit,
+   in der Ich-Ansicht sitzt er unten rechts im Blickfeld und wippt beim
+   Laufen. Gerechnet wird beides mit denselben sechs Seiten wie ein
+   ganz normaler Block, nur kleiner.                                   */
+function handDing(){
+  const id = besitz()[gewaehlt];
+  return (id && BLOECKE[id]) ? id : 0;
+}
+// Einen kleinen Würfel an eine Stelle der Welt legen, um die Y-Achse gedreht
+function wuerfelEcken(daten, id, mx, my, mz, g, dreh){
+  const def = BLOECKE[id];
+  const co = Math.cos(dreh || 0), si = Math.sin(dreh || 0);
+  for(let f = 0; f < 6; f++){
+    const S = SEITEN[f];
+    const kachel = def.kacheln[S.kachel];
+    const ku = (kachel%AN)/AN, kv = Math.floor(kachel/AN)/AN;
+    const p = [];
+    for(let e = 0; e < 4; e++){
+      const E = S.ecken[e];
+      const x = (E[0]-0.5)*g, y = (E[1]-0.5)*g, z = (E[2]-0.5)*g;
+      p.push([mx + x*co + z*si, my + y, mz - x*si + z*co,
+              ku + UVE[e][0]*UVW + 0.0008, kv + UVE[e][1]*UVW + 0.0008, S.licht]);
+    }
+    for(const v of [p[0],p[1],p[2], p[0],p[2],p[3]]) for(let i = 0; i < 6; i++) daten.push(v[i]);
+  }
+}
+function wuerfelZeichnen(daten){
+  if(!daten.length) return;
+  gl.bindBuffer(gl.ARRAY_BUFFER, bbBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(daten), gl.DYNAMIC_DRAW);
+  gl.vertexAttribPointer(A.pos, 3, gl.FLOAT, false, 24, 0);
+  gl.vertexAttribPointer(A.uv, 2, gl.FLOAT, false, 24, 12);
+  gl.vertexAttribPointer(A.licht, 1, gl.FLOAT, false, 24, 20);
+  gl.bindTexture(gl.TEXTURE_2D, atlasTex);
+  gl.drawArrays(gl.TRIANGLES, 0, daten.length/6);
+}
+/* In der Faust: erst die Stelle im Modellraum bestimmen, dann mit dem
+   Arm kippen, dann den ganzen Helden drehen - genau wie beim Skin.   */
+function handDingHinten(co, si, armDreh, tiefer){
+  const id = handDing();
+  if(!id) return;
+  const E = SKIN_EINHEIT;
+  const mx = 6.2*E, my = 10.0*E, mz = -3.6*E;      // knapp unter der Faust, nach vorn
+  const dy = my - armDreh[2];
+  const my2 = armDreh[2] + dy*armDreh[0] - mz*armDreh[1];
+  const mz2 =              dy*armDreh[1] + mz*armDreh[0];
+  const daten = [];
+  wuerfelEcken(daten, id, 0, 0, 0, 7*E, 0);
+  // Den kleinen Würfel an seinen Platz schieben und mitdrehen
+  for(let i = 0; i < daten.length; i += 6){
+    const x = daten[i] + mx, y = daten[i+1] + my2, z = daten[i+2] + mz2;
+    daten[i]   = pos.x + x*co + z*si;
+    daten[i+1] = pos.y + y - tiefer;
+    daten[i+2] = pos.z - x*si + z*co;
+  }
+  wuerfelZeichnen(daten);
+}
+/* In der Ich-Ansicht klebt der Würfel unten rechts am Blickfeld. Dafür
+   wird er an der Kamera aufgehängt: nach vorn, nach rechts, nach unten. */
+function handDingVorn(){
+  const id = handDing();
+  if(!id) return;
+  const v = vorne();
+  let rx = -v.z, rz = v.x;
+  const l = Math.hypot(rx, rz) || 1; rx /= l; rz /= l;
+  // "Oben" der Kamera, damit der Würfel beim Hoch- und Runterschauen an seinem Platz bleibt
+  const ux = -rz*v.y, uy = rz*v.x - rx*v.z, uz = rx*v.y;
+  const wippe = Math.sin(schrittPhase)*0.016*schrittStaerke;
+  const vor = 1.20, seit = 0.44, runter = 0.42 + wippe;
+  const daten = [];
+  wuerfelEcken(daten, id,
+    pos.x + AUGE*0 + v.x*vor + rx*seit - ux*runter,
+    pos.y + AUGE   + v.y*vor            - uy*runter,
+    pos.z          + v.z*vor + rz*seit - uz*runter,
+    0.30, gier + 0.6);
+  /* Der Tiefenspeicher wird vorher geleert: sonst steckt der Block in der
+     Wand, sobald du nach unten schaust. So liegt er immer obenauf - und
+     testet nur noch gegen seine eigenen Seiten.                        */
+  gl.clear(gl.DEPTH_BUFFER_BIT);
+  wuerfelZeichnen(daten);
+}
+
 function zeichneHeld(){
   if(kameraAbstand < 0.9) return;      // Kamera klebt an einer Wand - sonst säßen wir im Kopf
   if(!skinRohBereit()) return;
@@ -3798,6 +3882,7 @@ function zeichneHeld(){
   gl.vertexAttribPointer(A.licht, 1, gl.FLOAT, false, 24, 20);
   gl.bindTexture(gl.TEXTURE_2D, skinRohTextur);
   gl.drawArrays(gl.TRIANGLES, 0, daten.length/6);
+  handDingHinten(co, si, dreh[1], tiefer);
 }
 
 // Der Block wird beim Abbauen immer dunkler – wie Risse in Minecraft
