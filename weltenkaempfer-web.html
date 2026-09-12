@@ -371,7 +371,7 @@
     <div style="font-size:52px">⛏️</div>
     <h2>WELTENKÄMPFER · BLOCKWELT</h2>
     <p class="c-dim" style="margin-top:0">Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.</p>
-    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 35 · Kreaturenbuch, Bälle, schillernde Tiere</p>
+    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 36 · 55 Arten in elf Körperformen</p>
     <p style="margin:0 0 4px">Willkommen, <b id="grussName" class="c-gold">Held</b>
       <button onclick="nameAendern()" style="padding:4px 10px; font-size:12px; margin-left:8px">✏️ Name &amp; Skin</button>
       <button onclick="uebertragZeigen()" style="padding:4px 10px; font-size:12px; margin-left:4px">💾 Spielstand übertragen</button></p>
@@ -692,7 +692,7 @@ const EN = {
   "Eisschwert": "Ice Sword",
   "Eisspitzhacke": "Ice Pickaxe",
   "Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.": "Thirteen open block worlds. Build, dig, fight – and find the portal.",
-  "Ausgabe 35 · Kreaturenbuch, Bälle, schillernde Tiere": "Build 35 · Creature book, balls, shiny creatures",
+  "Ausgabe 36 · 55 Arten in elf Körperformen": "Build 36 · 55 species in eleven body shapes",
   "Endlose Dünen. Und die Kakteen hier stehen nicht nur herum – sie laufen.": "Endless dunes. And the cacti here don't just stand around – they walk.",
   "Erde": "Dirt",
   "Erlege 14 Schattenriesen": "Slay 14 shadow giants",
@@ -1339,7 +1339,41 @@ const EN = {
   " Stück": " left",
   " erscheint – es schillert!": " appears – it is shiny!",
   "Bälle": "Balls",
-  "Du wirfst den ": "You throw the "
+  "Du wirfst den ": "You throw the ",
+  "Blattfrosch": "Blattfrosch",
+  "Blütenfürst": "Blütenfürst",
+  "Blütenlicht": "Blütenlicht",
+  "Dschungelfürst": "Dschungelfürst",
+  "Dünenpanzer": "Dünenpanzer",
+  "Eisvogel": "Eisvogel",
+  "Faulnebel": "Faulnebel",
+  "Feenfalter": "Feenfalter",
+  "Frostküken": "Frostküken",
+  "Frostpelz": "Frostpelz",
+  "Giftpfeil": "Giftpfeil",
+  "Gletscherwyrm": "Gletscherwyrm",
+  "Igelbeere": "Igelbeere",
+  "Kirschreh": "Kirschreh",
+  "Leuchtqualle": "Leuchtqualle",
+  "Lianenaffe": "Lianenaffe",
+  "Moorgeist": "Moorgeist",
+  "Moosling": "Moosling",
+  "Myzelherr": "Myzelherr",
+  "Panzerkäfer": "Panzerkäfer",
+  "Pilzwächter": "Pilzwächter",
+  "Rankenwolf": "Rankenwolf",
+  "Sandkrabbe": "Sandkrabbe",
+  "Sandstachel": "Sandstachel",
+  "Schilfaal": "Schilfaal",
+  "Schneehase": "Schneehase",
+  "Skorpling": "Skorpling",
+  "Sporenkind": "Sporenkind",
+  "Stachelbau": "Stachelbau",
+  "Sumpflicht": "Sumpflicht",
+  "Tropfkäfer": "Tropfkäfer",
+  "Tukanix": "Tukanix",
+  "Waldhüter": "Waldhüter",
+  "Wüstenkoloss": "Wüstenkoloss"
 };
 function ue(s){
   if(sprache !== "en" || typeof s !== "string") return s;
@@ -3533,7 +3567,12 @@ function gegnerSetzen(){
     let zeigt = v, heimat = s.welt;
     if(biomeAn && !v.bild){
       const nr = biomNummer(x, z), bw = WELTEN[nr];
-      if(bw && bw !== WELTEN[s.welt] && bw.gegner && bw.gegner.length){
+      // Zwei von drei Begegnungen sind eigene Arten des Sammler-Modus
+      const eigene = extraImBiom(nr);
+      if(eigene.length && Math.random() < 0.66){
+        zeigt = eigene[rnd(0, eigene.length-1)];
+        heimat = nr;
+      } else if(bw && bw !== WELTEN[s.welt] && bw.gegner && bw.gegner.length){
         zeigt = bw.gegner[rnd(0, bw.gegner.length-1)];
         heimat = nr;
       }
@@ -3727,8 +3766,7 @@ function begleiterSetzen(){
   const liste = begleiter();
   for(let i = 0; i < liste.length; i++){
     const b = liste[i];
-    const w = WELTEN[b.welt];
-    const v = w && w.gegner.find(g => g.id === b.id);
+    const v = artVon(b.welt, b.id);
     if(!v) continue;
     let x, y, z;
     if(b.sitzt){
@@ -5487,6 +5525,8 @@ const KOERPERPLAENE = [
   ["zweibeiner",["goblin","troll","ritter","könig","konig","magier","hexe","hexer","mumie","skelett","riese","krieger","yeti","affe","mensch","wächter","wachter","warden","sonnengeist"]]
 ];
 function artBauplan(welt, id){
+  const eigen = extraArt(id);
+  if(eigen) return eigen.plan;
   const v = artVon(welt, id);
   const name = ((v && (v.nameDe || v.name)) || "").toLowerCase();
   for(const [plan, woerter] of KOERPERPLAENE)
@@ -5763,6 +5803,102 @@ const KASTEN_PLAENE = {
       k(-8.2, 0, z, 1.8, 3.2, 1.9, 1, teil);                    // Unterbein
       k(5, 2.6, z, 3.6, 1.6, 1.9, 1, i % 2 ? 2 : 1, 1, [0, 0, -22]);
       k(6.4, 0, z, 1.8, 3.2, 1.9, 1, i % 2 ? 2 : 1);
+    }
+  },
+  /* Gehörnt: schwerer Vierbeiner mit Hörnern und Nackenkamm. */
+  gehoernt: function(k){
+    k(-5.4, 7.5, -5, 10.8, 9, 13, 0, 0, 4);                     // Rumpf, breit
+    k(-4.6, 7.2, -5.4, 9.2, 3.6, 11, 4, 0, 4);                  // Bauch
+    k(-5, 13.5, -12.5, 10, 9.5, 8.5, 0, 0, 4);                  // Kopf
+    k(-3, 13.6, -15, 6, 5, 3, 4, 0);                            // Maulpartie
+    k(-2, 13.5, -15.6, 4, 1.2, 1.4, 7, 0);
+    augen(k, 18.4, -13.3, 3, 0.9);
+    k(-6.4, 20.4, -9.6, 2.4, 4.4, 2.4, 3, 0, 3, [-16, 0, -34]); // Hörner
+    k(4, 20.4, -9.6, 2.4, 4.4, 2.4, 3, 0, 3, [-16, 0, 34]);
+    k(-7.8, 23.4, -8.6, 2, 3.6, 2, 7, 0, 7, [-26, 0, -52]);
+    k(5.8, 23.4, -8.6, 2, 3.6, 2, 7, 0, 7, [-26, 0, 52]);
+    for(let i = 0; i < 4; i++)                                   // Nackenkamm
+      k(-1.1, 16.4 + i*0.3, -7 + i*2.6, 2.2, 3.2 - i*0.4, 2.2, 3, 0, 3, [-12, 0, 0]);
+    for(const [bx, bz, teil] of [[-5, -3.4, 1], [2.2, 4.6, 1], [2.2, -3.4, 2], [-5, 4.6, 2]]){
+      k(bx, 1.8, bz, 3.4, 6, 3.4, 1, teil);
+      k(bx-0.3, 0, bz-0.4, 4, 2, 4.2, 7, teil);                 // Hufe
+    }
+    k(-1.2, 10.5, 7.6, 2.4, 2.4, 4.4, 3, 0, 3, [-18, 0, 0]);    // Schwanz
+    k(-1.6, 12, 11, 3.2, 3.2, 3.2, 7, 0);
+  },
+  /* Kugelig: rundes Wesen mit Federbüschel, das auf zwei Stummeln steht. */
+  kugel: function(k){
+    k(-5.6, 3, -5.6, 11.2, 11.2, 11.2, 0, 0, 4);                // Kugelkörper
+    k(-4.6, 2.4, -6.2, 9.2, 7.6, 1.2, 4, 0);                    // Bauchfleck
+    k(-4.6, 13.4, -4.6, 9.2, 2.4, 9.2, 2, 0);                   // Kopfkuppe
+    augen(k, 9, -6.6, 3.4, 1.1);
+    k(-1.6, 7.2, -6.7, 3.2, 1.4, 1, 7, 0);                      // Mund
+    k(-1, 15.4, -1, 2, 2.8, 2, 3, 0, 3, [-20, 0, -12]);         // Büschel
+    k(-2.6, 17.4, 0.4, 1.8, 2.4, 1.8, 3, 0, 3, [-34, 0, -30]);
+    k(0.8, 17.4, 0.4, 1.8, 2.4, 1.8, 3, 0, 3, [-34, 0, 30]);
+    k(-6.8, 6.6, -2.4, 2.6, 4.4, 4.4, 3, 1, 3, [0, 0, 24]);     // Ärmchen
+    k(4.2, 6.6, -2.4, 2.6, 4.4, 4.4, 3, 2, 3, [0, 0, -24]);
+    k(-4.4, 0, -3.4, 3.6, 3, 4.4, 1, 1); k(0.8, 0, -3.4, 3.6, 3, 4.4, 1, 2);
+  },
+  /* Krabbe: breiter Panzer, Scheren vorn, Stielaugen. */
+  krabbe: function(k){
+    k(-7, 3.4, -4.6, 14, 6.4, 10, 0, 0, 4);                     // Panzer
+    k(-5.8, 9.4, -3.6, 11.6, 1.6, 8, 3, 0);                     // Panzerdeckel
+    k(-3.4, 10.6, -2.6, 6.8, 1.2, 6, 7, 0);
+    k(-2.4, 3.6, -7.2, 4.8, 4.4, 3, 4, 0);                      // Mundpartie
+    k(-4.2, 10.4, -4.6, 1.4, 3.6, 1.4, 1, 0, 1, [-16, 0, -14]); // Stielaugen
+    k(2.8, 10.4, -4.6, 1.4, 3.6, 1.4, 1, 0, 1, [-16, 0, 14]);
+    k(-4.9, 13.4, -5.4, 2.8, 2.8, 2.8, 6, 0, 6, [-16, 0, -14]);
+    k(2.1, 13.4, -5.4, 2.8, 2.8, 2.8, 6, 0, 6, [-16, 0, 14]);
+    k(-11.4, 3.6, -7, 4.6, 5, 5, 3, 1, 3, [0, 0, 12]);          // Scheren
+    k(6.8, 3.6, -7, 4.6, 5, 5, 3, 2, 3, [0, 0, -12]);
+    k(-11.8, 6.6, -9.4, 4, 2.4, 4, 7, 1); k(7.8, 6.6, -9.4, 4, 2.4, 4, 7, 2);
+    for(let i = 0; i < 3; i++){
+      const z = -3 + i*3.8;
+      k(-8.6, 0.6, z, 2.6, 1.4, 1.8, 1, i % 2 ? 1 : 2, 1, [0, 0, 20]);
+      k(-8.2, 0, z, 1.6, 2.6, 1.8, 1, i % 2 ? 1 : 2);
+      k(6, 0.6, z, 2.6, 1.4, 1.8, 1, i % 2 ? 2 : 1, 1, [0, 0, -20]);
+      k(6.6, 0, z, 1.6, 2.6, 1.8, 1, i % 2 ? 2 : 1);
+    }
+  },
+  /* Fisch: schlanker Körper, Schwanzflosse, Rückenflosse, Seitenflossen. */
+  fisch: function(k){
+    k(-3.4, 5, -7, 6.8, 8, 14, 0, 0, 4);                        // Körper
+    k(-2.8, 4.8, -7.4, 5.6, 3.4, 12, 4, 0, 4);                  // Bauch
+    k(-3, 6, -11.4, 6, 6.4, 4.6, 0, 0, 4);                      // Kopf
+    k(-1.8, 6.2, -13, 3.6, 3, 2, 4, 0);                         // Maul
+    augen(k, 9.6, -11.8, 3, 0.8);
+    k(-0.9, 12.6, -3.6, 1.8, 4.4, 8, 3, 0, 3, [-8, 0, 0]);      // Rückenflosse
+    k(-0.8, 4.4, 6.6, 1.6, 6.4, 5.4, 3, 1, 3, [0, 0, 0]);       // Schwanz
+    k(-0.8, 3, 10.4, 1.6, 9.4, 4.4, 7, 1, 7, [0, 0, 0]);
+    k(-7.4, 6.4, -4, 4.4, 1.4, 5.4, 3, 1, 3, [0, 0, 18]);       // Seitenflossen
+    k(3, 6.4, -4, 4.4, 1.4, 5.4, 3, 2, 3, [0, 0, -18]);
+  },
+  /* Drache: großer Kopf, Hörner, Flügel, langer Schwanz, vier Beine. */
+  drache: function(k){
+    k(-5, 8, -6, 10, 9, 15, 0, 0, 4);                           // Rumpf
+    k(-4.2, 7.6, -6.4, 8.4, 4, 13, 4, 0, 4);                    // Bauchplatten
+    k(-4.6, 14, -14, 9.2, 8.6, 9.5, 0, 0, 4);                   // Kopf
+    k(-2.8, 13.8, -16.8, 5.6, 4.6, 3.4, 0, 0, 4);               // Schnauze
+    k(-2.2, 13.7, -17.4, 4.4, 1.2, 1.6, 7, 0);                  // Maul
+    k(-1.6, 17.4, -17.6, 1.2, 1.2, 1, 5, 0); k(0.4, 17.4, -17.6, 1.2, 1.2, 1, 5, 0);
+    augen(k, 18.6, -14.8, 3, 0.9);
+    k(-5, 21.4, -10.6, 2.2, 4.6, 2.2, 3, 0, 3, [-34, 0, -22]);  // Hörner
+    k(2.8, 21.4, -10.6, 2.2, 4.6, 2.2, 3, 0, 3, [-34, 0, 22]);
+    k(-12.5, 15, -4.5, 8.5, 1.4, 11, 3, 3, 3, [0, 0, 14]);      // Flügel
+    k(4, 15, -4.5, 8.5, 1.4, 11, 3, 4, 3, [0, 0, -14]);
+    k(-19.5, 17, -2.5, 7.5, 1.2, 8.5, 7, 3, 7, [0, 0, 30]);
+    k(12, 17, -2.5, 7.5, 1.2, 8.5, 7, 4, 7, [0, 0, -30]);
+    for(let i = 0; i < 5; i++)                                   // Rückenzacken
+      k(-1, 16.8, -3.2 + i*2.6, 2, 2.8 - i*0.25, 2, 3, 0, 3, [-10, 0, 0]);
+    k(-2.2, 9, 8.8, 4.4, 4.4, 5, 0, 0, 4, [-10, 0, 0]);         // Schwanz
+    k(-1.8, 10.4, 13, 3.6, 3.6, 4.6, 0, 0, 4, [-22, 0, 0]);
+    k(-1.3, 12.2, 16.6, 2.6, 2.6, 4, 3, 0, 3, [-36, 0, 0]);
+    for(const [bx, bz, teil] of [[-5, -4, 1], [2, 5, 1], [2, -4, 2], [-5, 5, 2]]){
+      k(bx, 1.6, bz, 3.2, 6.6, 3.2, 1, teil);
+      k(bx-0.3, 0, bz-0.8, 3.8, 1.8, 4.2, 7, teil);
+      k(bx-0.1, 0, bz-1.6, 1, 1, 1, 6, teil); k(bx+1.2, 0, bz-1.6, 1, 1, 1, 6, teil);
+      k(bx+2.4, 0, bz-1.6, 1, 1, 1, 6, teil);
     }
   },
   /* Schlange: Kopf hoch, Körper in Ringen, die sich abwechselnd färben. */
@@ -6317,6 +6453,73 @@ function pkEnde(){
    Entwicklungsreihe: ihr erstes Monster wird mit Stufe 16 zum zweiten
    und mit Stufe 32 zum dritten.
    ===================================================================== */
+
+/* =====================================================================
+   EIGENE ARTEN FÜR DIE SAMMLER-SPIELART
+   Die Monster der Abenteuerwelten reichen für ein Sammelspiel nicht.
+   Hier stehen darum eigene Arten, die es nur im Sammler-Modus gibt -
+   jede mit Namen, Zeichen, Typ, Körperform, Rang und dem, was aus ihr
+   wird. Sie leben im Biom, das bei "biom" steht, und mischen sich dort
+   unter die Bewohner.
+
+   Der Rang sagt, wie stark die Grundwerte sind: 0 ist ein Küken, 2 die
+   letzte Stufe einer Reihe.
+   ===================================================================== */
+const ART_EXTRA = -1;                  // Pseudowelt für die eigenen Arten
+const EXTRA_ARTEN = [
+  // ---- Grünwald ----
+  {id:"moosling",  nameDe:"Moosling",    emoji:"🌱", typ:"pflanze", plan:"klumpen",    rang:0, biom:0, tempo:2.6, wird:"rankenwolf", ab:16},
+  {id:"rankenwolf",nameDe:"Rankenwolf",  emoji:"🌿", typ:"pflanze", plan:"vierbeiner", rang:1, biom:0, tempo:3.8, wird:"waldhueter", ab:32},
+  {id:"waldhueter",nameDe:"Waldhüter",   emoji:"🌳", typ:"pflanze", plan:"gehoernt",   rang:2, biom:0, tempo:2.4},
+  {id:"igelbeere", nameDe:"Igelbeere",   emoji:"🦔", typ:"pflanze", plan:"kugel",      rang:0, biom:0, tempo:3.0, wird:"stachelbau", ab:20},
+  {id:"stachelbau",nameDe:"Stachelbau",  emoji:"🌰", typ:"boden",   plan:"kugel",      rang:2, biom:0, tempo:2.2},
+  // ---- Kirschblütenhain ----
+  {id:"bluetlicht",nameDe:"Blütenlicht", emoji:"🌸", typ:"fee",     plan:"kugel",      rang:0, biom:1, tempo:3.4, wird:"feenfalter", ab:16},
+  {id:"feenfalter",nameDe:"Feenfalter",  emoji:"🦋", typ:"fee",     plan:"flieger",    rang:1, biom:1, tempo:5.0, wird:"bluetkoenig", ab:32},
+  {id:"bluetkoenig",nameDe:"Blütenfürst",emoji:"👑", typ:"fee",     plan:"zweibeiner", rang:2, biom:1, tempo:3.2},
+  {id:"kirschreh", nameDe:"Kirschreh",   emoji:"🦌", typ:"fee",     plan:"gehoernt",   rang:1, biom:1, tempo:4.4},
+  // ---- Dornenwüste ----
+  {id:"sandkrabbe",nameDe:"Sandkrabbe",  emoji:"🦀", typ:"boden",   plan:"krabbe",     rang:0, biom:4, tempo:3.2, wird:"duenenpanzer", ab:18},
+  {id:"duenenpanzer",nameDe:"Dünenpanzer",emoji:"🐢",typ:"boden",   plan:"krabbe",     rang:1, biom:4, tempo:2.2, wird:"wuestenkoloss", ab:34},
+  {id:"wuestenkoloss",nameDe:"Wüstenkoloss",emoji:"🗿",typ:"boden", plan:"gehoernt",   rang:2, biom:4, tempo:2.0},
+  {id:"skorpling", nameDe:"Skorpling",   emoji:"🦂", typ:"gift",    plan:"kriecher",   rang:0, biom:4, tempo:4.0, wird:"sandstachel", ab:22},
+  {id:"sandstachel",nameDe:"Sandstachel",emoji:"🏜️", typ:"gift",    plan:"kriecher",   rang:2, biom:4, tempo:3.4},
+  // ---- Dschungeltiefe ----
+  {id:"lianenaffe",nameDe:"Lianenaffe",  emoji:"🐒", typ:"pflanze", plan:"zweibeiner", rang:0, biom:5, tempo:4.6, wird:"dschungelfuerst", ab:24},
+  {id:"dschungelfuerst",nameDe:"Dschungelfürst",emoji:"🦍",typ:"kaefer",plan:"zweibeiner",rang:2,biom:5,tempo:3.0},
+  {id:"blattfrosch",nameDe:"Blattfrosch",emoji:"🐸", typ:"gift",    plan:"kugel",      rang:0, biom:5, tempo:3.6, wird:"giftpfeil", ab:20},
+  {id:"giftpfeil", nameDe:"Giftpfeil",   emoji:"🐍", typ:"gift",    plan:"schlange",   rang:2, biom:5, tempo:4.2},
+  {id:"tukanix",   nameDe:"Tukanix",     emoji:"🦜", typ:"flug",    plan:"flieger",    rang:1, biom:5, tempo:5.0},
+  // ---- Seuchensumpf ----
+  {id:"sumpflicht",nameDe:"Sumpflicht",  emoji:"💧", typ:"gift",    plan:"kugel",      rang:0, biom:6, tempo:3.0, wird:"moorgeist", ab:16},
+  {id:"moorgeist", nameDe:"Moorgeist",   emoji:"👻", typ:"geist",   plan:"flieger",    rang:1, biom:6, tempo:3.8, wird:"faulnebel", ab:32},
+  {id:"faulnebel", nameDe:"Faulnebel",   emoji:"🌫️", typ:"geist",   plan:"flieger",    rang:2, biom:6, tempo:4.2},
+  {id:"schilfaal", nameDe:"Schilfaal",   emoji:"🐟", typ:"gift",    plan:"fisch",      rang:1, biom:6, tempo:4.0},
+  // ---- Ewiges Eis ----
+  {id:"frostkueken",nameDe:"Frostküken", emoji:"🐧", typ:"eis",     plan:"kugel",      rang:0, biom:7, tempo:3.0, wird:"eisvogel", ab:18},
+  {id:"eisvogel",  nameDe:"Eisvogel",    emoji:"🦅", typ:"eis",     plan:"flieger",    rang:1, biom:7, tempo:4.8, wird:"gletscherwyrm", ab:34},
+  {id:"gletscherwyrm",nameDe:"Gletscherwyrm",emoji:"🐉",typ:"eis",  plan:"drache",     rang:2, biom:7, tempo:3.6},
+  {id:"schneehase",nameDe:"Schneehase",  emoji:"🐇", typ:"eis",     plan:"vierbeiner", rang:0, biom:7, tempo:4.4, wird:"frostpelz", ab:22},
+  {id:"frostpelz", nameDe:"Frostpelz",   emoji:"🦊", typ:"eis",     plan:"vierbeiner", rang:2, biom:7, tempo:4.0},
+  // ---- Pilzland ----
+  {id:"sporenkind",nameDe:"Sporenkind",  emoji:"🍄", typ:"pflanze", plan:"klumpen",    rang:0, biom:8, tempo:2.8, wird:"pilzwaechter", ab:16},
+  {id:"pilzwaechter",nameDe:"Pilzwächter",emoji:"🧄",typ:"pflanze", plan:"gehoernt",   rang:1, biom:8, tempo:2.6, wird:"myzelherr", ab:32},
+  {id:"myzelherr", nameDe:"Myzelherr",   emoji:"🧟", typ:"gift",    plan:"zweibeiner", rang:2, biom:8, tempo:2.4},
+  {id:"leuchtqualle",nameDe:"Leuchtqualle",emoji:"🪼",typ:"geist",  plan:"kugel",      rang:1, biom:8, tempo:3.2},
+  {id:"tropfkaefer",nameDe:"Tropfkäfer", emoji:"🪲", typ:"kaefer",  plan:"krabbe",     rang:0, biom:8, tempo:3.8, wird:"panzerkaefer", ab:20},
+  {id:"panzerkaefer",nameDe:"Panzerkäfer",emoji:"🐞",typ:"kaefer",  plan:"krabbe",     rang:2, biom:8, tempo:3.0}
+];
+const EXTRA_NACH_ID = {};
+for(const a of EXTRA_ARTEN){
+  a.name = a.nameDe;
+  a.hp = 1; a.atk = 1; a.def = 1;               // echte Werte kommen aus dem Rang
+  a.xp = 900 + a.rang*700; a.gold = 400 + a.rang*400;
+  EXTRA_NACH_ID[a.id] = a;
+}
+function extraArt(id){ return EXTRA_NACH_ID[id] || null; }
+// Welche eigenen Arten leben in diesem Biom?
+function extraImBiom(nr){ return EXTRA_ARTEN.filter(a => a.biom === nr); }
+
 const WELT_TYP = ["pflanze","fee","feuer","unlicht","boden","kaefer","gift",
                   "eis","pflanze","feuer","geist","unlicht","flug"];
 const TYP_NAME = {normal:"Normal", pflanze:"Pflanze", feuer:"Feuer", eis:"Eis",
@@ -6363,6 +6566,8 @@ const ATTACKEN = {
 
 // Wo steckt diese Art in ihrer Welt? Daraus kommen die Grundwerte.
 function artStelle(welt, id){
+  const eigen = extraArt(id);
+  if(eigen) return eigen.rang;
   const w = WELTEN[welt];
   if(!w) return -1;
   if(w.boss && w.boss.id === id) return 3;
@@ -6376,11 +6581,14 @@ function artGrund(welt, id){
   const stelle = artStelle(welt, id);
   const g = GRUNDWERTE[klemm(stelle < 0 ? 0 : stelle, 0, 3)];
   const v = artVon(welt, id);
-  const bonus = welt * 2;                 // spätere Welten bringen etwas kräftigere Arten mit
+  const eigen = extraArt(id);
+  const bonus = (eigen ? eigen.biom : welt) * 2;   // spätere Biome bringen kräftigere Arten mit
   return {hp: g.hp + bonus, atk: g.atk + bonus, def: g.def + bonus,
           init: Math.round(35 + (v ? v.tempo : 3) * 8)};
 }
 function artVon(welt, id){
+  const eigen = extraArt(id);
+  if(eigen) return eigen;
   const w = WELTEN[welt];
   if(!w) return null;
   if(w.boss && w.boss.id === id) return w.boss;
@@ -6403,6 +6611,8 @@ const TYP_WOERTER = [
                "panther","schlange","schleim","krieger","koloss","riese"]]
 ];
 function artTyp(welt, id){
+  const eigen = extraArt(id);
+  if(eigen) return eigen.typ;
   if(id){
     const v = artVon(welt, id);
     const name = ((v && (v.nameDe || v.name)) || "").toLowerCase();
@@ -6434,6 +6644,8 @@ function attackenAuf(welt, id, stufe){
 /* Entwicklung: das erste Monster einer Welt wird mit 16 zum zweiten
    und mit 32 zum dritten.                                            */
 function entwicklungZu(welt, id, stufe){
+  const eigen = extraArt(id);
+  if(eigen) return (eigen.wird && stufe >= eigen.ab) ? eigen.wird : null;
   const w = WELTEN[welt];
   if(!w || !w.gegner) return null;
   const stelle = w.gegner.findIndex(g => g.id === id);
@@ -6595,6 +6807,7 @@ function buchArten(){
     const w = WELTEN[nr];
     if(!w || !w.gegner) continue;
     for(const g of w.gegner) liste.push({welt:nr, id:g.id, g:g});
+    for(const a of extraImBiom(nr)) liste.push({welt:nr, id:a.id, g:a});
   }
   return liste;
 }
@@ -6797,14 +7010,22 @@ function tierFaellt(){
 
 /* ---------- Das erste Tier ----------
    Drei Arten zur Wahl, je eine aus den ersten Biomen der Karte.     */
+/* Zur Wahl stehen drei eigene Arten der ersten Stufe, je eine aus einem
+   anderen Biom - so wie man es aus Sammelspielen kennt.              */
 function starterMoeglich(){
   const aus = [];
   for(const nr of BIOM_WELTEN){
-    const w = WELTEN[nr];
-    if(w && w.gegner && w.gegner.length) aus.push({welt:nr, g:w.gegner[0]});
+    const jung = extraImBiom(nr).filter(a => a.rang === 0 && a.wird);
+    if(jung.length) aus.push({welt:nr, g:jung[0]});
     if(aus.length >= 3) break;
   }
-  return aus;
+  if(aus.length < 3)
+    for(const nr of BIOM_WELTEN){
+      const w = WELTEN[nr];
+      if(w && w.gegner && w.gegner.length) aus.push({welt:nr, g:w.gegner[0]});
+      if(aus.length >= 3) break;
+    }
+  return aus.slice(0, 3);
 }
 function starterZeigen(){
   const kasten = $("starterListe");
