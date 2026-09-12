@@ -280,7 +280,7 @@
     <div style="font-size:52px">⛏️</div>
     <h2>WELTENKÄMPFER · BLOCKWELT</h2>
     <p class="c-dim" style="margin-top:0">Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.</p>
-    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 27 · Erweiterungen: der Sammler</p>
+    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 28 · Spielart wählen, Sammlerwelt mit Biomen</p>
     <p style="margin:0 0 4px">Willkommen, <b id="grussName" class="c-gold">Held</b>
       <button onclick="nameAendern()" style="padding:4px 10px; font-size:12px; margin-left:8px">✏️ Name &amp; Skin</button>
       <button onclick="uebertragZeigen()" style="padding:4px 10px; font-size:12px; margin-left:4px">💾 Spielstand übertragen</button></p>
@@ -307,18 +307,38 @@
     <div id="weltliste"></div>
 
     <h3 style="text-align:left; margin-top:18px">Neue Welt anlegen</h3>
+    <div class="reihe" style="justify-content:flex-start">
+      <button class="primary" onclick="neueWeltZeigen()">🌱 Neue Welt erschaffen …</button>
+    </div>
+    <p class="c-dim" style="font-size:12px; text-align:left">Auf der nächsten Seite gibst du Name und
+      Startwert ein und wählst die Spielart. Jede Welt hat ihre eigenen Bauten, ihr eigenes
+      Inventar und ihren eigenen Fortschritt.</p>
+  </div>
+</div>
+
+<div class="overlay hidden" id="neuewelt">
+  <div class="fenster">
+    <div style="text-align:center; font-size:44px">🌱</div>
+    <h2 style="text-align:center">Neue Welt</h2>
+    <p class="c-dim" style="margin-top:0; text-align:center">Gib ihr einen Namen und such dir aus,
+      wie du in dieser Welt spielen willst.</p>
+
+    <h3 style="margin-top:16px">Name und Startwert</h3>
     <div class="neuwelt">
       <input id="neuName" maxlength="24" placeholder="Name der Welt" value="">
       <input id="neuSaat" maxlength="16" placeholder="Startwert (Zahl oder Wort, freilassen = zufällig)">
-      <button class="primary" onclick="neueWelt()">🌱 Welt erschaffen</button>
     </div>
-    <h3 style="text-align:left; margin-top:18px">Erweiterungen</h3>
-    <p class="c-dim" style="font-size:12px; margin-top:0; text-align:left">
-      Zusatzregeln fürs ganze Spiel. Du kannst sie jederzeit an- und ausschalten.</p>
+    <p class="c-dim" style="font-size:12px">Gleicher Startwert = gleiche Landschaft.</p>
+
+    <h3 style="margin-top:16px">Spielart</h3>
+    <p class="c-dim" style="font-size:12px; margin-top:0">Such dir eine aus. Sie gilt für diese Welt –
+      später lässt sie sich nicht mehr umstellen.</p>
     <div id="addonListe"></div>
 
-    <p class="c-dim" style="font-size:12px">Gleicher Startwert = gleiche Landschaft. Jede Welt hat ihre
-      eigenen Bauten, ihr eigenes Inventar und ihren eigenen Fortschritt.</p>
+    <div class="reihe" style="margin-top:14px">
+      <button class="primary" onclick="neueWeltErschaffen()">🌱 Welt erschaffen</button>
+      <button onclick="schliesse('neuewelt')">Zurück</button>
+    </div>
   </div>
 </div>
 
@@ -521,7 +541,7 @@ const EN = {
   "Eisschwert": "Ice Sword",
   "Eisspitzhacke": "Ice Pickaxe",
   "Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.": "Thirteen open block worlds. Build, dig, fight – and find the portal.",
-  "Ausgabe 27 · Erweiterungen: der Sammler": "Build 27 · Add-ons: the Collector",
+  "Ausgabe 28 · Spielart wählen, Sammlerwelt mit Biomen": "Build 28 · Pick a game mode, collector world with biomes",
   "Endlose Dünen. Und die Kakteen hier stehen nicht nur herum – sie laufen.": "Endless dunes. And the cacti here don't just stand around – they walk.",
   "Erde": "Dirt",
   "Erlege 14 Schattenriesen": "Slay 14 shadow giants",
@@ -1016,7 +1036,26 @@ const EN = {
   "Kein Begleiter dabei.": "No companion with you.",
   "Monster sind nicht mehr nur zum Verhauen da. Schwäche eines im Kampf und wirf den Fangball – dann gehört es dir, folgt dir durch alle Welten und kämpft an deiner Seite.": "Monsters are not just for beating up any more. Weaken one in battle and throw the catch ball – then it is yours, follows you through every world and fights at your side.",
   "Sammler": "Collector",
-  "Zusatzregeln fürs ganze Spiel. Du kannst sie jederzeit an- und ausschalten.": "Extra rules for the whole game. You can switch them on and off any time."
+  "Zusatzregeln fürs ganze Spiel. Du kannst sie jederzeit an- und ausschalten.": "Extra rules for the whole game. You can switch them on and off any time.",
+  "Auf der nächsten Seite gibst du Name und Startwert ein und wählst die Erweiterungen. Jede Welt hat ihre eigenen Bauten, ihr eigenes Inventar und ihren eigenen Fortschritt.": "On the next page you enter a name and a seed and pick the add-ons. Every world has its own buildings, its own inventory and its own progress.",
+  "Dabei": "Included",
+  "Eine große Welt aus vielen Biomen – Wald, Wüste, Eis, Sumpf und mehr, alles auf einer Karte. Monster sind nicht mehr nur zum Verhauen da: schwäche eines im Kampf und wirf den Fangball, dann gehört es dir, folgt dir überallhin und kämpft an deiner Seite.": "One big world made of many biomes – forest, desert, ice, swamp and more, all on one map. Monsters are not just for beating up: weaken one in battle and throw the catch ball, then it is yours, follows you everywhere and fights at your side.",
+  "Gib ihr einen Namen und such dir aus, welche Zusatzregeln in dieser Welt gelten sollen.": "Give it a name and pick which extra rules should apply in this world.",
+  "Klick sie an. Was du hier wählst, gilt für diese Welt – später lässt es sich nicht mehr umstellen.": "Click them on. What you pick here applies to this world – it cannot be changed later.",
+  "Name und Startwert": "Name and seed",
+  "Neue Welt": "New World",
+  "Nicht dabei": "Not included",
+  "Zurück": "Back",
+  "🌱 Neue Welt erschaffen …": "🌱 Create a new world …",
+  "Abenteuer": "Adventure",
+  "Auf der nächsten Seite gibst du Name und Startwert ein und wählst die Spielart. Jede Welt hat ihre eigenen Bauten, ihr eigenes Inventar und ihren eigenen Fortschritt.": "On the next page you enter a name and a seed and pick the game mode. Every world has its own buildings, its own inventory and its own progress.",
+  "Das Spiel, wie du es kennst. Dreizehn Welten nacheinander, jede mit ihrer eigenen Landschaft, ihren Quests und ihrem Boss.": "The game as you know it. Thirteen worlds one after another, each with its own landscape, its quests and its boss.",
+  "Eine große Welt aus vielen Biomen – Wald, Kirschblüten, Wüste, Dschungel, Sumpf, Eis und Pilzland, alles auf einer Karte. Monster sind nicht mehr nur zum Verhauen da: schwäche eines im Kampf und wirf den Fangball, dann gehört es dir, folgt dir überallhin und kämpft an deiner Seite.": "One big world made of many biomes - forest, cherry blossom, desert, jungle, swamp, ice and mushroom land, all on one map. Monsters are not just for beating up: weaken one in battle and throw the catch ball, then it is yours, follows you everywhere and fights at your side.",
+  "Gewählt": "Chosen",
+  "Gib ihr einen Namen und such dir aus, wie du in dieser Welt spielen willst.": "Give it a name and pick how you want to play in this world.",
+  "Spielart": "Game mode",
+  "Such dir eine aus. Sie gilt für diese Welt – später lässt sie sich nicht mehr umstellen.": "Pick one. It applies to this world – it cannot be changed later.",
+  "Wählen": "Choose"
 };
 function ue(s){
   if(sprache !== "en" || typeof s !== "string") return s;
@@ -1589,7 +1628,7 @@ let s;
 function neuerStand(){
   return {id:null, name:ue("Welt"), saat:0, level:1, xp:0, xpNext:30, hp:70, maxHp:70, mp:25, maxMp:25, atk:9, def:3, mag:7,
           gold:30, traenke:3, welt:0, freigeschaltet:0, waffe:0, ruestung:0, hacke:0, axt:0, kills:{}, sachen:{}, gesammelt:{},
-          fertig:{}, gewonnen:false, aenderungen:{}, inventar:{}, begleiter:[], version:2};
+          fertig:{}, gewonnen:false, aenderungen:{}, inventar:{}, begleiter:[], addons:[], version:2};
 }
 /* ---------- Mehrere Spielwelten nebeneinander ----------
    "wkListe"        = Übersicht aller Welten
@@ -1980,9 +2019,50 @@ let gelaendeHoehen = null;
 let deckenHoehe = null;
 let schneeWelt = false;   // nur im Eis liegt Schnee auf den Fichten
 let imAufbau = false;     // solange die Welt entsteht, endet sie am alten Himmel
+/* ---------- Viele Biome auf einer Karte ----------
+   Mit der Sammler-Erweiterung besteht eine Welt nicht mehr aus einer
+   einzigen Landschaft. Der Boden, die Bäume und die Erze richten sich
+   danach, in welchem Biom eine Spalte liegt; die Höhen und der
+   Wasserspiegel bleiben von der Grundwelt, sonst gäbe es Klippen und
+   zerrissene Seen an jeder Biomgrenze.
+
+   Welches Biom wo liegt, kommt aus zwei großflächigen Rauschfeldern:
+   ihr Winkel zueinander teilt die Karte in unregelmäßige Flecken.     */
+// Grünwald, Kirschblüten, Dornenwüste, Dschungel, Sumpf, Eis, Pilzland
+const BIOM_WELTEN = [0, 1, 4, 5, 6, 7, 8];
+let biomSaat = 0, biomeAn = false, biomPunkte = [];
+/* Jedes Biom bekommt zwei Mittelpunkte auf der Karte, und jede Spalte
+   gehört zum nächstgelegenen. So werden alle Biome ähnlich groß. Die
+   Entfernung wird vorher mit Rauschen verbogen, sonst sähe man die
+   geraden Kanten zwischen den Flecken.                                */
+function biomPunkteBauen(wuerfel){
+  biomPunkte = [];
+  const n = BIOM_WELTEN.length * 2;
+  for(let i = 0; i < n; i++)
+    biomPunkte.push({x: 10 + wuerfel()*(WX-20), z: 10 + wuerfel()*(WZ-20),
+                     welt: BIOM_WELTEN[i % BIOM_WELTEN.length]});
+}
+function biomNummer(x, z){
+  const wx = x + fbm(x, z, biomSaat+55, 2, 0.030)*16;
+  const wz = z + fbm(x, z, biomSaat+77, 2, 0.030)*16;
+  let best = BIOM_WELTEN[0], nah = 1e9;
+  for(const p of biomPunkte){
+    const d = (wx-p.x)*(wx-p.x) + (wz-p.z)*(wz-p.z);
+    if(d < nah){ nah = d; best = p.welt; }
+  }
+  return best;
+}
+function biomVon(x, z, grund){
+  return biomeAn ? WELTEN[biomNummer(x, z)] : grund;
+}
+
 function weltErzeugen(){
   imAufbau = true;
   const w = WELTEN[s.welt];
+  // In geschlossenen Höhlenwelten bleibt alles beim Alten
+  biomeAn = addonAn("sammler") && !w.decke;
+  biomSaat = ((w.saat + (s.saat||0)*7919) | 0) + 31337;
+  if(biomeAn) biomPunkteBauen(zufall(biomSaat));
   const saat = (w.saat + (s.saat||0)*7919) | 0;      // jede Spielwelt sieht anders aus
   const wuerfel = zufall(saat + 4711);               // fester Zufall: Orte bleiben, wo sie sind
   bloecke = new Uint8Array(WX*WY*WZ);
@@ -1999,17 +2079,18 @@ function weltErzeugen(){
       /* Die oberste Schicht ist mal einen, mal zwei Blöcke dick. Fleckig
          verteilt, damit der Boden nicht überall gleich aussieht.        */
       const doppelt = (hashZ(x, z, saat+4242)+1)/2 > 0.68;
+      const bw = biomVon(x, z, w);            // in dieser Spalte gilt dieses Biom
       for(let y=0; y<=h; y++){
         let b = w.tief;
         if(y === h || (doppelt && y === h-1 && h > w.seehoehe+1)){
-          b = (h <= w.seehoehe+1 ? w.strand : w.oben);
+          b = (h <= w.seehoehe+1 ? bw.strand : bw.oben);
           if(w.flecken && h > w.seehoehe+1){
             const misch = fbm(x, z, saat+606, 3, 0.085);
             b = misch > 0.12 ? w.flecken[0] : (misch < -0.18 ? w.flecken[2] : w.flecken[1]);
           }
         }
-        else if(y > h-4) b = (h <= w.seehoehe+1 ? w.strand : w.unter);
-        else if(w.erz && y > 2 && (hashZ(x + y*131, z - y*57, saat+900)+1)/2 > 0.972) b = w.erz;
+        else if(y > h-4) b = (h <= w.seehoehe+1 ? bw.strand : bw.unter);
+        else if(bw.erz && y > 2 && (hashZ(x + y*131, z - y*57, saat+900)+1)/2 > 0.972) b = bw.erz;
         setzeBlock(x,y,z,b);
       }
       for(let y=h+1; y<=w.seehoehe; y++) setzeBlock(x,y,z,w.fluessig);
@@ -2062,17 +2143,18 @@ function weltErzeugen(){
   for(let z=2; z<WZ-2; z++){
     for(let x=2; x<WX-2; x++){
       const h = hoehen[z*WX+x];
-      if(!w.flecken && block(x,h-1,z) !== w.oben && block(x,h,z) !== w.oben) continue;
+      const bw = biomVon(x, z, w);        // jedes Biom bringt seine eigenen Pflanzen mit
+      if(!w.flecken && block(x,h-1,z) !== bw.oben && block(x,h,z) !== bw.oben) continue;
       if(w.flecken && !w.decke){          // draußen: nur auf Erde und Gras, nicht auf nacktem Fels
         const unterGrund = block(x, h-1, z);
         if(unterGrund !== B_GRAS && unterGrund !== B_ERDE) continue;
       }
       const r = (hashZ(x, z, saat+555)+1)/2;
-      if(w.baeume && r > 0.988) baumSetzen(x, h, z);
-      else if(w.baumArt === "kirsch" && r > 0.992) kirschbaumSetzen(x, h, z);
-      else if(w.saeulen && r > 0.993) saeuleSetzen(x, h, z, w);
-      else if(w.kristalle && r > 0.990) kristallSetzen(x, h, z);
-      else if(w.bewuchs && r > 1 - w.dichte) BEWUCHS[w.bewuchs](x, h, z);
+      if(bw.baeume && r > 0.988) baumSetzen(x, h, z);
+      else if(bw.baumArt === "kirsch" && r > 0.992) kirschbaumSetzen(x, h, z);
+      else if(bw.saeulen && r > 0.993) saeuleSetzen(x, h, z, bw);
+      else if(bw.kristalle && r > 0.990) kristallSetzen(x, h, z);
+      else if(bw.bewuchs && r > 1 - bw.dichte) BEWUCHS[bw.bewuchs](x, h, z);
     }
   }
   // Orte bestimmen (immer an Land, geglättet)
@@ -3092,7 +3174,19 @@ function gegnerSetzen(){
     const y = bodenHoehe(x,z);
     if(y <= WELTEN[s.welt].seehoehe) continue;
     const f = 0.9 + Math.random()*0.25;
-    wesen.push({art:"gegner", id:v.id, name:v.name, emoji:v.emoji, bild:v.bild, x:x+0.5, y:y, z:z+0.5,
+    /* Mit vielen Biomen bringt jedes Biom seine eigenen Bewohner mit.
+       Aussehen und Name kommen aus dem Biom, die Werte aber aus der Welt,
+       in der du gerade bist - sonst wäre ein Wolf im Aether ein Witz.   */
+    let zeigt = v, heimat = s.welt;
+    if(biomeAn && !v.bild){
+      const nr = biomNummer(x, z), bw = WELTEN[nr];
+      if(bw && bw !== WELTEN[s.welt] && bw.gegner && bw.gegner.length){
+        zeigt = bw.gegner[rnd(0, bw.gegner.length-1)];
+        heimat = nr;
+      }
+    }
+    wesen.push({art:"gegner", id:zeigt.id, name:zeigt.name, emoji:zeigt.emoji, bild:zeigt.bild,
+                heimat:heimat, x:x+0.5, y:y, z:z+0.5,
                 hp:Math.round(v.hp*f), maxHp:Math.round(v.hp*f), atk:v.atk, def:v.def,
                 xp:v.xp, gold:v.gold, tempo:v.tempo, gross:1.5, ruhe:0});
     return;
@@ -3221,7 +3315,7 @@ function begleiterMerken(o){
     return;
   }
   o.nr = l.length;
-  l.push({welt: s.welt, id: o.id});
+  l.push({welt: o.heimat === undefined ? s.welt : o.heimat, id: o.id});
   speichern();
 }
 function begleiterVon(o){ return o.nr === undefined ? null : begleiter()[o.nr]; }
@@ -4950,34 +5044,36 @@ function rasten(){
    Zusatzregeln, die für alle Welten gelten. Sie stehen neben dem Spielstand
    im Gerät, damit eine Erweiterung nicht an einer einzelnen Welt klebt.
    ===================================================================== */
-const ADDON_KEY = "wkAddons";
-const ADDONS = [
+/* Die Spielart wird beim Erschaffen einer Welt gewählt und gehört dann
+   zu ihr. "Abenteuer" ist das Spiel, wie es immer war.                 */
+const SPIELARTEN = [
+  {id:"abenteuer", zeichen:"⚔️", name:"Abenteuer",
+   beschreibung:"Das Spiel, wie du es kennst. Dreizehn Welten nacheinander, jede mit ihrer eigenen Landschaft, ihren Quests und ihrem Boss."},
   {id:"sammler", zeichen:"🔴", name:"Sammler",
-   beschreibung:"Monster sind nicht mehr nur zum Verhauen da. Schwäche eines im Kampf und wirf den Fangball – dann gehört es dir, folgt dir durch alle Welten und kämpft an deiner Seite."}
+   beschreibung:"Eine große Welt aus vielen Biomen – Wald, Kirschblüten, Wüste, Dschungel, Sumpf, Eis und Pilzland, alles auf einer Karte. Monster sind nicht mehr nur zum Verhauen da: schwäche eines im Kampf und wirf den Fangball, dann gehört es dir, folgt dir überallhin und kämpft an deiner Seite."}
 ];
-function addons(){
-  try{ const l = JSON.parse(localStorage.getItem(ADDON_KEY)); return Array.isArray(l) ? l : []; }
-  catch(e){ return []; }
+/* Eine Erweiterung gehört zu einer Welt, nicht zum Gerät. Sie wird beim
+   Erschaffen gewählt und steht danach im Spielstand.                   */
+let neueArt = "abenteuer";                // was auf der Seite gerade gewählt ist
+function addonAn(id){
+  return !!(s && Array.isArray(s.addons) && s.addons.indexOf(id) >= 0);
 }
-function addonAn(id){ return addons().indexOf(id) >= 0; }
-function addonUmschalten(id){
-  const l = addons(), i = l.indexOf(id);
-  if(i >= 0) l.splice(i, 1); else l.push(id);
-  try{ localStorage.setItem(ADDON_KEY, JSON.stringify(l)); }catch(e){}
+function artWaehlen(id){
+  if(neueArt === id) return;
+  neueArt = id;
   addonListeZeichnen();
-  const jetzt = addonAn(id);
-  klang("sine", jetzt ? 660 : 330, 0.16, 0.15, jetzt ? 990 : 220);
-  meldung((jetzt ? "✅ " : "⬜ ") + ue(ADDONS.find(a => a.id === id).name)
-          + (jetzt ? ue(" ist an.") : ue(" ist aus.")), "c-gold");
+  klang("sine", 660, 0.16, 0.15, 990);
 }
 function addonListeZeichnen(){
   const kasten = $("addonListe");
   if(!kasten) return;
   kasten.innerHTML = "";
-  for(const a of ADDONS){
-    const an = addonAn(a.id);
+  for(const a of SPIELARTEN){
+    const an = neueArt === a.id;
     const d = document.createElement("div");
     d.className = "addon" + (an ? " an" : "");
+    d.style.cursor = "pointer";
+    d.onclick = () => artWaehlen(a.id);
     const z = document.createElement("div"); z.className = "zeichen"; z.textContent = a.zeichen;
     const txt = document.createElement("div"); txt.className = "text";
     const b = document.createElement("b"); b.textContent = ue(a.name);
@@ -4985,8 +5081,8 @@ function addonListeZeichnen(){
     txt.appendChild(b); txt.appendChild(p);
     const k = document.createElement("button");
     k.className = an ? "goldbtn" : "";
-    k.textContent = an ? ue("An") : ue("Aus");
-    k.onclick = () => addonUmschalten(a.id);
+    k.textContent = an ? ue("Gewählt") : ue("Wählen");
+    k.onclick = () => artWaehlen(a.id);
     d.appendChild(z); d.appendChild(txt); d.appendChild(k);
     kasten.appendChild(d);
   }
@@ -5021,7 +5117,7 @@ function gefangen(g){
     return;
   }
   tonZahm();
-  l.push({welt: s.welt, id: g.id});
+  l.push({welt: g.heimat === undefined ? s.welt : g.heimat, id: g.id});
   g.zahm = true; g.nr = l.length - 1; g.hp = g.maxHp; g.ruhe = 0;
   kampflog("🔴 " + g.name + ue(" ist gefangen!"), "c-good");
   meldung("🔴 " + g.name + ue(" ist gefangen!"), "c-gold");
@@ -5849,13 +5945,23 @@ function weltlisteZeichnen(){
     ziel.appendChild(karte);
   });
 }
-function neueWelt(){
+function neueWeltZeigen(){
+  neueArt = "abenteuer";
+  $("neuName").value = ""; $("neuSaat").value = "";
+  addonListeZeichnen();
+  oeffne("neuewelt");
+}
+function neueWeltErschaffen(){
   const name = $("neuName").value;
   const saat = $("neuSaat").value;
   weltAnlegen(name, saat);
+  s.addons = neueArt === "abenteuer" ? [] : [neueArt];   // gehört ab jetzt zu dieser Welt
+  speichern();
   $("neuName").value = ""; $("neuSaat").value = "";
+  schliesse("neuewelt");
   starteAktuelleWelt();
 }
+function neueWelt(){ neueWeltZeigen(); }   // alter Name, falls ihn noch etwas ruft
 function weltSpielen(id){
   if(!standLaden(id)){ alert(ue("Diese Welt lässt sich nicht laden.")); return; }
   starteAktuelleWelt();
@@ -5919,7 +6025,6 @@ function standAusLink(){
   return ok;
 }
 function startBildschirmZeigen(){
-  addonListeZeichnen();
   standAusLink();
   belohnungenNachtragen();
   if(nameLaden()){
