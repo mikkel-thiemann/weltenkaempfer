@@ -231,6 +231,16 @@
   .a-zahl  {animation:pkZahl .9s forwards}
   .a-wackel{animation:pkWackel .55s}
   .a-saugen{animation:pkSaugen .55s forwards}
+  .buchgitter{display:grid; grid-template-columns:repeat(auto-fill,minmax(106px,1fr)); gap:8px;
+              max-height:56vh; overflow-y:auto; padding-right:4px}
+  .buchfeld{background:rgba(255,255,255,.05); border:1px solid var(--rahmen); border-radius:10px;
+            padding:8px 6px 7px; text-align:center}
+  .buchfeld.unbekannt{opacity:.4}
+  .buchfeld .buchbild{height:48px; background-size:contain; background-position:center;
+                      background-repeat:no-repeat; image-rendering:pixelated; margin-bottom:4px}
+  .buchfeld.unbekannt .buchbild{background:rgba(255,255,255,.06); border-radius:8px}
+  .buchfeld b{display:block; font-size:12px}
+  .buchfeld span{display:block; font-size:10.5px; color:#93a1b8; margin-top:3px}
   .tierkarte{display:flex; gap:10px; align-items:center; background:rgba(255,255,255,.05);
              border:1px solid var(--rahmen); border-radius:11px; padding:9px 11px; margin-bottom:7px}
   .tierkarte.kaempft{border-color:var(--gold); background:rgba(245,196,81,.12)}
@@ -368,7 +378,7 @@
     <div style="font-size:52px">⛏️</div>
     <h2>WELTENKÄMPFER · BLOCKWELT</h2>
     <p class="c-dim" style="margin-top:0">Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.</p>
-    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 34 · Feinere Kreaturen mit schrägen Teilen</p>
+    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 35 · Kreaturenbuch, Bälle, schillernde Tiere</p>
     <p style="margin:0 0 4px">Willkommen, <b id="grussName" class="c-gold">Held</b>
       <button onclick="nameAendern()" style="padding:4px 10px; font-size:12px; margin-left:8px">✏️ Name &amp; Skin</button>
       <button onclick="uebertragZeigen()" style="padding:4px 10px; font-size:12px; margin-left:4px">💾 Spielstand übertragen</button></p>
@@ -379,7 +389,8 @@
       <span class="taste">E</span> benutzen &nbsp; <span class="taste">Q</span> Quests &nbsp; <span class="taste">I</span> oder <span class="taste">B</span> Inventar &amp; Herstellen &nbsp; <span class="taste">Esc</span> Maus frei<br>
       <span class="taste">M</span> werfen &nbsp; <span class="taste">I</span> auf ein gezähmtes Tier steigen &nbsp;
       <span class="taste">G</span> sitzen bleiben &nbsp; <span class="taste">N</span> Namen geben &nbsp;
-      <span class="taste">T</span> Team (nur im Sammler-Modus)<br>
+      <span class="taste">T</span> Team &nbsp; <span class="taste">P</span> Kreaturenbuch
+      <span class="c-dim">(nur im Sammler-Modus)</span><br>
       Oben links neben „🌍 Welten“ schaltet 🔊 den Ton an und aus.
       <div class="c-dim" style="line-height:1.6; margin-top:8px">
         Du fängst mit leeren Händen an. Halte die linke Maustaste auf einen Block, bis er zerbricht –
@@ -558,6 +569,15 @@
   </div>
 </div>
 
+<div class="overlay hidden" id="buch">
+  <div class="fenster">
+    <h2 style="text-align:center">📕 Kreaturenbuch</h2>
+    <p class="c-dim" style="margin-top:0; text-align:center" id="buchZahl">–</p>
+    <div id="buchListe" class="buchgitter"></div>
+    <div class="reihe" style="margin-top:12px"><button class="primary" onclick="schliesse('buch')">Weiter</button></div>
+  </div>
+</div>
+
 <div class="overlay hidden" id="team">
   <div class="fenster">
     <h2 style="text-align:center">🎒 Dein Team</h2>
@@ -679,7 +699,7 @@ const EN = {
   "Eisschwert": "Ice Sword",
   "Eisspitzhacke": "Ice Pickaxe",
   "Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.": "Thirteen open block worlds. Build, dig, fight – and find the portal.",
-  "Ausgabe 34 · Feinere Kreaturen mit schrägen Teilen": "Build 34 · Finer creatures with angled parts",
+  "Ausgabe 35 · Kreaturenbuch, Bälle, schillernde Tiere": "Build 35 · Creature book, balls, shiny creatures",
   "Endlose Dünen. Und die Kakteen hier stehen nicht nur herum – sie laufen.": "Endless dunes. And the cacti here don't just stand around – they walk.",
   "Erde": "Dirt",
   "Erlege 14 Schattenriesen": "Slay 14 shadow giants",
@@ -1311,7 +1331,22 @@ const EN = {
   "Trank": "Potion",
   "Was soll ": "What should ",
   "Was? ": "What? ",
-  "Zurück": "Back"
+  "Zurück": "Back",
+  " gekauft.": " bought.",
+  "Fangball": "Catch Ball",
+  "Gefangen ": "Caught ",
+  "Gesehen ": "Seen ",
+  "Hyperball": "Hyper Ball",
+  "Kreaturenbuch": "Creature book",
+  "Superball": "Super Ball",
+  "Team": "Team",
+  "noch nie gesehen": "never seen",
+  "von": "of",
+  "📕 Kreaturenbuch": "📕 Creature book",
+  " Stück": " left",
+  " erscheint – es schillert!": " appears – it is shiny!",
+  "Bälle": "Balls",
+  "Du wirfst den ": "You throw the "
 };
 function ue(s){
   if(sprache !== "en" || typeof s !== "string") return s;
@@ -1885,7 +1920,8 @@ function neuerStand(){
   return {id:null, name:ue("Welt"), saat:0, level:1, xp:0, xpNext:30, hp:70, maxHp:70, mp:25, maxMp:25, atk:9, def:3, mag:7,
           gold:30, traenke:3, welt:0, freigeschaltet:0, waffe:0, ruestung:0, hacke:0, axt:0, kills:{}, sachen:{}, gesammelt:{},
           fertig:{}, gewonnen:false, aenderungen:{}, inventar:{}, begleiter:[], addons:[],
-          breite:WELT_BREIT, hoch:WELT_HOCH, box:[], version:2};
+          breite:WELT_BREIT, hoch:WELT_HOCH, box:[], buch:{}, baelle:{normal:8},
+          version:2};
 }
 /* ---------- Mehrere Spielwelten nebeneinander ----------
    "wkListe"        = Übersicht aller Welten
@@ -3009,7 +3045,7 @@ function zeichneArt(o){
   gl.vertexAttribPointer(A.pos, 3, gl.FLOAT, false, 24, 0);
   gl.vertexAttribPointer(A.uv, 2, gl.FLOAT, false, 24, 12);
   gl.vertexAttribPointer(A.licht, 1, gl.FLOAT, false, 24, 20);
-  gl.bindTexture(gl.TEXTURE_2D, artTextur(gl, heim, o.id));
+  gl.bindTexture(gl.TEXTURE_2D, artTextur(gl, heim, o.id, o.schillernd));
   gl.drawArrays(gl.TRIANGLES, 0, daten.length/6);
 }
 
@@ -3517,8 +3553,10 @@ function gegnerSetzen(){
       const w2 = werteAuf(heimat, zeigt.id, stufe);
       hp = w2.maxHp; atk = w2.atk; rue = w2.def;
     }
+    // Ungefähr jedes vierundsechzigste Tier schillert
+    const schillernd = addonAn("sammler") && Math.random() < 1/64;
     wesen.push({art:"gegner", id:zeigt.id, name:zeigt.name, emoji:zeigt.emoji, bild:zeigt.bild,
-                heimat:heimat, stufe:stufe, x:x+0.5, y:y, z:z+0.5,
+                heimat:heimat, stufe:stufe, schillernd:schillernd, x:x+0.5, y:y, z:z+0.5,
                 hp:hp, maxHp:hp, atk:atk, def:rue,
                 xp:v.xp, gold:v.gold, tempo:v.tempo, gross:1.5, ruhe:0});
     return;
@@ -3709,7 +3747,7 @@ function begleiterSetzen(){
       y = bodenHoehe(x, z);
     }
     wesen.push({art:"gegner", id:v.id, name:v.name, emoji:v.emoji, bild:v.bild, zahm:true,
-                nr:i, sitzt:!!b.sitzt, eigenName:b.name || null,
+                nr:i, sitzt:!!b.sitzt, eigenName:b.name || null, schillernd:!!b.schillernd,
                 futter:FUTTER_NOETIG, x:x, y:y, z:z,
                 hp:v.hp, maxHp:v.hp, atk:v.atk, def:v.def, xp:v.xp, gold:v.gold,
                 tempo:v.tempo, gross:1.5, ruhe:0});
@@ -4832,7 +4870,7 @@ function oeffne(id){
 }
 function schliesse(id){
   $(id).classList.add("hidden");
-  const offen = ["kampf","pkampf","tafel","lager","stufe","info","reise","uebertragung","start","team","starter","neuewelt"].some(x => !$(x).classList.contains("hidden"));
+  const offen = ["kampf","pkampf","tafel","lager","stufe","info","reise","uebertragung","start","team","buch","starter","neuewelt"].some(x => !$(x).classList.contains("hidden"));
   if(!offen) modus = "welt";
 }
 function infoZeigen(icon, titel, text){
@@ -5346,6 +5384,12 @@ function ladenZeichnen(){
   const nr = RUESTUNGEN[s.ruestung+1];
   h += nr ? ladenZeile("🛡️ " + nr.name + " <span class='c-dim'>+" + nr.def + ue(" Rüstung</span>"), nr.preis, "ruestung")
           : ue('<div class="karte2"><span>🛡️ Beste Rüstung getragen</span></div>');
+  if(addonAn("sammler")){
+    h += '<h3 style="margin-top:16px">' + ue("Bälle") + "</h3>";
+    for(const b of BAELLE)
+      h += ladenZeile(b.zeichen + " " + ue(b.name) + " <span class='c-dim'>×"
+                      + ballZahl(b.id) + "</span>", b.preis, "ball:" + b.id);
+  }
   $("ladenInhalt").innerHTML = h;
   $("rastknopf").disabled = s.gold < 10;
 }
@@ -5360,6 +5404,7 @@ function ladenZeile(text, preis, was){
     + (s.gold < preis ? "disabled" : "") + " onclick=\"kaufe('" + was + "'," + preis + ')">' + preis + " 💰</button></div>";
 }
 function kaufe(was, preis){
+  if(was.indexOf("ball:") === 0){ ballKaufen(was.slice(5)); return; }
   if(s.gold < preis) return;
   s.gold -= preis;
   if(was === "trank"){ s.traenke++; meldung(ue("Heiltrank gekauft."), "c-gold"); }
@@ -5501,13 +5546,52 @@ function artFarben(emoji){
 }
 
 /* ---------- Die Farbtextur: vier mal zwei Felder ---------- */
-const artTexturen = {};
-function artTextur(gl, welt, id){
-  const v = artVon(welt, id);
-  const emoji = (v && v.emoji) || "❓";
-  if(artTexturen[emoji]) return artTexturen[emoji];
+/* Ein schillerndes Tier trägt dieselbe Form, aber verschobene Farben -
+   der Farbkreis wird um 140 Grad gedreht. So bleibt es erkennbar und
+   sieht doch deutlich anders aus.                                    */
+function farbeDrehen(f, grad){
+  const r = f[0]/255, g = f[1]/255, b = f[2]/255;
+  const max = Math.max(r,g,b), min = Math.min(r,g,b), d = max-min;
+  let h = 0;
+  if(d){
+    if(max === r) h = ((g-b)/d + 6) % 6;
+    else if(max === g) h = (b-r)/d + 2;
+    else h = (r-g)/d + 4;
+    h *= 60;
+  }
+  h = (h + grad) % 360;
+  const l = (max+min)/2, sa = d === 0 ? 0 : d/(1 - Math.abs(2*l - 1));
+  const c = (1 - Math.abs(2*l - 1))*sa, x = c*(1 - Math.abs((h/60) % 2 - 1)), m = l - c/2;
+  let rr=0, gg=0, bb=0;
+  if(h < 60){ rr=c; gg=x; } else if(h < 120){ rr=x; gg=c; }
+  else if(h < 180){ gg=c; bb=x; } else if(h < 240){ gg=x; bb=c; }
+  else if(h < 300){ rr=x; bb=c; } else { rr=c; bb=x; }
+  return [Math.round((rr+m)*255), Math.round((gg+m)*255), Math.round((bb+m)*255)];
+}
+function artPalette(emoji, schillernd){
   const p = artFarben(emoji);
   const reihe = [p.haupt, p.dunkel, p.hell, p.akzent, p.bauch, p.auge, p.weiss, p.akzentD];
+  if(!schillernd) return reihe;
+  /* Bunte Tiere bekommen den Farbkreis gedreht. Bei grauen bringt das
+     nichts - die werden stattdessen golden getönt.                    */
+  const h = p.haupt;
+  const bunt = (Math.max(h[0],h[1],h[2]) - Math.min(h[0],h[1],h[2])) > 34;
+  const gold = [255, 206, 92];
+  return reihe.map((f, i) => {
+    if(i === 5 || i === 6) return f;
+    if(bunt) return farbeDrehen(f, 140);
+    return [Math.round(f[0]*0.45 + gold[0]*0.55),
+            Math.round(f[1]*0.45 + gold[1]*0.55),
+            Math.round(f[2]*0.45 + gold[2]*0.55)];
+  });
+}
+const artTexturen = {};
+function artTextur(gl, welt, id, schillernd){
+  const v = artVon(welt, id);
+  const emoji = ((v && v.emoji) || "❓") + (schillernd ? "*" : "");
+  if(artTexturen[emoji]) return artTexturen[emoji];
+  const p = artFarben(emoji.replace("*",""));
+  const reihe = artPalette(emoji.replace("*",""), schillernd);
   const c = document.createElement("canvas");
   c.width = 4; c.height = 2;
   const g = c.getContext("2d");
@@ -5719,12 +5803,11 @@ function artNetz(welt, id){
    Dieselben Kästen, nur flach von der Seite gemalt: was weiter vorne
    liegt, kommt zuletzt darüber.                                      */
 const artBilder = {};
-function artSeitenbild(welt, id){
+function artSeitenbild(welt, id, schillernd){
   const v = artVon(welt, id);
-  const schluessel = artBauplan(welt, id) + "|" + ((v && v.emoji) || "?");
+  const schluessel = artBauplan(welt, id) + "|" + ((v && v.emoji) || "?") + (schillernd ? "*" : "");
   if(artBilder[schluessel]) return artBilder[schluessel];
-  const p = artFarben((v && v.emoji) || "❓");
-  const reihe = [p.haupt, p.dunkel, p.hell, p.akzent, p.bauch, p.auge, p.weiss, p.akzentD];
+  const reihe = artPalette((v && v.emoji) || "❓", schillernd);
   const kaesten = [];
   KASTEN_PLAENE[artBauplan(welt, id)]((x, y, z, w, h, d, farbe, teil, bauch, dreh) => {
     // Fürs flache Bild reicht die Drehung um die X-Achse, sie kippt nach vorn und hinten
@@ -5795,7 +5878,7 @@ function pkSpriteSetzen(el, w, meins){
   el.style.height = meins ? "158px" : "112px";
   el.style.backgroundImage = "url(" + (w.bild
     ? mobFigurBild(w.bild, u => { el.style.backgroundImage = "url(" + u + ")"; })
-    : artSeitenbild(w.welt, w.id)) + ")";
+    : artSeitenbild(w.welt, w.id, w.schillernd)) + ")";
 }
 function pkBewegung(el, name, dauer){
   return new Promise(f => {
@@ -5873,6 +5956,8 @@ async function pkampfStarten(o){
                 atk:gw.atk, def:gw.def, init:gw.init, attacken:attackenAuf(heim, o.id, st)},
         meinsW: tierWerte(b), geflohen:false};
   gegner = o; meinTier = b; modus = "kampf";
+  pk.wildW.schillernd = !!o.schillernd;
+  buchEintragen(heim, o.id, false);
   pkMenueLeeren();
   $("pkKastenG").classList.add("hidden");
   $("pkKastenM").classList.add("hidden");
@@ -5882,7 +5967,11 @@ async function pkampfStarten(o){
   oeffne("pkampf");
   tonBoss && o.boss && tonBoss();
   pkBewegung($("pkSpriteG"), "a-auf", 450);
-  await pkSagen(ue("Ein wildes ") + o.name + ue(" erscheint!"));
+  if(o.schillernd){
+    klang("sine", 990, 0.10, 0.16); klang("sine", 1320, 0.12, 0.15, 0, 0.10);
+    klang("sine", 1760, 0.20, 0.14, 0, 0.22);
+    await pkSagen("✨ " + ue("Ein wildes ") + o.name + ue(" erscheint – es schillert!"));
+  } else await pkSagen(ue("Ein wildes ") + o.name + ue(" erscheint!"));
   $("pkKastenG").classList.remove("hidden");
   pkSpriteSetzen($("pkSpriteM"), pk.meinsW, true);
   pkBewegung($("pkSpriteM"), "a-aufM", 450);
@@ -5917,9 +6006,20 @@ function pkZugmenue(){
 }
 function pkBeutel(){
   pkMenueLeeren();
-  pkKnopf("🔴 " + ue("Fangball") + " (" + Math.round(pkFangChance()*100) + "%)",
-          pkFangen).disabled = !!pk.wild.boss;
-  pkKnopf("🧪 " + ue("Trank") + " (" + s.traenke + ")", pkTrank).disabled = s.traenke <= 0;
+  for(const b of BAELLE){
+    const zahl = ballZahl(b.id);
+    const kasten = document.createElement("span");
+    kasten.className = "pkzug";
+    kasten.innerHTML = "<b>" + b.zeichen + " " + ue(b.name) + "</b><small>"
+      + zahl + ue(" Stück") + " · "
+      + Math.round(klemm(pkFangChance()*b.faktor, 0.03, 0.98)*100) + "%</small>";
+    const k = pkKnopf(kasten, () => pkFangen(b));
+    k.disabled = zahl <= 0 || !!pk.wild.boss;
+  }
+  const tk = document.createElement("span");
+  tk.className = "pkzug";
+  tk.innerHTML = "<b>🧪 " + ue("Trank") + "</b><small>" + s.traenke + ue(" Stück") + "</small>";
+  pkKnopf(tk, pkTrank).disabled = s.traenke <= 0;
   pkKnopf("↩︎ " + ue("Zurück"), pkHauptmenue);
 }
 function pkTeammenue(){
@@ -6046,10 +6146,13 @@ function pkFangChance(){
   const stufenHilfe = klemm(1 + (pk.meinsW.stufe - pk.wildW.stufe)*0.02, 0.7, 1.3);
   return klemm((0.95 - anteil*1.25) * stufenHilfe, 0.03, 0.92);
 }
-async function pkFangen(){
+async function pkFangen(sorte){
   pkSperren();
-  const chance = pkFangChance();
-  await pkSagen(ue("Du wirfst den Fangball!"), 200);
+  sorte = sorte || BAELLE[0];
+  baelle()[sorte.id] = Math.max(0, ballZahl(sorte.id) - 1);
+  const chance = klemm(pkFangChance() * sorte.faktor, 0.03, 0.98);
+  $("pkBall").textContent = sorte.zeichen;
+  await pkSagen(ue("Du wirfst den ") + ue(sorte.name) + "!", 200);
   tonWurf();
   // Der Ball fliegt im Bogen zum Gegner
   const ball = $("pkBall"), ziel = $("pkSpriteG"), feld = $("pkFeld");
@@ -6096,7 +6199,9 @@ async function pkFangen(){
 function pkGefangen(){
   const l = begleiter();
   const eintrag = {welt: pk.wild.heimat === undefined ? s.welt : pk.wild.heimat,
-                   id: pk.wild.id, stufe: pk.wildW.stufe, xp: 0};
+                   id: pk.wild.id, stufe: pk.wildW.stufe, xp: 0,
+                   schillernd: !!pk.wild.schillernd};
+  buchEintragen(eintrag.welt, eintrag.id, true);
   if(l.length >= TEAM_MAX){
     box().push(eintrag);
     tiereOrdnen();
@@ -6365,7 +6470,7 @@ function tierWerte(b){
   const stufe = b.stufe || START_STUFE;
   const w = werteAuf(b.welt, b.id, stufe);
   return {name: b.name || v.name, emoji: v.emoji, bild: v.bild,
-          welt: b.welt, id: b.id,
+          welt: b.welt, id: b.id, schillernd: !!b.schillernd,
           typ: artTyp(b.welt, b.id), stufe: stufe,
           maxHp: w.maxHp, atk: w.atk, def: w.def, init: w.init,
           attacken: attackenAuf(b.welt, b.id, stufe)};
@@ -6454,6 +6559,85 @@ function typMarke(typ){
        + ue(TYP_NAME[typ] || typ) + "</i>";
 }
 
+/* ---------- Bälle ----------
+   Drei Sorten, von einfach bis richtig gut. Der Faktor geht direkt in
+   die Fangrechnung.                                                  */
+const BAELLE = [
+  {id:"normal", name:"Fangball",  zeichen:"🔴", faktor:1.0, preis:120},
+  {id:"super",  name:"Superball", zeichen:"🔵", faktor:1.6, preis:420},
+  {id:"hyper",  name:"Hyperball", zeichen:"🟡", faktor:2.4, preis:1100}
+];
+function baelle(){
+  if(!s.baelle || typeof s.baelle !== "object") s.baelle = {normal:8};
+  return s.baelle;
+}
+function ballZahl(id){ return baelle()[id] || 0; }
+function ballKaufen(id){
+  const b = BAELLE.find(x => x.id === id);
+  if(!b || s.gold < b.preis) return;
+  s.gold -= b.preis;
+  baelle()[id] = ballZahl(id) + 1;
+  tonAufsammeln();
+  meldung(b.zeichen + " " + ue(b.name) + ue(" gekauft."), "c-gold");
+  speichern(); ladenZeichnen(); hudZeichnen();
+}
+
+/* ---------- Das Kreaturenbuch ----------
+   0 = nie gesehen, 1 = im Kampf begegnet, 2 = gefangen.              */
+function buch(){
+  if(!s.buch || typeof s.buch !== "object") s.buch = {};
+  return s.buch;
+}
+function buchEintragen(welt, id, gefangen){
+  const k = welt + ":" + id;
+  const alt = buch()[k] || 0;
+  const neu = gefangen ? 2 : 1;
+  if(neu > alt){ buch()[k] = neu; speichern(); }
+}
+function buchArten(){
+  const liste = [];
+  const welten = BIOM_WELTEN.slice();
+  if(welten.indexOf(s.welt) < 0) welten.push(s.welt);
+  for(const nr of welten){
+    const w = WELTEN[nr];
+    if(!w || !w.gegner) continue;
+    for(const g of w.gegner) liste.push({welt:nr, id:g.id, g:g});
+  }
+  return liste;
+}
+function buchZeichnen(){
+  const kasten = $("buchListe");
+  kasten.innerHTML = "";
+  const arten = buchArten();
+  let gesehen = 0, gefangen = 0;
+  for(const a of arten){
+    const stand = buch()[a.welt + ":" + a.id] || 0;
+    if(stand >= 1) gesehen++;
+    if(stand >= 2) gefangen++;
+    const d = document.createElement("div");
+    d.className = "buchfeld" + (stand === 0 ? " unbekannt" : "");
+    const bild = document.createElement("div");
+    bild.className = "buchbild";
+    if(stand >= 1) bild.style.backgroundImage = "url(" + artSeitenbild(a.welt, a.id) + ")";
+    d.appendChild(bild);
+    const n = document.createElement("b");
+    n.textContent = stand >= 1 ? a.g.name : "???";
+    d.appendChild(n);
+    const u = document.createElement("span");
+    u.innerHTML = stand >= 2 ? typMarke(artTyp(a.welt, a.id)) + " ✓"
+                : (stand >= 1 ? typMarke(artTyp(a.welt, a.id)) : ue("noch nie gesehen"));
+    d.appendChild(u);
+    kasten.appendChild(d);
+  }
+  $("buchZahl").textContent = ue("Gesehen ") + gesehen + " · " + ue("Gefangen ") + gefangen
+                            + " " + ue("von") + " " + arten.length;
+}
+function buchZeigen(){
+  if(!addonAn("sammler")){ meldung(ue("Das gibt es nur in der Sammler-Spielart."), "c-dim"); return; }
+  buchZeichnen();
+  oeffne("buch");
+}
+
 /* ---------- Team und Box ----------
    Sechs Tiere passen ins Team, der Rest wartet in der Box. Getauscht
    wird von Hand - so behaelt man den Ueberblick.                     */
@@ -6470,7 +6654,7 @@ function tierKarte(b, inBox, stelle){
   const kopf = document.createElement("div");
   kopf.className = "kopf";
   kopf.style.backgroundImage = "url(" + (w.bild
-    ? mobFigurBild(w.bild) : artSeitenbild(w.welt, w.id)) + ")";
+    ? mobFigurBild(w.bild) : artSeitenbild(w.welt, w.id, w.schillernd)) + ")";
   kopf.style.backgroundSize = "contain";
   kopf.style.backgroundPosition = "center";
   kopf.style.backgroundRepeat = "no-repeat";
@@ -6479,7 +6663,7 @@ function tierKarte(b, inBox, stelle){
   const mitte = document.createElement("div"); mitte.className = "mitte";
   const zeile = document.createElement("div");
   zeile.className = "zeileName";
-  zeile.innerHTML = "<b>" + w.name + "</b> · Lv " + w.stufe + " " + typMarke(w.typ)
+  zeile.innerHTML = "<b>" + (w.schillernd ? "✨ " : "") + w.name + "</b> · Lv " + w.stufe + " " + typMarke(w.typ)
                   + ' <span class="c-dim">' + Math.max(0, b.hp) + "/" + w.maxHp + " ❤️</span>";
   const leiste = document.createElement("div");
   leiste.className = "balkenmini";
@@ -7307,10 +7491,11 @@ addEventListener("keydown", e => {
   tonWecken();                                 // Browser erlauben Ton erst nach einer Eingabe
   tasten[k] = true;
   if(modus === "menue"){                       // offene Fenster mit Esc / I / Q schliessen
-    if(k === "Escape" || k === "i" || k === "q" || k === "t"){
+    if(k === "Escape" || k === "i" || k === "q" || k === "t" || k === "p"){
       if(!$("tafel").classList.contains("hidden")) tafelSchliessen();
       else if(!$("lager").classList.contains("hidden")) schliesse("lager");
       else if(!$("team").classList.contains("hidden")) schliesse("team");
+      else if(!$("buch").classList.contains("hidden")) schliesse("buch");
     }
     return;
   }
@@ -7326,6 +7511,7 @@ addEventListener("keydown", e => {
   if(k === "g") sitzenSagen();
   if(k === "n") tierBenennen();
   if(k === "t") teamZeigen();
+  if(k === "p") buchZeigen();
   // I setzt dich auf ein gezähmtes Tier - steht keines da, öffnet es die Tasche
   if(k === "i" && !aufsteigen()) tafelZeigen("tasche");
   if(k === "b") tafelZeigen("tasche");
