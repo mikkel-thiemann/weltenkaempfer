@@ -161,6 +161,15 @@
     border-radius:9px; padding:9px 11px; color:var(--txt); font-family:monospace; font-size:11px;
     resize:vertical}
   #uebertragung textarea:focus{outline:none; border-color:var(--violett)}
+  .addon{display:flex; gap:11px; align-items:flex-start; text-align:left;
+         background:rgba(255,255,255,.05); border:1px solid var(--rahmen);
+         border-radius:12px; padding:11px 13px; margin-bottom:8px}
+  .addon.an{border-color:var(--xp); background:rgba(126,231,135,.10)}
+  .addon .zeichen{font-size:26px; line-height:1.1}
+  .addon .text{flex:1; min-width:0}
+  .addon .text b{font-size:14px}
+  .addon .text p{margin:3px 0 0; font-size:12px; color:#c9d5e6; line-height:1.5}
+  .addon button{padding:7px 13px; font-size:13px; white-space:nowrap}
   #skingalerie{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px}
   .skinfeld{background:rgba(255,255,255,.05); border:2px solid var(--rahmen); border-radius:10px;
             padding:7px 6px 5px; cursor:pointer; text-align:center; width:74px; transition:border-color .12s}
@@ -271,7 +280,7 @@
     <div style="font-size:52px">⛏️</div>
     <h2>WELTENKÄMPFER · BLOCKWELT</h2>
     <p class="c-dim" style="margin-top:0">Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.</p>
-    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 26 · Kleinerer Block in der Hand</p>
+    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 27 · Erweiterungen: der Sammler</p>
     <p style="margin:0 0 4px">Willkommen, <b id="grussName" class="c-gold">Held</b>
       <button onclick="nameAendern()" style="padding:4px 10px; font-size:12px; margin-left:8px">✏️ Name &amp; Skin</button>
       <button onclick="uebertragZeigen()" style="padding:4px 10px; font-size:12px; margin-left:4px">💾 Spielstand übertragen</button></p>
@@ -303,6 +312,11 @@
       <input id="neuSaat" maxlength="16" placeholder="Startwert (Zahl oder Wort, freilassen = zufällig)">
       <button class="primary" onclick="neueWelt()">🌱 Welt erschaffen</button>
     </div>
+    <h3 style="text-align:left; margin-top:18px">Erweiterungen</h3>
+    <p class="c-dim" style="font-size:12px; margin-top:0; text-align:left">
+      Zusatzregeln fürs ganze Spiel. Du kannst sie jederzeit an- und ausschalten.</p>
+    <div id="addonListe"></div>
+
     <p class="c-dim" style="font-size:12px">Gleicher Startwert = gleiche Landschaft. Jede Welt hat ihre
       eigenen Bauten, ihr eigenes Inventar und ihren eigenen Fortschritt.</p>
   </div>
@@ -329,6 +343,8 @@
       <button onclick="aktion('feuer')">🔥 Feuerball <small>8 MP</small></button>
       <button onclick="aktion('heil')">💚 Heilung <small>10 MP</small></button>
       <button onclick="aktion('trank')">🧪 Trank <span id="ktrank">0</span></button>
+      <button id="knopfFangen" class="hidden" onclick="aktion('fangen')">🔴 Fangball</button>
+      <button id="knopfBegleiter" class="hidden" onclick="aktion('begleiter')">🐾 Begleiter</button>
       <button onclick="aktion('flucht')">🏃 Fliehen</button>
     </div>
   </div>
@@ -505,7 +521,7 @@ const EN = {
   "Eisschwert": "Ice Sword",
   "Eisspitzhacke": "Ice Pickaxe",
   "Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.": "Thirteen open block worlds. Build, dig, fight – and find the portal.",
-  "Ausgabe 26 · Kleinerer Block in der Hand": "Build 26 · Smaller block in hand",
+  "Ausgabe 27 · Erweiterungen: der Sammler": "Build 27 · Add-ons: the Collector",
   "Endlose Dünen. Und die Kakteen hier stehen nicht nur herum – sie laufen.": "Endless dunes. And the cacti here don't just stand around – they walk.",
   "Erde": "Dirt",
   "Erlege 14 Schattenriesen": "Slay 14 shadow giants",
@@ -986,7 +1002,21 @@ const EN = {
   "folgt dir wieder.": "is following you again.",
   "sitzen bleiben": "stay sitting",
   "sitzt jetzt hier und wartet.": "is sitting here and waiting.",
-  "Oben links neben „🌍 Welten“ schaltet 🔊 den Ton an und aus.": "Top left, next to “🌍 Worlds”, 🔊 turns the sound on and off."
+  "Oben links neben „🌍 Welten“ schaltet 🔊 den Ton an und aus.": "Top left, next to “🌍 Worlds”, 🔊 turns the sound on and off.",
+  " greift an: <b>": " attacks: <b>",
+  " ist an.": " is on.",
+  " ist aus.": " is off.",
+  " ist gefangen!": " is caught!",
+  "An": "On",
+  "Aus": "Off",
+  "Der Ball springt wieder auf! Schwäche es erst.": "The ball pops open! Weaken it first.",
+  "Einen Boss fängst du nicht – den musst du besiegen.": "You cannot catch a boss – you have to beat it.",
+  "Erweiterungen": "Add-ons",
+  "Fangball fliegt … ": "Catch ball flies … ",
+  "Kein Begleiter dabei.": "No companion with you.",
+  "Monster sind nicht mehr nur zum Verhauen da. Schwäche eines im Kampf und wirf den Fangball – dann gehört es dir, folgt dir durch alle Welten und kämpft an deiner Seite.": "Monsters are not just for beating up any more. Weaken one in battle and throw the catch ball – then it is yours, follows you through every world and fights at your side.",
+  "Sammler": "Collector",
+  "Zusatzregeln fürs ganze Spiel. Du kannst sie jederzeit an- und ausschalten.": "Extra rules for the whole game. You can switch them on and off any time."
 };
 function ue(s){
   if(sprache !== "en" || typeof s !== "string") return s;
@@ -1059,6 +1089,7 @@ function spracheAnwenden(){
       if(b) b.classList.toggle("gewaehlt", sprache === k);
     }
   }
+  if(typeof addonListeZeichnen === "function") addonListeZeichnen();
   // Alles neu zeichnen, was Text aus den Tabellen zeigt
   if(typeof s !== "undefined" && s){
     if(typeof hudZeichnen === "function") hudZeichnen();
@@ -4915,6 +4946,53 @@ function rasten(){
 }
 
 /* =====================================================================
+   ERWEITERUNGEN
+   Zusatzregeln, die für alle Welten gelten. Sie stehen neben dem Spielstand
+   im Gerät, damit eine Erweiterung nicht an einer einzelnen Welt klebt.
+   ===================================================================== */
+const ADDON_KEY = "wkAddons";
+const ADDONS = [
+  {id:"sammler", zeichen:"🔴", name:"Sammler",
+   beschreibung:"Monster sind nicht mehr nur zum Verhauen da. Schwäche eines im Kampf und wirf den Fangball – dann gehört es dir, folgt dir durch alle Welten und kämpft an deiner Seite."}
+];
+function addons(){
+  try{ const l = JSON.parse(localStorage.getItem(ADDON_KEY)); return Array.isArray(l) ? l : []; }
+  catch(e){ return []; }
+}
+function addonAn(id){ return addons().indexOf(id) >= 0; }
+function addonUmschalten(id){
+  const l = addons(), i = l.indexOf(id);
+  if(i >= 0) l.splice(i, 1); else l.push(id);
+  try{ localStorage.setItem(ADDON_KEY, JSON.stringify(l)); }catch(e){}
+  addonListeZeichnen();
+  const jetzt = addonAn(id);
+  klang("sine", jetzt ? 660 : 330, 0.16, 0.15, jetzt ? 990 : 220);
+  meldung((jetzt ? "✅ " : "⬜ ") + ue(ADDONS.find(a => a.id === id).name)
+          + (jetzt ? ue(" ist an.") : ue(" ist aus.")), "c-gold");
+}
+function addonListeZeichnen(){
+  const kasten = $("addonListe");
+  if(!kasten) return;
+  kasten.innerHTML = "";
+  for(const a of ADDONS){
+    const an = addonAn(a.id);
+    const d = document.createElement("div");
+    d.className = "addon" + (an ? " an" : "");
+    const z = document.createElement("div"); z.className = "zeichen"; z.textContent = a.zeichen;
+    const txt = document.createElement("div"); txt.className = "text";
+    const b = document.createElement("b"); b.textContent = ue(a.name);
+    const p = document.createElement("p"); p.textContent = ue(a.beschreibung);
+    txt.appendChild(b); txt.appendChild(p);
+    const k = document.createElement("button");
+    k.className = an ? "goldbtn" : "";
+    k.textContent = an ? ue("An") : ue("Aus");
+    k.onclick = () => addonUmschalten(a.id);
+    d.appendChild(z); d.appendChild(txt); d.appendChild(k);
+    kasten.appendChild(d);
+  }
+}
+
+/* =====================================================================
    KAMPF
    ===================================================================== */
 let gegner = null, spielerDran = true;
@@ -4924,6 +5002,35 @@ function kampflog(text, cls){
   d.className = cls || ""; d.innerHTML = text;
   l.appendChild(d); l.scrollTop = l.scrollHeight;
 }
+/* Das erste gezähmte Tier, das dabei ist und nicht gerade sitzt,
+   springt im Kampf für dich ein.                                    */
+function begleiterImKampf(){
+  for(const o of wesen) if(o.zahm && !o.sitzt && o !== gegner) return o;
+  return null;
+}
+/* Fangen statt Erschlagen: je weniger Leben das Monster noch hat,
+   desto besser hält der Ball. Bei vollem Leben geht fast nie etwas.  */
+function fangChance(g){
+  return klemm(0.95 - (g.hp / g.maxHp) * 1.25, 0.03, 0.9);
+}
+function gefangen(g){
+  const l = begleiter();
+  if(l.length >= BEGLEITER_MAX){
+    kampflog(ue("Mehr Tiere kannst du nicht mitnehmen."), "c-bad");
+    setTimeout(gegnerZug, 700);
+    return;
+  }
+  tonZahm();
+  l.push({welt: s.welt, id: g.id});
+  g.zahm = true; g.nr = l.length - 1; g.hp = g.maxHp; g.ruhe = 0;
+  kampflog("🔴 " + g.name + ue(" ist gefangen!"), "c-good");
+  meldung("🔴 " + g.name + ue(" ist gefangen!"), "c-gold");
+  const xp = Math.round(g.xp * 0.5);
+  gegner = null;
+  speichern();
+  setTimeout(() => { kampfEnde(); xpGeben(xp); questsPruefen(); speichern(); }, 700);
+}
+
 function kampfStarten(o){
   if(modus !== "welt") return;
   gegner = o; spielerDran = true;
@@ -4950,6 +5057,15 @@ function kampfStarten(o){
     gf.style.width = ""; gf.style.height = ""; gf.style.display = ""; gf.style.margin = "";
     gf.style.backgroundImage = "";
     gf.style.fontSize = o.boss ? "84px" : "58px";
+  }
+  // Die Sammler-Knöpfe nur zeigen, wenn die Erweiterung an ist
+  const sammler = addonAn("sammler");
+  const kf = $("knopfFangen");
+  if(kf) kf.classList.toggle("hidden", !sammler || !!o.boss);
+  const kb = $("knopfBegleiter"), mit = begleiterImKampf();
+  if(kb){
+    kb.classList.toggle("hidden", !(sammler && mit));
+    if(mit) kb.textContent = "🐾 " + tierName(mit);
   }
   $("nameG").textContent = o.name + (o.boss ? " 👑" : "");
   $("nameP").textContent = spielerName + ue(" (Stufe ") + s.level + ")";
@@ -5002,6 +5118,27 @@ function aktion(art){
     const heil = Math.max(60, Math.round(s.maxHp*0.25));      // wächst mit dir mit
     s.hp = Math.min(s.maxHp, s.hp + heil);
     kampflog(ue("🧪 Trank getrunken: +") + heil + ue(" Leben."), "c-good");
+  } else if(art === "fangen"){
+    if(gegner.boss){
+      kampflog(ue("Einen Boss fängst du nicht – den musst du besiegen."), "c-bad");
+    } else {
+      tonWurf();
+      const glueck = fangChance(gegner);
+      kampflog("🔴 " + ue("Fangball fliegt … ") + Math.round(glueck*100) + "%", "c-dim");
+      if(Math.random() < glueck){ gefangen(gegner); return; }
+      tonFehler();
+      kampflog(ue("Der Ball springt wieder auf! Schwäche es erst."), "c-bad");
+    }
+  } else if(art === "begleiter"){
+    const mit = begleiterImKampf();
+    if(!mit){ kampflog(ue("Kein Begleiter dabei."), "c-dim"); }
+    else {
+      const dmg = Math.max(1, Math.round(mit.atk*0.5) + rnd(0,4) - Math.floor(gegner.def/2));
+      gegner.hp -= dmg;
+      tonTreffer(false);
+      setTimeout(() => animiere("figurG","treffer"), 110);
+      kampflog("🐾 " + tierName(mit) + ue(" greift an: <b>") + dmg + ue("</b> Schaden."), "c-good");
+    }
   } else if(art === "flucht"){
     if(gegner.boss) kampflog(ue("Vor einem Boss gibt es kein Entkommen!"), "c-bad");
     else if(Math.random() < 0.55){
@@ -5782,6 +5919,7 @@ function standAusLink(){
   return ok;
 }
 function startBildschirmZeigen(){
+  addonListeZeichnen();
   standAusLink();
   belohnungenNachtragen();
   if(nameLaden()){
