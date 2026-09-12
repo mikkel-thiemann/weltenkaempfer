@@ -135,6 +135,11 @@
   @keyframes tr{0%{transform:none}30%{transform:translateX(-10px) scale(.9); filter:brightness(2.5)}100%{transform:none}}
   .schlagA{animation:sA .32s} @keyframes sA{50%{transform:translateX(22px) scale(1.12)}}
   .schlagB{animation:sB .32s} @keyframes sB{50%{transform:translateX(-22px) scale(1.12)}}
+  .zugknopf{display:flex; flex-direction:column; align-items:center; gap:2px;
+            min-width:128px; padding:8px 12px; line-height:1.25}
+  .zugknopf b{font-size:13.5px}
+  .zugknopf small{font-size:10.5px; color:#93a1b8}
+  #zugKnoepfe{margin-bottom:9px}
   #kampflog{height:76px; overflow-y:auto; background:rgba(0,0,0,.45); border:1px solid var(--rahmen);
             border-radius:10px; padding:8px 10px; font-size:12.5px; line-height:1.5; margin-bottom:12px}
   .karte2{background:rgba(255,255,255,.05); border:1px solid var(--rahmen); border-radius:10px; padding:9px 12px;
@@ -166,6 +171,15 @@
     border-radius:9px; padding:9px 11px; color:var(--txt); font-family:monospace; font-size:11px;
     resize:vertical}
   #uebertragung textarea:focus{outline:none; border-color:var(--violett)}
+  .tierkarte{display:flex; gap:10px; align-items:center; background:rgba(255,255,255,.05);
+             border:1px solid var(--rahmen); border-radius:11px; padding:9px 11px; margin-bottom:7px}
+  .tierkarte.kaempft{border-color:var(--gold); background:rgba(245,196,81,.12)}
+  .tierkarte.ohnmacht{opacity:.5}
+  .tierkarte .kopf{font-size:28px; width:34px; text-align:center}
+  .tierkarte .mitte{flex:1; min-width:0}
+  .tierkarte .zeileName{font-size:13.5px}
+  .tierkarte .zuege{font-size:11px; color:#93a1b8; margin-top:3px; line-height:1.5}
+  .tierkarte button{padding:6px 11px; font-size:12px; white-space:nowrap}
   .starterfeld{display:inline-block; background:rgba(255,255,255,.05); border:2px solid var(--rahmen);
                border-radius:12px; padding:12px 10px 9px; margin:5px; width:118px; cursor:pointer;
                transition:border-color .12s, background .12s}
@@ -294,7 +308,7 @@
     <div style="font-size:52px">⛏️</div>
     <h2>WELTENKÄMPFER · BLOCKWELT</h2>
     <p class="c-dim" style="margin-top:0">Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.</p>
-    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 29 · Sammler: Starter, Stufen, Tierkämpfe</p>
+    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 30 · Sammler: Typen, Attacken, Entwicklung</p>
     <p style="margin:0 0 4px">Willkommen, <b id="grussName" class="c-gold">Held</b>
       <button onclick="nameAendern()" style="padding:4px 10px; font-size:12px; margin-left:8px">✏️ Name &amp; Skin</button>
       <button onclick="uebertragZeigen()" style="padding:4px 10px; font-size:12px; margin-left:4px">💾 Spielstand übertragen</button></p>
@@ -304,7 +318,8 @@
       <span class="taste">Rechtsklick</span> Block setzen &nbsp; <span class="taste">1–9</span> Material wählen &nbsp; <span class="taste">R</span> Kamera<br>
       <span class="taste">E</span> benutzen &nbsp; <span class="taste">Q</span> Quests &nbsp; <span class="taste">I</span> oder <span class="taste">B</span> Inventar &amp; Herstellen &nbsp; <span class="taste">Esc</span> Maus frei<br>
       <span class="taste">M</span> werfen &nbsp; <span class="taste">I</span> auf ein gezähmtes Tier steigen &nbsp;
-      <span class="taste">G</span> sitzen bleiben &nbsp; <span class="taste">N</span> Namen geben<br>
+      <span class="taste">G</span> sitzen bleiben &nbsp; <span class="taste">N</span> Namen geben &nbsp;
+      <span class="taste">T</span> Team (nur im Sammler-Modus)<br>
       Oben links neben „🌍 Welten“ schaltet 🔊 den Ton an und aus.
       <div class="c-dim" style="line-height:1.6; margin-top:8px">
         Du fängst mit leeren Händen an. Halte die linke Maustaste auf einen Block, bis er zerbricht –
@@ -372,8 +387,9 @@
       </div>
     </div>
     <div id="kampflog"></div>
+    <div class="reihe hidden" id="zugKnoepfe"></div>
     <div class="reihe" id="kampfknoepfe">
-      <button onclick="aktion('angriff')">🗡️ Angriff</button>
+      <button id="knopfAngriff" onclick="aktion('angriff')">🗡️ Angriff</button>
       <button id="knopfFeuer" onclick="aktion('feuer')">🔥 Feuerball <small>8 MP</small></button>
       <button id="knopfHeil" onclick="aktion('heil')">💚 Heilung <small>10 MP</small></button>
       <button id="knopfWechsel" class="hidden" onclick="aktion('wechsel')">🔄 Wechseln</button>
@@ -454,6 +470,18 @@
     <div class="reihe" style="margin-top:10px">
       <button class="primary" onclick="schliesse('uebertragung')">Weiter</button>
     </div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="team">
+  <div class="fenster">
+    <h2 style="text-align:center">🎒 Dein Team</h2>
+    <p class="c-dim" style="margin-top:0; text-align:center">Sechs Tiere sind bei dir. Wer darüber
+      hinaus gefangen wird, wartet in der Box – tausch ihn hier herein.</p>
+    <div id="teamListe"></div>
+    <h3 style="margin-top:16px">In der Box</h3>
+    <div id="boxListe"></div>
+    <div class="reihe" style="margin-top:12px"><button class="primary" onclick="schliesse('team')">Weiter</button></div>
   </div>
 </div>
 
@@ -566,7 +594,7 @@ const EN = {
   "Eisschwert": "Ice Sword",
   "Eisspitzhacke": "Ice Pickaxe",
   "Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.": "Thirteen open block worlds. Build, dig, fight – and find the portal.",
-  "Ausgabe 29 · Sammler: Starter, Stufen, Tierkämpfe": "Build 29 · Collector: starter, levels, creature battles",
+  "Ausgabe 30 · Sammler: Typen, Attacken, Entwicklung": "Build 30 · Collector: types, moves, evolution",
   "Endlose Dünen. Und die Kakteen hier stehen nicht nur herum – sie laufen.": "Endless dunes. And the cacti here don't just stand around – they walk.",
   "Erde": "Dirt",
   "Erlege 14 Schattenriesen": "Slay 14 shadow giants",
@@ -1094,7 +1122,74 @@ const EN = {
   "Deine Tiere brauchen eine Pause. Du bist zurück am Startpunkt, und alle sind wieder munter.": "Your animals need a rest. You are back at the starting point and they are all fresh again.",
   "Kein anderes Tier kann kämpfen.": "No other animal can fight.",
   "Such dir einen Gefährten aus. Er kämpft von jetzt an für dich, wächst mit jedem Sieg und bleibt bei dir, wohin du auch gehst.": "Pick a companion. From now on it fights for you, grows with every win and stays with you wherever you go.",
-  "🔄 Wechseln": "🔄 Switch"
+  "🔄 Wechseln": "🔄 Switch",
+  " Das ist sehr wirksam!": " It is super effective!",
+  " Das wirkt kaum.": " It is not very effective.",
+  " Erfahrung.": " experience.",
+  " Es zeigt keine Wirkung.": " It has no effect.",
+  " ein.": ".",
+  " ein: <b>": ": <b>",
+  " entwickelt sich zu <b>": " evolves into <b>",
+  " setzt ": " uses ",
+  "Biss": "Bite",
+  "Blattsturm": "Leaf Storm",
+  "Blütenstaub": "Petal Dust",
+  "Boden": "Ground",
+  "Dunkelstoß": "Dark Thrust",
+  "Eis": "Ice",
+  "Eissplitter": "Ice Shard",
+  "Entwicklung!": "Evolution!",
+  "Erdstoß": "Earth Jab",
+  "Fee": "Fairy",
+  "Feenschlag": "Fairy Strike",
+  "Feuer": "Fire",
+  "Finsterblick": "Dark Glare",
+  "Flammenstoß": "Flame Burst",
+  "Flug": "Flying",
+  "Frosthauch": "Frost Breath",
+  "Frostlanze": "Frost Lance",
+  "Funkenflug": "Ember",
+  "Geist": "Ghost",
+  "Geisterklaue": "Ghost Claw",
+  "Gift": "Poison",
+  "Giftstachel": "Poison Sting",
+  "Glutwelle": "Heat Wave",
+  "Himmelssturz": "Sky Drop",
+  "Keine AP mehr für diese Attacke.": "No PP left for that move.",
+  "Käfer": "Bug",
+  "Nachthieb": "Night Slash",
+  "Normal": "Normal",
+  "Panzerstoß": "Shell Ram",
+  "Pflanze": "Grass",
+  "Rankenhieb": "Vine Whip",
+  "Rempler": "Tackle",
+  "Sandwirbel": "Sand Swirl",
+  "Schattenhauch": "Shadow Breath",
+  "Schwarmwut": "Swarm Fury",
+  "Seelenschlag": "Soul Strike",
+  "Steinlawine": "Rockslide",
+  "Sturmflügel": "Storm Wing",
+  "Sumpfschwall": "Bog Surge",
+  "Säurespritzer": "Acid Spray",
+  "Unlicht": "Dark",
+  "Windstoß": "Gust",
+  "Wurzelgriff": "Root Grip",
+  "Zangenkniff": "Pincer",
+  "Zauberglanz": "Dazzle",
+  " wandert in die Box.": " goes into the box.",
+  "Das gibt es nur in der Sammler-Spielart.": "That only exists in the collector mode.",
+  "Dein Team ist voll.": "Your team is full.",
+  "Die Box ist leer.": "The box is empty.",
+  "Ein Tier musst du dabeihaben.": "You have to keep one animal with you.",
+  "In der Box": "In the box",
+  "In die Box": "To the box",
+  "Ins Team": "To the team",
+  "Noch kein Tier dabei.": "No animal with you yet.",
+  "Sechs Tiere sind bei dir. Wer darüber hinaus gefangen wird, wartet in der Box – tausch ihn hier herein.": "Six animals travel with you. Anything caught beyond that waits in the box – swap it in here.",
+  "T": "T",
+  "Team (nur im Sammler-Modus)": "Team (collector mode only)",
+  "🎒 Dein Team": "🎒 Your team",
+  "Wuchtschlag": "Power Slam"
 };
 function ue(s){
   if(sprache !== "en" || typeof s !== "string") return s;
@@ -1668,7 +1763,7 @@ function neuerStand(){
   return {id:null, name:ue("Welt"), saat:0, level:1, xp:0, xpNext:30, hp:70, maxHp:70, mp:25, maxMp:25, atk:9, def:3, mag:7,
           gold:30, traenke:3, welt:0, freigeschaltet:0, waffe:0, ruestung:0, hacke:0, axt:0, kills:{}, sachen:{}, gesammelt:{},
           fertig:{}, gewonnen:false, aenderungen:{}, inventar:{}, begleiter:[], addons:[],
-          breite:WELT_BREIT, hoch:WELT_HOCH, version:2};
+          breite:WELT_BREIT, hoch:WELT_HOCH, box:[], version:2};
 }
 /* ---------- Mehrere Spielwelten nebeneinander ----------
    "wkListe"        = Übersicht aller Welten
@@ -3248,11 +3343,9 @@ function gegnerSetzen(){
        Team orientiert. Sonst wäre nach drei Stufen alles ein Spaziergang. */
     let hp = Math.round(v.hp*f), atk = v.atk, rue = v.def, stufe = 0;
     if(addonAn("sammler")){
-      stufe = klemm(Math.round(wildStufe() + rnd(-2, 2)), 2, 60);
-      const sf = 0.40 + stufe*0.12;
-      hp  = Math.max(14, Math.round(v.hp*sf*f));
-      atk = Math.max(4,  Math.round(v.atk*sf));
-      rue = Math.max(1,  Math.round(v.def*sf));
+      stufe = klemm(Math.round(wildStufe() + rnd(-2, 2)), 2, 70);
+      const w2 = werteAuf(heimat, zeigt.id, stufe);
+      hp = w2.maxHp; atk = w2.atk; rue = w2.def;
     }
     wesen.push({art:"gegner", id:zeigt.id, name:zeigt.name, emoji:zeigt.emoji, bild:zeigt.bild,
                 heimat:heimat, stufe:stufe, x:x+0.5, y:y, z:z+0.5,
@@ -4568,7 +4661,7 @@ function oeffne(id){
 }
 function schliesse(id){
   $(id).classList.add("hidden");
-  const offen = ["kampf","tafel","lager","stufe","info","reise","uebertragung","start"].some(x => !$(x).classList.contains("hidden"));
+  const offen = ["kampf","tafel","lager","stufe","info","reise","uebertragung","start","team","starter","neuewelt"].some(x => !$(x).classList.contains("hidden"));
   if(!offen) modus = "welt";
 }
 function infoZeigen(icon, titel, text){
@@ -5161,6 +5254,143 @@ function addonListeZeichnen(){
   }
 }
 
+
+/* =====================================================================
+   SAMMLER: ARTEN, TYPEN UND ATTACKEN
+   Das Regelwerk ist dem großen Vorbild nachgebaut: jede Art hat einen
+   Typ, Grundwerte und bis zu vier Attacken. Wer zuerst zuschlägt,
+   entscheidet die Initiative; wie hart, die Typentabelle. Werte und
+   Schaden werden mit denselben Formeln gerechnet wie im Original.
+
+   Die Arten sind die Monster des Spiels. Jede Welt stellt eine
+   Entwicklungsreihe: ihr erstes Monster wird mit Stufe 16 zum zweiten
+   und mit Stufe 32 zum dritten.
+   ===================================================================== */
+const WELT_TYP = ["pflanze","fee","feuer","unlicht","boden","kaefer","gift",
+                  "eis","pflanze","feuer","geist","unlicht","flug"];
+const TYP_NAME = {normal:"Normal", pflanze:"Pflanze", feuer:"Feuer", eis:"Eis",
+                  boden:"Boden", kaefer:"Käfer", gift:"Gift", geist:"Geist",
+                  unlicht:"Unlicht", fee:"Fee", flug:"Flug"};
+const TYP_FARBE = {normal:"#a8a878", pflanze:"#78c850", feuer:"#f08030", eis:"#98d8d8",
+                   boden:"#e0c068", kaefer:"#a8b820", gift:"#a040a0", geist:"#705898",
+                   unlicht:"#705848", fee:"#ee99ac", flug:"#a890f0"};
+/* Wie stark ein Typ gegen einen anderen wirkt. Was nicht drinsteht,
+   richtet ganz normalen Schaden an.                                   */
+const TYP_TABELLE = {
+  normal:  {geist:0},
+  pflanze: {boden:2, pflanze:0.5, feuer:0.5, kaefer:0.5, gift:0.5, flug:0.5},
+  feuer:   {pflanze:2, eis:2, kaefer:2, feuer:0.5},
+  eis:     {pflanze:2, boden:2, flug:2, feuer:0.5, eis:0.5},
+  boden:   {feuer:2, gift:2, kaefer:0.5, pflanze:0.5, flug:0},
+  kaefer:  {pflanze:2, unlicht:2, feuer:0.5, fee:0.5, flug:0.5, geist:0.5, gift:0.5},
+  gift:    {pflanze:2, fee:2, boden:0.5, geist:0.5, gift:0.5},
+  geist:   {geist:2, normal:0, unlicht:0.5},
+  unlicht: {geist:2, unlicht:0.5, fee:0.5},
+  fee:     {unlicht:2, gift:0.5, feuer:0.5},
+  flug:    {pflanze:2, kaefer:2, eis:0.5}
+};
+function typWirkung(anTyp, zielTyp){
+  const z = TYP_TABELLE[anTyp];
+  return (z && z[zielTyp] !== undefined) ? z[zielTyp] : 1;
+}
+/* Jeder Typ hat drei eigene Attacken, dazu kann jede Art einen
+   normalen Rempler. Freigeschaltet wird nach Stufe.                   */
+const ATTACKEN = {
+  normal:  [{n:"Rempler",     s:40, ap:35, lv:1},  {n:"Biss",         s:65, ap:25, lv:16},
+            {n:"Wuchtschlag", s:95, ap:10, lv:30}],
+  pflanze: [{n:"Rankenhieb",  s:45, ap:30, lv:1},  {n:"Blattsturm",   s:70, ap:20, lv:14}, {n:"Wurzelgriff", s:95, ap:10, lv:28}],
+  feuer:   [{n:"Funkenflug",  s:45, ap:30, lv:1},  {n:"Glutwelle",    s:70, ap:20, lv:14}, {n:"Flammenstoß", s:95, ap:10, lv:28}],
+  eis:     [{n:"Frosthauch",  s:45, ap:30, lv:1},  {n:"Eissplitter",  s:70, ap:20, lv:14}, {n:"Frostlanze",  s:95, ap:10, lv:28}],
+  boden:   [{n:"Sandwirbel",  s:45, ap:30, lv:1},  {n:"Erdstoß",      s:70, ap:20, lv:14}, {n:"Steinlawine", s:95, ap:10, lv:28}],
+  kaefer:  [{n:"Zangenkniff", s:45, ap:30, lv:1},  {n:"Panzerstoß",   s:70, ap:20, lv:14}, {n:"Schwarmwut",  s:95, ap:10, lv:28}],
+  gift:    [{n:"Säurespritzer",s:45,ap:30, lv:1},  {n:"Giftstachel",  s:70, ap:20, lv:14}, {n:"Sumpfschwall",s:95, ap:10, lv:28}],
+  geist:   [{n:"Schattenhauch",s:45,ap:30, lv:1},  {n:"Seelenschlag", s:70, ap:20, lv:14}, {n:"Geisterklaue",s:95, ap:10, lv:28}],
+  unlicht: [{n:"Finsterblick",s:45, ap:30, lv:1},  {n:"Nachthieb",    s:70, ap:20, lv:14}, {n:"Dunkelstoß",  s:95, ap:10, lv:28}],
+  fee:     [{n:"Blütenstaub", s:45, ap:30, lv:1},  {n:"Zauberglanz",  s:70, ap:20, lv:14}, {n:"Feenschlag",  s:95, ap:10, lv:28}],
+  flug:    [{n:"Windstoß",    s:45, ap:30, lv:1},  {n:"Sturmflügel",  s:70, ap:20, lv:14}, {n:"Himmelssturz",s:95, ap:10, lv:28}]
+};
+
+// Wo steckt diese Art in ihrer Welt? Daraus kommen die Grundwerte.
+function artStelle(welt, id){
+  const w = WELTEN[welt];
+  if(!w) return -1;
+  if(w.boss && w.boss.id === id) return 3;
+  return w.gegner.findIndex(g => g.id === id);
+}
+const GRUNDWERTE = [
+  {hp:45, atk:45, def:40}, {hp:58, atk:62, def:52},
+  {hp:72, atk:78, def:68}, {hp:92, atk:96, def:86}
+];
+function artGrund(welt, id){
+  const stelle = artStelle(welt, id);
+  const g = GRUNDWERTE[klemm(stelle < 0 ? 0 : stelle, 0, 3)];
+  const v = artVon(welt, id);
+  const bonus = welt * 2;                 // spätere Welten bringen etwas kräftigere Arten mit
+  return {hp: g.hp + bonus, atk: g.atk + bonus, def: g.def + bonus,
+          init: Math.round(35 + (v ? v.tempo : 3) * 8)};
+}
+function artVon(welt, id){
+  const w = WELTEN[welt];
+  if(!w) return null;
+  if(w.boss && w.boss.id === id) return w.boss;
+  return w.gegner.find(g => g.id === id) || null;
+}
+/* Der Typ steckt im Namen der Art. Was sich nicht zuordnen lässt,
+   bekommt den Typ seiner Heimatwelt.                                 */
+const TYP_WOERTER = [
+  ["kaefer",  ["spinne","biene","skarab","käfer","kafer","larve","schwarm"]],
+  ["eis",     ["eis","frost","yeti","schnee"]],
+  ["feuer",   ["feuer","glut","magma","lava","schwefel","flamme"]],
+  ["gift",    ["gift","seuche","schlamm","kröte","krote","molch","sumpf","säure","saure"]],
+  ["boden",   ["kaktus","dorn","sand","stein","golem","fels","mumie","wächter","wachter"]],
+  ["fee",     ["blüte","blute","fee","blossom","irrlicht"]],
+  ["pflanze", ["pilz","sporen","ranke","laub","wald","hain","blatt","myzel"]],
+  ["flug",    ["drache","wyrm","zephyr","fledermaus","vogel","kuh","geist der luft"]],
+  ["unlicht", ["skelett","knochen","todes","nacht","dunkel","schatten","hexe","hexer"]],
+  ["geist",   ["seele","geist","warden","kreischer","lauscher"]],
+  ["normal",  ["wolf","goblin","troll","ritter","könig","konig","affe","keiler",
+               "panther","schlange","schleim","krieger","koloss","riese"]]
+];
+function artTyp(welt, id){
+  if(id){
+    const v = artVon(welt, id);
+    const name = ((v && (v.nameDe || v.name)) || "").toLowerCase();
+    for(const [typ, woerter] of TYP_WOERTER)
+      for(const w of woerter) if(name.indexOf(w) >= 0) return typ;
+  }
+  return WELT_TYP[welt] || "normal";
+}
+
+/* Die Werte auf einer Stufe - dieselben Formeln wie im Vorbild:
+   Leben zählen die Stufe doppelt, die anderen Werte nicht.           */
+function werteAuf(welt, id, stufe){
+  const g = artGrund(welt, id);
+  const rest = x => Math.floor(2*x*stufe/100) + 5;
+  return {maxHp: Math.floor(2*g.hp*stufe/100) + stufe + 10,
+          atk: rest(g.atk), def: rest(g.def), init: rest(g.init)};
+}
+// Welche Attacken eine Art auf ihrer Stufe kann - höchstens vier
+function attackenAuf(welt, id, stufe){
+  const typ = artTyp(welt, id);
+  const alle = [];
+  for(const a of ATTACKEN.normal) if(stufe >= a.lv) alle.push(Object.assign({typ:"normal"}, a));
+  // Arten vom Typ Normal bekommen ihre Attacken sonst doppelt
+  if(typ !== "normal")
+    for(const a of (ATTACKEN[typ] || [])) if(stufe >= a.lv) alle.push(Object.assign({typ:typ}, a));
+  alle.sort((x,y) => y.lv - x.lv);         // die neuesten zuerst
+  return alle.slice(0, 4).sort((x,y) => x.lv - y.lv);
+}
+/* Entwicklung: das erste Monster einer Welt wird mit 16 zum zweiten
+   und mit 32 zum dritten.                                            */
+function entwicklungZu(welt, id, stufe){
+  const w = WELTEN[welt];
+  if(!w || !w.gegner) return null;
+  const stelle = w.gegner.findIndex(g => g.id === id);
+  if(stelle === 0 && stufe >= 16 && w.gegner[1]) return w.gegner[1].id;
+  if(stelle === 1 && stufe >= 32 && w.gegner[2]) return w.gegner[2].id;
+  return null;
+}
+
 /* =====================================================================
    SAMMLER: KAEMPFE ZWISCHEN KREATUREN
    In dieser Spielart schlaegst du nicht selbst zu. Dein Tier tritt an,
@@ -5171,39 +5401,36 @@ function addonListeZeichnen(){
    ===================================================================== */
 const START_STUFE = 5;
 let meinTier = null;                   // der Eintrag aus s.begleiter, der kaempft
+let wildKampf = null;                  // die Werte des wilden Tieres im Kampf
 
-function tierStamm(b){
-  const w = WELTEN[b.welt];
-  return (w && w.gegner.find(g => g.id === b.id)) || null;
-}
+/* Ein Eintrag in s.begleiter ist:
+   {welt, id, name?, stufe, hp, xp, ap:[…]}  - ap sind die Reste je Attacke. */
 function tierWerte(b){
-  const v = tierStamm(b);
+  if(!b) return null;
+  const v = artVon(b.welt, b.id);
   if(!v) return null;
   const stufe = b.stufe || START_STUFE;
-  const f = 0.40 + stufe*0.12;
-  return {
-    name: b.name || v.name, emoji: v.emoji, bild: v.bild, stufe: stufe,
-    maxHp: Math.max(14, Math.round(v.hp*f)),
-    atk:   Math.max(4,  Math.round(v.atk*f)),
-    rue:   Math.max(1,  Math.round(v.def*f))
-  };
+  const w = werteAuf(b.welt, b.id, stufe);
+  return {name: b.name || v.name, emoji: v.emoji, bild: v.bild,
+          typ: artTyp(b.welt, b.id), stufe: stufe,
+          maxHp: w.maxHp, atk: w.atk, def: w.def, init: w.init,
+          attacken: attackenAuf(b.welt, b.id, stufe)};
 }
-/* Jeder Eintrag braucht Stufe und Leben - auch die, die vor dieser
-   Spielart gefangen wurden.                                          */
+// Wie viel Erfahrung bis zur naechsten Stufe
+function xpNoetig(stufe){ return Math.round(18 + stufe*stufe*1.6); }
+
+/* Jeder Eintrag braucht Stufe, Leben, Erfahrung und volle Attackenreste -
+   auch die, die vor dieser Spielart gefangen wurden.                   */
 function tiereOrdnen(){
-  for(const b of begleiter()){
+  for(const b of begleiter().concat(Array.isArray(s.box) ? s.box : [])){
     if(!b.stufe) b.stufe = START_STUFE;
+    if(!b.xp) b.xp = 0;
     const w = tierWerte(b);
     if(!w) continue;
     if(b.hp === undefined || b.hp > w.maxHp) b.hp = w.maxHp;
+    if(!Array.isArray(b.ap) || b.ap.length !== w.attacken.length)
+      b.ap = w.attacken.map(a => a.ap);
   }
-}
-/* Ungefähr so stark wie dein bestes Tier - ein bisschen Streuung gibt
-   es beim einzelnen Monster.                                          */
-function wildStufe(){
-  let hoechste = 0;
-  for(const b of begleiter()) hoechste = Math.max(hoechste, b.stufe || START_STUFE);
-  return hoechste || START_STUFE;
 }
 function tierBereit(){
   tiereOrdnen();
@@ -5211,12 +5438,33 @@ function tierBereit(){
   return null;
 }
 function tiereHeilen(){
-  for(const b of begleiter()){
+  for(const b of begleiter().concat(Array.isArray(s.box) ? s.box : [])){
     const w = tierWerte(b);
-    if(w) b.hp = w.maxHp;
+    if(!w) continue;
+    b.hp = w.maxHp;
+    b.ap = w.attacken.map(a => a.ap);
   }
   speichern();
 }
+/* Ungefaehr so stark wie dein bestes Tier - mit etwas Streuung. */
+function wildStufe(){
+  let hoechste = 0;
+  for(const b of begleiter()) hoechste = Math.max(hoechste, b.stufe || START_STUFE);
+  return hoechste || START_STUFE;
+}
+
+/* ---------- Schaden, genau nach der Formel des Vorbilds ---------- */
+function schadenRechnen(stufe, atk, def, staerke, wirkung){
+  const grund = Math.floor(Math.floor(Math.floor(2*stufe/5 + 2) * staerke * atk / Math.max(1, def)) / 50) + 2;
+  return Math.max(1, Math.round(grund * wirkung * (0.85 + Math.random()*0.15)));
+}
+function wirkungText(w){
+  if(w === 0) return ue(" Es zeigt keine Wirkung.");
+  if(w >= 2) return ue(" Das ist sehr wirksam!");
+  if(w <= 0.5) return ue(" Das wirkt kaum.");
+  return "";
+}
+
 function tierAnzeigen(){
   const w = meinTier && tierWerte(meinTier);
   const bild = $("figurP"), tier = $("figurPT");
@@ -5244,12 +5492,173 @@ function tierAnzeigen(){
     tier.style.fontSize = "58px";
     tier.textContent = w.emoji;
   }
-  $("nameP").textContent = w.name + " · Lv " + w.stufe;
+  $("nameP").innerHTML = w.name + " · Lv " + w.stufe + " " + typMarke(w.typ);
 }
-// Nach einem Sieg waechst das Tier
-/* Drei Tiere zur Wahl, aus den Biomen der Sammlerwelt. Wer eines
-   anklickt, hat seinen ersten Gefaehrten.                            */
-const STARTER = [["w0", "wolf"], ["w5", "affe"], ["w7", "frostwolf"]];
+function typMarke(typ){
+  return '<i style="font-style:normal; font-size:10px; padding:1px 6px; border-radius:6px; '
+       + 'color:#141413; background:' + (TYP_FARBE[typ] || "#888") + '">'
+       + ue(TYP_NAME[typ] || typ) + "</i>";
+}
+
+/* ---------- Team und Box ----------
+   Sechs Tiere passen ins Team, der Rest wartet in der Box. Getauscht
+   wird von Hand - so behaelt man den Ueberblick.                     */
+const TEAM_MAX = 6;
+function box(){
+  if(!Array.isArray(s.box)) s.box = [];
+  return s.box;
+}
+function tierKarte(b, inBox, stelle){
+  const w = tierWerte(b);
+  const d = document.createElement("div");
+  d.className = "tierkarte" + (b === meinTier ? " kaempft" : "") + (b.hp <= 0 ? " ohnmacht" : "");
+  if(!w){ d.textContent = "?"; return d; }
+  const kopf = document.createElement("div");
+  kopf.className = "kopf"; kopf.textContent = w.emoji;
+  const mitte = document.createElement("div"); mitte.className = "mitte";
+  const zeile = document.createElement("div");
+  zeile.className = "zeileName";
+  zeile.innerHTML = "<b>" + w.name + "</b> · Lv " + w.stufe + " " + typMarke(w.typ)
+                  + ' <span class="c-dim">' + Math.max(0, b.hp) + "/" + w.maxHp + " ❤️</span>";
+  const leiste = document.createElement("div");
+  leiste.className = "balkenmini";
+  leiste.innerHTML = '<i style="width:' + Math.round(klemm(b.hp/w.maxHp,0,1)*100) + '%"></i>';
+  const zuege = document.createElement("div");
+  zuege.className = "zuege";
+  zuege.textContent = w.attacken.map((a,i) =>
+    ue(a.n) + " " + (b.ap ? b.ap[i] : a.ap) + "/" + a.ap).join(" · ");
+  mitte.appendChild(zeile); mitte.appendChild(leiste); mitte.appendChild(zuege);
+  const k = document.createElement("button");
+  k.textContent = inBox ? ue("Ins Team") : ue("In die Box");
+  k.onclick = () => tierTauschen(b, inBox);
+  d.appendChild(kopf); d.appendChild(mitte);
+  if(inBox || begleiter().length > 1) d.appendChild(k);
+  return d;
+}
+function tierTauschen(b, ausBox){
+  if(ausBox){
+    if(begleiter().length >= TEAM_MAX){ meldung(ue("Dein Team ist voll."), "c-dim"); return; }
+    const i = box().indexOf(b);
+    if(i >= 0){ box().splice(i,1); begleiter().push(b); }
+  } else {
+    if(begleiter().length <= 1){ meldung(ue("Ein Tier musst du dabeihaben."), "c-dim"); return; }
+    const i = begleiter().indexOf(b);
+    if(i >= 0){ begleiter().splice(i,1); box().push(b); }
+  }
+  tiereOrdnen();
+  speichern();
+  teamZeichnen();
+  klang("sine", 560, 0.12, 0.13, 760);
+}
+function teamZeichnen(){
+  tiereOrdnen();
+  const tl = $("teamListe"), bl = $("boxListe");
+  tl.innerHTML = ""; bl.innerHTML = "";
+  for(const b of begleiter()) tl.appendChild(tierKarte(b, false));
+  if(!begleiter().length) tl.innerHTML = '<p class="c-dim">' + ue("Noch kein Tier dabei.") + "</p>";
+  for(const b of box()) bl.appendChild(tierKarte(b, true));
+  if(!box().length) bl.innerHTML = '<p class="c-dim">' + ue("Die Box ist leer.") + "</p>";
+}
+function teamZeigen(){
+  if(!addonAn("sammler")){ meldung(ue("Das gibt es nur in der Sammler-Spielart."), "c-dim"); return; }
+  teamZeichnen();
+  oeffne("team");
+}
+
+/* ---------- Die Attackenknoepfe ---------- */
+function zugKnoepfeBauen(){
+  const kasten = $("zugKnoepfe");
+  kasten.innerHTML = "";
+  const w = meinTier && tierWerte(meinTier);
+  kasten.classList.toggle("hidden", !w);
+  if(!w) return;
+  w.attacken.forEach((a, i) => {
+    const rest = meinTier.ap ? meinTier.ap[i] : a.ap;
+    const k = document.createElement("button");
+    k.className = "zugknopf";
+    k.disabled = rest <= 0;
+    k.innerHTML = '<b>' + ue(a.n) + "</b>" + typMarke(a.typ)
+                + '<small>' + rest + "/" + a.ap + " AP</small>";
+    k.onclick = () => aktion("zug" + i);
+    kasten.appendChild(k);
+  });
+}
+
+/* ---------- Ein Kampfzug ---------- */
+function zugMachen(angreifer, verteidiger, attacke, name, zielName){
+  const wirkung = typWirkung(attacke.typ, verteidiger.typ);
+  if(wirkung === 0){
+    kampflog(name + ue(" setzt ") + ue(attacke.n) + ue(" ein.") + wirkungText(0), "c-dim");
+    return 0;
+  }
+  const dmg = schadenRechnen(angreifer.stufe, angreifer.atk, verteidiger.def, attacke.s, wirkung);
+  kampflog(name + ue(" setzt ") + ue(attacke.n) + ue(" ein: <b>") + dmg + ue("</b> Schaden.")
+           + wirkungText(wirkung), wirkung >= 2 ? "c-good" : (wirkung <= 0.5 ? "c-dim" : ""));
+  return dmg;
+}
+function wildAttacke(){
+  const a = wildKampf.attacken;
+  return a[rnd(0, a.length-1)];
+}
+/* Wer zuerst darf, entscheidet die Initiative. */
+function sammlerZug(nr){
+  const eigen = tierWerte(meinTier);
+  const attacke = eigen.attacken[nr];
+  if(!attacke || meinTier.ap[nr] <= 0){ kampflog(ue("Keine AP mehr für diese Attacke."), "c-bad");
+    spielerDran = true; knoepfe(false); return; }
+  meinTier.ap[nr]--;
+  const ichZuerst = eigen.init >= wildKampf.init
+    ? (eigen.init > wildKampf.init || Math.random() < 0.5) : false;
+
+  const meinSchlag = () => {
+    animiere("figurPT","schlagA");
+    const d = zugMachen(eigen, wildKampf, attacke, eigen.name, gegner.name);
+    gegner.hp -= d;
+    setTimeout(() => animiere("figurG","treffer"), 110);
+    tonTreffer(typWirkung(attacke.typ, wildKampf.typ) >= 2);
+    kampfZeichnen();
+    return gegner.hp <= 0;
+  };
+  const wildSchlag = () => {
+    animiere("figurG","schlagB");
+    const a = wildAttacke();
+    const d = zugMachen(wildKampf, eigen, a, gegner.name, eigen.name);
+    meinTier.hp -= d;
+    setTimeout(() => animiere("figurPT","treffer"), 110);
+    tonWehTun();
+    kampfZeichnen();
+    return meinTier.hp <= 0;
+  };
+
+  if(ichZuerst){
+    if(meinSchlag()){ setTimeout(sieg, 450); return; }
+    setTimeout(() => {
+      if(!gegner) return;
+      if(wildSchlag()) tierFaellt(); else { spielerDran = true; knoepfe(false); zugKnoepfeBauen(); }
+    }, 650);
+  } else {
+    if(wildSchlag()){ tierFaellt(); return; }
+    setTimeout(() => {
+      if(!gegner) return;
+      if(meinSchlag()){ setTimeout(sieg, 450); return; }
+      spielerDran = true; knoepfe(false); zugKnoepfeBauen();
+    }, 650);
+  }
+}
+function tierFaellt(){
+  const w = tierWerte(meinTier);
+  meinTier.hp = 0;
+  kampflog("💤 " + w.name + ue(" kann nicht mehr."), "c-bad");
+  speichern();
+  if(tierWechseln()){
+    kampflog("🔄 " + tierWerte(meinTier).name + ue(" tritt an!"), "c-good");
+    kampfZeichnen(); zugKnoepfeBauen();
+    spielerDran = true; knoepfe(false);
+  } else setTimeout(() => tiereErschoepft(), 600);
+}
+
+/* ---------- Das erste Tier ----------
+   Drei Arten zur Wahl, je eine aus den ersten Biomen der Karte.     */
 function starterMoeglich(){
   const aus = [];
   for(const nr of BIOM_WELTEN){
@@ -5267,7 +5676,8 @@ function starterZeigen(){
     d.className = "starterfeld";
     const z = document.createElement("div"); z.className = "zeichen"; z.textContent = e.g.emoji;
     const b = document.createElement("b"); b.textContent = e.g.name;
-    const sp = document.createElement("span"); sp.textContent = WELTEN[e.welt].name;
+    const sp = document.createElement("span");
+    sp.innerHTML = typMarke(artTyp(e.welt, e.g.id)) + "<br>" + WELTEN[e.welt].name;
     d.appendChild(z); d.appendChild(b); d.appendChild(sp);
     d.onclick = () => starterNehmen(e.welt, e.g.id);
     kasten.appendChild(d);
@@ -5276,7 +5686,7 @@ function starterZeigen(){
 }
 function starterNehmen(welt, id){
   const l = begleiter();
-  l.push({welt:welt, id:id, stufe:START_STUFE});
+  l.push({welt:welt, id:id, stufe:START_STUFE, xp:0});
   tiereOrdnen();
   s.starter = true;
   speichern();
@@ -5286,15 +5696,44 @@ function starterNehmen(welt, id){
   meldung("🥚 " + w.name + ue(" ist jetzt dein Gefährte!"), "c-gold");
   begleiterSetzen();
 }
+
+/* ---------- Erfahrung, Stufen, Entwicklung ---------- */
 function tierStaerken(g){
   if(!meinTier) return;
-  const vorher = meinTier.stufe || START_STUFE;
-  meinTier.stufe = Math.min(60, vorher + 1);
-  const w = tierWerte(meinTier);
-  meinTier.hp = Math.min(w.maxHp, meinTier.hp + Math.round(w.maxHp*0.2));
-  kampflog("⭐ " + w.name + ue(" ist jetzt Stufe ") + meinTier.stufe + ".", "c-gold");
-  tonStufe();
+  const gewinn = Math.round(12 + (g.stufe || START_STUFE) * 9);
+  meinTier.xp = (meinTier.xp || 0) + gewinn;
+  kampflog("✨ " + tierWerte(meinTier).name + " +" + gewinn + ue(" Erfahrung."), "c-mag");
+  let gestiegen = false;
+  while(meinTier.xp >= xpNoetig(meinTier.stufe) && meinTier.stufe < 80){
+    meinTier.xp -= xpNoetig(meinTier.stufe);
+    meinTier.stufe++;
+    gestiegen = true;
+  }
+  if(gestiegen){
+    const w = tierWerte(meinTier);
+    meinTier.hp = Math.min(w.maxHp, meinTier.hp + Math.round(w.maxHp*0.25));
+    meinTier.ap = w.attacken.map((a,i) => (meinTier.ap && meinTier.ap[i] !== undefined) ? meinTier.ap[i] : a.ap);
+    kampflog("⭐ " + w.name + ue(" ist jetzt Stufe ") + meinTier.stufe + ".", "c-gold");
+    tonStufe();
+    const neu = entwicklungZu(meinTier.welt, meinTier.id, meinTier.stufe);
+    if(neu) setTimeout(() => entwickeln(meinTier, neu), 800);
+  }
+  speichern();
 }
+function entwickeln(b, neueId){
+  const alt = tierWerte(b).name;
+  b.id = neueId;
+  if(b.name === alt) b.name = null;        // ein selbst vergebener Name bleibt
+  const w = tierWerte(b);
+  b.hp = w.maxHp;
+  b.ap = w.attacken.map(a => a.ap);
+  speichern();
+  tonSieg();
+  infoZeigen("✨", ue("Entwicklung!"),
+    alt + ue(" entwickelt sich zu <b>") + w.name + "</b>!");
+  tierAnzeigen(); zugKnoepfeBauen();
+}
+
 // Auf das naechste gesunde Tier wechseln
 function tierWechseln(){
   const liste = begleiter();
@@ -5302,7 +5741,7 @@ function tierWechseln(){
   const start = liste.indexOf(meinTier);
   for(let i = 1; i <= liste.length; i++){
     const b = liste[(start + i) % liste.length];
-    if(b.hp > 0 && tierWerte(b)){ meinTier = b; tierAnzeigen(); return true; }
+    if(b.hp > 0 && tierWerte(b)){ meinTier = b; tierAnzeigen(); zugKnoepfeBauen(); return true; }
   }
   return false;
 }
@@ -5330,16 +5769,18 @@ function fangChance(g){
 }
 function gefangen(g){
   const l = begleiter();
-  if(l.length >= BEGLEITER_MAX){
-    kampflog(ue("Mehr Tiere kannst du nicht mitnehmen."), "c-bad");
-    setTimeout(gegnerZug, 700);
-    return;
-  }
+  const eintrag = {welt: g.heimat === undefined ? s.welt : g.heimat, id: g.id,
+                   stufe: g.stufe || (START_STUFE + rnd(0, 3))};
   tonZahm();
-  l.push({welt: g.heimat === undefined ? s.welt : g.heimat, id: g.id,
-          stufe: g.stufe || (START_STUFE + rnd(0, 3))});
-  tiereOrdnen();
-  g.zahm = true; g.nr = l.length - 1; g.hp = g.maxHp; g.ruhe = 0;
+  if(addonAn("sammler") && l.length >= TEAM_MAX){
+    box().push(eintrag);
+    tiereOrdnen();
+    kampflog("📦 " + g.name + ue(" wandert in die Box."), "c-mag");
+  } else {
+    l.push(eintrag);
+    tiereOrdnen();
+    g.zahm = true; g.nr = l.length - 1;
+  } g.hp = g.maxHp; g.ruhe = 0;
   kampflog("🔴 " + g.name + ue(" ist gefangen!"), "c-good");
   meldung("🔴 " + g.name + ue(" ist gefangen!"), "c-gold");
   const xp = Math.round(g.xp * 0.5);
@@ -5352,6 +5793,16 @@ function kampfStarten(o){
   if(modus !== "welt") return;
   // In der Sammler-Spielart tritt dein Tier an, nicht du selbst
   meinTier = addonAn("sammler") ? tierBereit() : null;
+  wildKampf = null;
+  if(meinTier){
+    const heim = o.heimat === undefined ? s.welt : o.heimat;
+    const st = o.stufe || wildStufe();
+    const w = werteAuf(heim, o.id, st);
+    wildKampf = {stufe: st, atk: w.atk, def: w.def, init: w.init,
+                 typ: artTyp(heim, o.id), attacken: attackenAuf(heim, o.id, st)};
+    o.maxHp = w.maxHp;
+    if(o.hp === undefined || o.hp > o.maxHp) o.hp = o.maxHp;
+  }
   if(addonAn("sammler") && !meinTier && begleiter().length){
     meldung(ue("Alle deine Tiere sind erschöpft – ruh dich am Lagerfeuer aus."), "c-bad");
     o.ruhe = 6;
@@ -5362,6 +5813,7 @@ function kampfStarten(o){
   $("kampfort").textContent = WELTEN[s.welt].name + ue(" · Kampf");
   $("figurP").src = heldBild();
   tierAnzeigen();
+  zugKnoepfeBauen();
   const gf = $("figurG");
   if(o.bild){
     // Die ganze Figur von der Seite, aus denselben Stücken wie das Modell
@@ -5392,10 +5844,12 @@ function kampfStarten(o){
     kb.classList.toggle("hidden", !(sammler && mit));
     if(mit) kb.textContent = "🐾 " + tierName(mit);
   }
-  $("nameG").textContent = o.name + (o.stufe ? " · Lv " + o.stufe : "") + (o.boss ? " 👑" : "");
+  $("nameG").innerHTML = o.name + (o.stufe ? " · Lv " + o.stufe : "")
+    + (wildKampf ? " " + typMarke(wildKampf.typ) : "") + (o.boss ? " 👑" : "");
   if(!meinTier) $("nameP").textContent = spielerName + ue(" (Stufe ") + s.level + ")";
   // Ohne eigenes Tier bleiben Zauber und Tränke, mit Tier kämpft es allein
   for(const [id, zeigen] of [["knopfFeuer", !meinTier], ["knopfHeil", !meinTier],
+                             ["knopfAngriff", !meinTier],
                              ["knopfWechsel", !!meinTier && begleiter().length > 1]]){
     const k = $(id); if(k) k.classList.toggle("hidden", !zeigen);
   }
@@ -5412,7 +5866,10 @@ function kampfZeichnen(){
   balken("glhp","gthp", gegner.hp, gegner.maxHp, "❤️");
   hudZeichnen();
 }
-function knoepfe(sperren){ document.querySelectorAll("#kampfknoepfe button").forEach(b => b.disabled = sperren); }
+function knoepfe(sperren){
+  document.querySelectorAll("#kampfknoepfe button, #zugKnoepfe button").forEach(b => b.disabled = sperren);
+  if(!sperren && meinTier) zugKnoepfeBauen();
+}
 function animiere(id, cls){ const el = $(id); el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
 
 function aktion(art){
@@ -5422,22 +5879,26 @@ function aktion(art){
   if(art === "trank" && s.traenke <= 0){ kampflog(ue("Keine Tränke mehr!"), "c-bad"); return; }
   spielerDran = false; knoepfe(true);
 
+  if(art.indexOf("zug") === 0){
+    sammlerZug(+art.slice(3));
+    return;
+  }
   if(art === "wechsel"){
     animiere("figurP","schlagA");
     if(tierWechseln()) kampflog("🔄 " + tierWerte(meinTier).name + ue(" tritt an!"), "c-good");
     else kampflog(ue("Kein anderes Tier kann kämpfen."), "c-dim");
+    kampfZeichnen();
+    setTimeout(gegnerZug, 700);
+    return;
   } else if(art === "angriff"){
-    animiere(meinTier ? "figurPT" : "figurP","schlagA");
-    const eigen = meinTier && tierWerte(meinTier);
+    animiere("figurP","schlagA");
     const krit = Math.random() < 0.15;
-    let dmg = eigen ? Math.max(1, eigen.atk + rnd(0,4) - Math.floor(gegner.def/2))
-                    : Math.max(1, gesAtk() + rnd(0,4) - Math.floor(gegner.def/2));
+    let dmg = Math.max(1, gesAtk() + rnd(0,4) - Math.floor(gegner.def/2));
     if(krit) dmg = Math.round(dmg*1.9);
     gegner.hp -= dmg;
     tonTreffer(krit);
     setTimeout(() => animiere("figurG","treffer"), 110);
-    kampflog((eigen ? eigen.name + ue(" trifft für <b>") : ue("Du triffst für <b>"))
-             + dmg + ue("</b> Schaden.") + (krit?" 💥 KRITISCH!":""), krit?"c-gold":"");
+    kampflog(ue("Du triffst für <b>") + dmg + ue("</b> Schaden.") + (krit?" 💥 KRITISCH!":""), krit?"c-gold":"");
   } else if(art === "feuer"){
     s.mp -= 8; animiere("figurP","schlagA");
     const dmg = Math.max(1, Math.round(s.mag*2.1) + rnd(0,6) - Math.floor(gegner.def/4));
@@ -5454,11 +5915,11 @@ function aktion(art){
   } else if(art === "trank"){
     s.traenke--;
     tonTrank();
-    const eigen = meinTier && tierWerte(meinTier);
-    if(eigen){                                  // im Sammler-Modus trinkt dein Tier
-      const heil = Math.max(12, Math.round(eigen.maxHp*0.45));
-      meinTier.hp = Math.min(eigen.maxHp, meinTier.hp + heil);
-      kampflog("🧪 " + eigen.name + ue(": +") + heil + ue(" Leben."), "c-good");
+    const meins = meinTier && tierWerte(meinTier);
+    if(meins){                                  // im Sammler-Modus trinkt dein Tier
+      const heil = Math.max(12, Math.round(meins.maxHp*0.45));
+      meinTier.hp = Math.min(meins.maxHp, meinTier.hp + heil);
+      kampflog("🧪 " + meins.name + ue(": +") + heil + ue(" Leben."), "c-good");
     } else {
       const heil = Math.max(60, Math.round(s.maxHp*0.25));    // wächst mit dir mit
       s.hp = Math.min(s.maxHp, s.hp + heil);
@@ -5502,6 +5963,19 @@ function aktion(art){
 }
 function gegnerZug(){
   if(modus !== "kampf" || !gegner) return;
+  if(meinTier && wildKampf){                  // im Sammler-Modus schlägt das wilde Tier zu
+    const eigen = tierWerte(meinTier);
+    animiere("figurG","schlagB");
+    const a = wildAttacke();
+    const d = zugMachen(wildKampf, eigen, a, gegner.name, eigen.name);
+    meinTier.hp -= d;
+    setTimeout(() => animiere("figurPT","treffer"), 110);
+    tonWehTun();
+    kampfZeichnen();
+    if(meinTier.hp <= 0){ tierFaellt(); return; }
+    spielerDran = true; knoepfe(false);
+    return;
+  }
   animiere("figurG","schlagB");
   let dmg = Math.max(1, gegner.atk + rnd(0,4) - Math.floor(gesDef()*0.8));
   const wucht = gegner.boss && Math.random() < 0.28;
@@ -5513,31 +5987,6 @@ function gegnerZug(){
       gegner.rasend = true;
       kampflog("🔥 " + gegner.name + ue(" wird <b>rasend</b> und schlägt härter zu!"), "c-bad");
     }
-  }
-  const eigen = meinTier && tierWerte(meinTier);
-  if(eigen){
-    // Der Schaden trifft dein Tier, seine Rüstung zählt
-    dmg = Math.max(1, gegner.atk + rnd(0,4) - Math.floor(eigen.rue*0.8));
-    meinTier.hp -= dmg;
-    tonWehTun();
-    setTimeout(() => animiere("figurPT","treffer"), 110);
-    kampflog(gegner.name + ue(" trifft ") + eigen.name + ue(" für <b>") + dmg
-             + ue("</b> Schaden.") + (wucht?" 💢 WUCHTSCHLAG!":""), "c-bad");
-    kampfZeichnen();
-    if(meinTier.hp <= 0){
-      meinTier.hp = 0;
-      kampflog("💤 " + eigen.name + ue(" kann nicht mehr."), "c-bad");
-      speichern();
-      if(tierWechseln()){
-        kampflog("🔄 " + tierWerte(meinTier).name + ue(" tritt an!"), "c-good");
-        kampfZeichnen();
-      } else {
-        setTimeout(() => tiereErschoepft(), 600);
-        return;
-      }
-    }
-    spielerDran = true; knoepfe(false);
-    return;
   }
   s.hp -= dmg;
   tonWehTun();
@@ -5578,7 +6027,7 @@ function sieg(){
 function tiereErschoepft(){
   tonNiederlage();
   if(gegner) gegner.ruhe = 8;
-  gegner = null; meinTier = null;
+  gegner = null; meinTier = null; wildKampf = null;
   tiereHeilen();
   pos.x = startOrt.x + 0.5; pos.z = startOrt.z + 0.5;
   pos.y = bodenHoehe(startOrt.x, startOrt.z) + 1;
@@ -5892,9 +6341,10 @@ addEventListener("keydown", e => {
   tonWecken();                                 // Browser erlauben Ton erst nach einer Eingabe
   tasten[k] = true;
   if(modus === "menue"){                       // offene Fenster mit Esc / I / Q schliessen
-    if(k === "Escape" || k === "i" || k === "q"){
+    if(k === "Escape" || k === "i" || k === "q" || k === "t"){
       if(!$("tafel").classList.contains("hidden")) tafelSchliessen();
       else if(!$("lager").classList.contains("hidden")) schliesse("lager");
+      else if(!$("team").classList.contains("hidden")) schliesse("team");
     }
     return;
   }
@@ -5909,6 +6359,7 @@ addEventListener("keydown", e => {
   if(k === "m") werfen();
   if(k === "g") sitzenSagen();
   if(k === "n") tierBenennen();
+  if(k === "t") teamZeigen();
   // I setzt dich auf ein gezähmtes Tier - steht keines da, öffnet es die Tasche
   if(k === "i" && !aufsteigen()) tafelZeigen("tasche");
   if(k === "b") tafelZeigen("tasche");
