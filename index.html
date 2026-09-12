@@ -368,7 +368,7 @@
     <div style="font-size:52px">⛏️</div>
     <h2>WELTENKÄMPFER · BLOCKWELT</h2>
     <p class="c-dim" style="margin-top:0">Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.</p>
-    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 31 · Sammler: neuer Kampfbildschirm</p>
+    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 32 · Jedes Tier hat ein Blockmodell</p>
     <p style="margin:0 0 4px">Willkommen, <b id="grussName" class="c-gold">Held</b>
       <button onclick="nameAendern()" style="padding:4px 10px; font-size:12px; margin-left:8px">✏️ Name &amp; Skin</button>
       <button onclick="uebertragZeigen()" style="padding:4px 10px; font-size:12px; margin-left:4px">💾 Spielstand übertragen</button></p>
@@ -679,7 +679,7 @@ const EN = {
   "Eisschwert": "Ice Sword",
   "Eisspitzhacke": "Ice Pickaxe",
   "Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.": "Thirteen open block worlds. Build, dig, fight – and find the portal.",
-  "Ausgabe 31 · Sammler: neuer Kampfbildschirm": "Build 31 · Collector: new battle screen",
+  "Ausgabe 32 · Jedes Tier hat ein Blockmodell": "Build 32 · Every creature has a block model",
   "Endlose Dünen. Und die Kakteen hier stehen nicht nur herum – sie laufen.": "Endless dunes. And the cacti here don't just stand around – they walk.",
   "Erde": "Dirt",
   "Erlege 14 Schattenriesen": "Slay 14 shadow giants",
@@ -2965,6 +2965,51 @@ function mobFigurBild(quelle, fertig){
 }
 
 // Das Wesen an seinen Platz drehen und zeichnen
+/* Ein Wesen ohne eigene Textur wird aus seinem Bauplan gezeichnet.
+   Beine schwingen um die Schulter, Flügel schlagen um den Rumpf.     */
+const ART_BEIN_Y = 9 * MOB_EINHEIT, ART_FLUEGEL_Y = 12.5 * MOB_EINHEIT;
+function zeichneArt(o){
+  const heim = o.heimat === undefined ? s.welt : o.heimat;
+  const netz = artNetz(heim, o.id);
+  if(!netz || !netz.length) return;
+  const bx = o.x - pos.x, bz = o.z - pos.z;
+  const blick = (o.blick === undefined) ? Math.atan2(bx, bz) : o.blick;
+  const co = Math.cos(blick), si = Math.sin(blick);
+  const takt = o.sitzt ? 1.2 : Math.sin(o.schritt || 0) * 0.9 * (o.schwung || 0);
+  const schlag = Math.sin((o.schritt || 0) * 2 + 1) * 0.55 * (0.35 + 0.65*(o.schwung || 0));
+  const dreh = [null,
+    [Math.cos(takt), Math.sin(takt)],
+    [Math.cos(o.sitzt ? takt : -takt), Math.sin(o.sitzt ? takt : -takt)],
+    [Math.cos(schlag), Math.sin(schlag)],
+    [Math.cos(-schlag), Math.sin(-schlag)]];
+  const tiefer = o.sitzt ? 0.4 : 0;
+  const daten = new Float32Array(netz.length/7*6);
+  for(let i = 0, j = 0; i < netz.length; i += 7, j += 6){
+    let x = netz[i], y = netz[i+1], z = netz[i+2];
+    const teil = netz[i+6], d = dreh[teil];
+    if(d && teil <= 2){                       // Bein: kippt vor und zurück
+      const dy = y - ART_BEIN_Y;
+      y = ART_BEIN_Y + dy*d[0] - z*d[1];
+      z =              dy*d[1] + z*d[0];
+    } else if(d){                             // Flügel: schlägt auf und ab
+      const dy = y - ART_FLUEGEL_Y;
+      y = ART_FLUEGEL_Y + dy*d[0] - x*d[1];
+      x =                 dy*d[1] + x*d[0];
+    }
+    daten[j]   = o.x + x*co + z*si;
+    daten[j+1] = o.y + y - tiefer;
+    daten[j+2] = o.z - x*si + z*co;
+    daten[j+3] = netz[i+3]; daten[j+4] = netz[i+4]; daten[j+5] = netz[i+5];
+  }
+  gl.bindBuffer(gl.ARRAY_BUFFER, bbBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, daten, gl.DYNAMIC_DRAW);
+  gl.vertexAttribPointer(A.pos, 3, gl.FLOAT, false, 24, 0);
+  gl.vertexAttribPointer(A.uv, 2, gl.FLOAT, false, 24, 12);
+  gl.vertexAttribPointer(A.licht, 1, gl.FLOAT, false, 24, 20);
+  gl.bindTexture(gl.TEXTURE_2D, artTextur(gl, heim, o.id));
+  gl.drawArrays(gl.TRIANGLES, 0, daten.length/6);
+}
+
 const MOB_BEIN_Y = 12 * MOB_EINHEIT;         // Drehpunkt der Beine, oben an der Schulter
 function zeichneMob(o){
   const netz = mobNetz(o.bild);
@@ -3983,7 +4028,8 @@ function zeichneWesen(mvp){
   for(const o of wesen){
     const d = Math.hypot(o.x-pos.x, o.z-pos.z);
     if(d > sichtWeite) continue;
-    if(o.bild){ zeichneMob(o); continue; }        // eigenes Modell statt Bildtafel
+    if(o.bild){ zeichneMob(o); continue; }        // eigene Textur, eigenes Modell
+    if(o.art === "gegner" && o.id){ zeichneArt(o); continue; }   // Blockmodell aus dem Bauplan
     const g = o.gross, hg = g*1.1;
     const daten = [];
     const ecken = [[-1,0],[1,0],[1,1],[-1,1]];
@@ -5378,6 +5424,215 @@ function addonListeZeichnen(){
 
 
 
+
+/* =====================================================================
+   BLOCKMODELLE FÜR ALLE ARTEN
+   Statt einer Bildtafel mit Emoji bekommt jedes Wesen ein Modell aus
+   Kästen. Die Form kommt aus einem Bauplan, den der Name verrät -
+   Vierbeiner, Zweibeiner, Klumpen, Flieger, Krabbler oder Schlange.
+   Die Farben werden aus dem Emoji selbst geholt: es wird einmal auf
+   eine kleine Leinwand gemalt und die häufigsten Farben ausgezählt.
+   So passt jedes Tier zu dem Bild, das man von ihm kennt.
+
+   Gefärbt wird über eine winzige Textur: vier mal zwei Felder, jedes
+   eine Farbe. Jede Kastenseite zeigt genau auf die Mitte eines Feldes -
+   dadurch gibt es keine Ränder und keine verwischten Kanten.
+   ===================================================================== */
+const KOERPERPLAENE = [
+  ["flieger",   ["fledermaus","biene","drache","wyrm","vogel","geist","irrlicht","zephyr","wolke","engel","seele"]],
+  ["kriecher",  ["spinne","skarab","käfer","kafer","krabbe","larve","schleim","molch","kröte","krote","schildkröte"]],
+  ["schlange",  ["schlange","wurm","ranke","würge","wurge","aal"]],
+  ["klumpen",   ["schleim","golem","pilz","sporling","sporen","kaktus","stein","fels","koloss","klumpen","blob"]],
+  ["zweibeiner",["goblin","troll","ritter","könig","konig","magier","hexe","hexer","mumie","skelett","riese","krieger","yeti","affe","mensch","wächter","wachter","warden","sonnengeist"]]
+];
+function artBauplan(welt, id){
+  const v = artVon(welt, id);
+  const name = ((v && (v.nameDe || v.name)) || "").toLowerCase();
+  for(const [plan, woerter] of KOERPERPLAENE)
+    for(const w of woerter) if(name.indexOf(w) >= 0) return plan;
+  return "vierbeiner";
+}
+
+/* ---------- Farben aus dem Emoji holen ---------- */
+const artFarbenSpeicher = {};
+function artFarben(emoji){
+  if(artFarbenSpeicher[emoji]) return artFarbenSpeicher[emoji];
+  const G = 28;
+  const c = document.createElement("canvas");
+  c.width = c.height = G;
+  const g = c.getContext("2d", {willReadFrequently:true});
+  g.font = (G-4) + "px serif";
+  g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillText(emoji || "❓", G/2, G/2 + 1);
+  const d = g.getImageData(0, 0, G, G).data;
+  const eimer = {};
+  for(let i = 0; i < d.length; i += 4){
+    if(d[i+3] < 140) continue;
+    const r = d[i], gr = d[i+1], b = d[i+2];
+    if(r > 238 && gr > 238 && b > 238) continue;          // fast weiß zählt nicht als Hauptfarbe
+    const k = (r>>4) + "," + (gr>>4) + "," + (b>>4);
+    if(!eimer[k]) eimer[k] = {n:0, r:0, g:0, b:0};
+    const e = eimer[k]; e.n++; e.r += r; e.g += gr; e.b += b;
+  }
+  const liste = Object.values(eimer).sort((a,b) => b.n - a.n)
+    .map(e => [Math.round(e.r/e.n), Math.round(e.g/e.n), Math.round(e.b/e.n), e.n]);
+  const haupt = liste[0] || [150,150,160,1];
+  // Die zweite Farbe soll sich deutlich von der ersten unterscheiden
+  let zweite = haupt;
+  for(const f of liste.slice(1)){
+    if(Math.abs(f[0]-haupt[0]) + Math.abs(f[1]-haupt[1]) + Math.abs(f[2]-haupt[2]) > 90){ zweite = f; break; }
+  }
+  const misch = (f, k) => [klemm(Math.round(f[0]*k),0,255), klemm(Math.round(f[1]*k),0,255), klemm(Math.round(f[2]*k),0,255)];
+  const p = {
+    haupt:  [haupt[0], haupt[1], haupt[2]],
+    dunkel: misch(haupt, 0.62),
+    hell:   misch(haupt, 1.35),
+    akzent: [zweite[0], zweite[1], zweite[2]],
+    bauch:  misch(haupt, 1.18),
+    auge:   [22, 20, 26]
+  };
+  artFarbenSpeicher[emoji] = p;
+  return p;
+}
+
+/* ---------- Die Farbtextur: vier mal zwei Felder ---------- */
+const artTexturen = {};
+function artTextur(gl, welt, id){
+  const v = artVon(welt, id);
+  const emoji = (v && v.emoji) || "❓";
+  if(artTexturen[emoji]) return artTexturen[emoji];
+  const p = artFarben(emoji);
+  const reihe = [p.haupt, p.dunkel, p.hell, p.akzent, p.bauch, p.auge];
+  const c = document.createElement("canvas");
+  c.width = 4; c.height = 2;
+  const g = c.getContext("2d");
+  reihe.forEach((f, i) => {
+    g.fillStyle = "rgb(" + f[0] + "," + f[1] + "," + f[2] + ")";
+    g.fillRect(i % 4, Math.floor(i/4), 1, 1);
+  });
+  const tex = texturVon(gl, c);
+  artTexturen[emoji] = tex;
+  return tex;
+}
+// Mitte des Farbfeldes - alle vier Ecken zeigen dorthin, darum keine Ränder
+function artUV(nr){ return [((nr % 4) + 0.5)/4, (Math.floor(nr/4) + 0.5)/2]; }
+
+/* ---------- Kästen bauen ---------- */
+function artFlaeche(aus, ecken, farbe, licht, teil){
+  const uv = artUV(farbe);
+  for(const i of [0,1,2, 0,2,3]){
+    const e = ecken[i];
+    aus.push(e[0]*MOB_EINHEIT, e[1]*MOB_EINHEIT, e[2]*MOB_EINHEIT, uv[0], uv[1], licht, teil || 0);
+  }
+}
+function artKasten(aus, x0, y0, z0, w, h, d, farbe, teil, bauchFarbe){
+  const x1 = x0+w, y1 = y0+h, z1 = z0+d;
+  const unten = bauchFarbe === undefined ? farbe : bauchFarbe;
+  artFlaeche(aus, [[x0,y1,z0],[x0,y1,z1],[x1,y1,z1],[x1,y1,z0]], farbe, 1.00, teil);
+  artFlaeche(aus, [[x0,y0,z1],[x0,y0,z0],[x1,y0,z0],[x1,y0,z1]], unten, 0.45, teil);
+  artFlaeche(aus, [[x0,y0,z0],[x0,y0,z1],[x0,y1,z1],[x0,y1,z0]], farbe, 0.72, teil);
+  artFlaeche(aus, [[x1,y0,z1],[x1,y0,z0],[x1,y1,z0],[x1,y1,z1]], farbe, 0.72, teil);
+  artFlaeche(aus, [[x1,y0,z0],[x0,y0,z0],[x0,y1,z0],[x1,y1,z0]], farbe, 0.92, teil);
+  artFlaeche(aus, [[x0,y0,z1],[x1,y0,z1],[x1,y1,z1],[x0,y1,z1]], farbe, 0.62, teil);
+}
+
+/* ---------- Die Baupläne ----------
+   Alle Maße in Texturpixeln, sechzehn davon sind ein Block. Der
+   Ursprung liegt zwischen den Füßen, vorne ist -z.
+   Teil 0 steht still, 1 und 2 sind die Beinpaare über Kreuz,
+   3 und 4 die Flügel, die auf und ab schlagen.                        */
+const KASTEN_PLAENE = {
+  vierbeiner: function(k){
+    k(-5, 9, -8, 10, 8, 16, 0, 0, 4);                 // Rumpf
+    k(-4, 13, -14, 8, 8, 7, 0, 0);                    // Kopf
+    k(-2, 13, -16, 4, 4, 3, 3, 0);                    // Schnauze
+    k(-5, 21, -12, 2, 3, 2, 3, 0); k(3, 21, -12, 2, 3, 2, 3, 0);   // Ohren
+    k(-3, 16, -15.2, 2, 2, 1, 5, 0); k(1, 16, -15.2, 2, 2, 1, 5, 0); // Augen
+    k(-5, 0, -7, 3, 9, 3, 1, 1); k(2, 0, 3, 3, 9, 3, 1, 1);
+    k(2, 0, -7, 3, 9, 3, 1, 2); k(-5, 0, 3, 3, 9, 3, 1, 2);
+  },
+  zweibeiner: function(k){
+    k(-4, 10, -3, 8, 11, 6, 0, 0, 4);                 // Rumpf
+    k(-4, 21, -4, 8, 8, 8, 0, 0);                     // Kopf
+    k(-2.6, 24, -4.6, 2, 2, 1, 5, 0); k(0.6, 24, -4.6, 2, 2, 1, 5, 0);
+    k(-7, 11, -2.5, 3, 10, 3, 3, 1); k(4, 11, -2.5, 3, 10, 3, 3, 2);   // Arme
+    k(-4, 0, -2, 4, 10, 4, 1, 1); k(0, 0, -2, 4, 10, 4, 1, 2);         // Beine
+  },
+  klumpen: function(k){
+    k(-7, 0, -7, 14, 13, 14, 0, 0, 4);
+    k(-5, 13, -5, 10, 4, 10, 2, 0);
+    k(-4, 7, -7.6, 3, 3, 1, 5, 0); k(1, 7, -7.6, 3, 3, 1, 5, 0);
+    k(-6, 0, -9, 4, 3, 3, 1, 1); k(2, 0, -9, 4, 3, 3, 1, 2);
+  },
+  flieger: function(k){
+    k(-4, 7, -6, 8, 8, 12, 0, 0, 4);                  // Rumpf
+    k(-3.5, 14, -10, 7, 7, 7, 0, 0);                  // Kopf
+    k(-2.4, 17, -10.6, 2, 2, 1, 5, 0); k(0.4, 17, -10.6, 2, 2, 1, 5, 0);
+    k(-15, 12, -4, 11, 1.4, 9, 2, 3); k(4, 12, -4, 11, 1.4, 9, 2, 4);  // Flügel
+    k(-3, 0, -3, 2.5, 7, 2.5, 1, 1); k(0.5, 0, -3, 2.5, 7, 2.5, 1, 2);
+  },
+  kriecher: function(k){
+    k(-6, 4, -6, 12, 6, 13, 0, 0, 4);                 // flacher Leib
+    k(-4, 4, -12, 8, 6, 6, 0, 0);                     // Kopf
+    k(-3, 7, -12.6, 2, 2, 1, 5, 0); k(1, 7, -12.6, 2, 2, 1, 5, 0);
+    for(let i = 0; i < 3; i++){
+      const z = -5 + i*5;
+      k(-9, 0, z, 3, 5, 2, 1, i % 2 ? 1 : 2);
+      k(6, 0, z, 3, 5, 2, 1, i % 2 ? 2 : 1);
+    }
+  },
+  schlange: function(k){
+    k(-4, 2, -12, 8, 7, 8, 0, 0);                     // Kopf
+    k(-2.6, 5, -12.6, 2, 2, 1, 5, 0); k(0.6, 5, -12.6, 2, 2, 1, 5, 0);
+    const teile = [[7, -4], [6, 1], [5, 5], [4, 8]];
+    teile.forEach(([b, z], i) => k(-b/2, 1.5, z, b, b, i === 3 ? 4 : 5, 0, i % 2 ? 1 : 2, 4));
+  }
+};
+const artNetze = {};
+function artNetz(welt, id){
+  const plan = artBauplan(welt, id);
+  const schluessel = plan;
+  if(artNetze[schluessel]) return artNetze[schluessel];
+  const aus = [];
+  KASTEN_PLAENE[plan]((x, y, z, w, h, d, farbe, teil, bauch) =>
+    artKasten(aus, x, y, z, w, h, d, farbe, teil, bauch));
+  artNetze[schluessel] = new Float32Array(aus);
+  return artNetze[schluessel];
+}
+
+/* ---------- Ein Seitenbild für das Kampfbild ----------
+   Dieselben Kästen, nur flach von der Seite gemalt: was weiter vorne
+   liegt, kommt zuletzt darüber.                                      */
+const artBilder = {};
+function artSeitenbild(welt, id){
+  const v = artVon(welt, id);
+  const schluessel = artBauplan(welt, id) + "|" + ((v && v.emoji) || "?");
+  if(artBilder[schluessel]) return artBilder[schluessel];
+  const p = artFarben((v && v.emoji) || "❓");
+  const reihe = [p.haupt, p.dunkel, p.hell, p.akzent, p.bauch, p.auge];
+  const kaesten = [];
+  KASTEN_PLAENE[artBauplan(welt, id)]((x, y, z, w, h, d, farbe) =>
+    kaesten.push({x:x, y:y, z:z, w:w, h:h, d:d, f:farbe}));
+  let minZ = 99, maxZ = -99, maxY = 0;
+  for(const b of kaesten){ minZ = Math.min(minZ, b.z); maxZ = Math.max(maxZ, b.z+b.d); maxY = Math.max(maxY, b.y+b.h); }
+  const E = 7, BX = Math.ceil(maxZ - minZ) + 2, BY = Math.ceil(maxY) + 2;
+  const c = document.createElement("canvas");
+  c.width = BX*E; c.height = BY*E;
+  const g = c.getContext("2d");
+  kaesten.sort((a, b) => a.z - b.z);                  // hinten zuerst, vorne zuletzt
+  for(const b of kaesten){
+    const f = reihe[b.f];
+    const dunkler = 1 - klemm((b.z - minZ)/Math.max(1, maxZ-minZ), 0, 1)*0.22;
+    g.fillStyle = "rgb(" + Math.round(f[0]*dunkler) + "," + Math.round(f[1]*dunkler)
+                + "," + Math.round(f[2]*dunkler) + ")";
+    // Kopf ist links: die Tiefe läuft von vorne (-z) nach hinten
+    g.fillRect(Math.round((b.z - minZ + 1)*E), Math.round((BY - 1 - b.y - b.h)*E),
+               Math.max(E, Math.round(b.d*E)), Math.max(E, Math.round(b.h*E)));
+  }
+  artBilder[schluessel] = c.toDataURL();
+  return artBilder[schluessel];
+}
+
 /* =====================================================================
    DER KAMPFBILDSCHIRM DER SAMMLER-SPIELART
    Ein eigenes Bild mit Kampffeld, zwei Sprites auf ihren Plattformen,
@@ -5411,18 +5666,13 @@ function pkBalken(el, von, nach, max, fertig){
   requestAnimationFrame(schritt);
 }
 function pkSpriteSetzen(el, w, meins){
-  el.className = "pksprite " + (meins ? "meins" : "gegner");
-  if(w.bild){
-    el.classList.add("bild");
-    el.textContent = "";
-    el.style.width = meins ? "150px" : "108px";
-    el.style.height = meins ? "150px" : "108px";
-    el.style.backgroundImage = "url(" + mobFigurBild(w.bild, u => {
-      el.style.backgroundImage = "url(" + u + ")"; }) + ")";
-  } else {
-    el.style.backgroundImage = ""; el.style.width = ""; el.style.height = "";
-    el.textContent = w.emoji;
-  }
+  el.className = "pksprite bild " + (meins ? "meins" : "gegner");
+  el.textContent = "";
+  el.style.width = meins ? "158px" : "112px";
+  el.style.height = meins ? "158px" : "112px";
+  el.style.backgroundImage = "url(" + (w.bild
+    ? mobFigurBild(w.bild, u => { el.style.backgroundImage = "url(" + u + ")"; })
+    : artSeitenbild(w.welt, w.id)) + ")";
 }
 function pkBewegung(el, name, dauer){
   return new Promise(f => {
@@ -5496,7 +5746,7 @@ async function pkampfStarten(o){
   o.maxHp = gw.maxHp;
   if(o.hp === undefined || o.hp > o.maxHp) o.hp = o.maxHp;
   pk = {wild:o, meins:b,
-        wildW: {name:o.name, emoji:o.emoji, bild:o.bild, stufe:st, typ:artTyp(heim, o.id),
+        wildW: {name:o.name, emoji:o.emoji, bild:o.bild, welt:heim, id:o.id, stufe:st, typ:artTyp(heim, o.id),
                 atk:gw.atk, def:gw.def, init:gw.init, attacken:attackenAuf(heim, o.id, st)},
         meinsW: tierWerte(b), geflohen:false};
   gegner = o; meinTier = b; modus = "kampf";
@@ -5992,6 +6242,7 @@ function tierWerte(b){
   const stufe = b.stufe || START_STUFE;
   const w = werteAuf(b.welt, b.id, stufe);
   return {name: b.name || v.name, emoji: v.emoji, bild: v.bild,
+          welt: b.welt, id: b.id,
           typ: artTyp(b.welt, b.id), stufe: stufe,
           maxHp: w.maxHp, atk: w.atk, def: w.def, init: w.init,
           attacken: attackenAuf(b.welt, b.id, stufe)};
@@ -6094,7 +6345,14 @@ function tierKarte(b, inBox, stelle){
   d.className = "tierkarte" + (b === meinTier ? " kaempft" : "") + (b.hp <= 0 ? " ohnmacht" : "");
   if(!w){ d.textContent = "?"; return d; }
   const kopf = document.createElement("div");
-  kopf.className = "kopf"; kopf.textContent = w.emoji;
+  kopf.className = "kopf";
+  kopf.style.backgroundImage = "url(" + (w.bild
+    ? mobFigurBild(w.bild) : artSeitenbild(w.welt, w.id)) + ")";
+  kopf.style.backgroundSize = "contain";
+  kopf.style.backgroundPosition = "center";
+  kopf.style.backgroundRepeat = "no-repeat";
+  kopf.style.width = "46px"; kopf.style.height = "42px";
+  kopf.style.imageRendering = "pixelated";
   const mitte = document.createElement("div"); mitte.className = "mitte";
   const zeile = document.createElement("div");
   zeile.className = "zeileName";
@@ -6254,7 +6512,11 @@ function starterZeigen(){
   for(const e of starterMoeglich()){
     const d = document.createElement("div");
     d.className = "starterfeld";
-    const z = document.createElement("div"); z.className = "zeichen"; z.textContent = e.g.emoji;
+    const z = document.createElement("div"); z.className = "zeichen";
+    z.style.backgroundImage = "url(" + artSeitenbild(e.welt, e.g.id) + ")";
+    z.style.backgroundSize = "contain"; z.style.backgroundPosition = "center";
+    z.style.backgroundRepeat = "no-repeat"; z.style.height = "52px";
+    z.style.imageRendering = "pixelated";
     const b = document.createElement("b"); b.textContent = e.g.name;
     const sp = document.createElement("span");
     sp.innerHTML = typMarke(artTyp(e.welt, e.g.id)) + "<br>" + WELTEN[e.welt].name;
