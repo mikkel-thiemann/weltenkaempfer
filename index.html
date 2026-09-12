@@ -368,7 +368,7 @@
     <div style="font-size:52px">⛏️</div>
     <h2>WELTENKÄMPFER · BLOCKWELT</h2>
     <p class="c-dim" style="margin-top:0">Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.</p>
-    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 32 · Jedes Tier hat ein Blockmodell</p>
+    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 33 · Die Tiere sehen aus wie Kreaturen</p>
     <p style="margin:0 0 4px">Willkommen, <b id="grussName" class="c-gold">Held</b>
       <button onclick="nameAendern()" style="padding:4px 10px; font-size:12px; margin-left:8px">✏️ Name &amp; Skin</button>
       <button onclick="uebertragZeigen()" style="padding:4px 10px; font-size:12px; margin-left:4px">💾 Spielstand übertragen</button></p>
@@ -679,7 +679,7 @@ const EN = {
   "Eisschwert": "Ice Sword",
   "Eisspitzhacke": "Ice Pickaxe",
   "Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.": "Thirteen open block worlds. Build, dig, fight – and find the portal.",
-  "Ausgabe 32 · Jedes Tier hat ein Blockmodell": "Build 32 · Every creature has a block model",
+  "Ausgabe 33 · Die Tiere sehen aus wie Kreaturen": "Build 33 · The creatures look like creatures",
   "Endlose Dünen. Und die Kakteen hier stehen nicht nur herum – sie laufen.": "Endless dunes. And the cacti here don't just stand around – they walk.",
   "Erde": "Dirt",
   "Erlege 14 Schattenriesen": "Slay 14 shadow giants",
@@ -2982,7 +2982,10 @@ function zeichneArt(o){
     [Math.cos(o.sitzt ? takt : -takt), Math.sin(o.sitzt ? takt : -takt)],
     [Math.cos(schlag), Math.sin(schlag)],
     [Math.cos(-schlag), Math.sin(-schlag)]];
-  const tiefer = o.sitzt ? 0.4 : 0;
+  // Im Stehen wippt das Tier leicht - das nimmt die Steifheit heraus
+  const ruhe = 1 - klemm(o.schwung || 0, 0, 1);
+  const wippe = Math.sin(performance.now()/430 + o.x) * 0.028 * ruhe;
+  const tiefer = (o.sitzt ? 0.4 : 0) - wippe;
   const daten = new Float32Array(netz.length/7*6);
   for(let i = 0, j = 0; i < netz.length; i += 7, j += 6){
     let x = netz[i], y = netz[i+1], z = netz[i+2];
@@ -5484,12 +5487,14 @@ function artFarben(emoji){
   }
   const misch = (f, k) => [klemm(Math.round(f[0]*k),0,255), klemm(Math.round(f[1]*k),0,255), klemm(Math.round(f[2]*k),0,255)];
   const p = {
-    haupt:  [haupt[0], haupt[1], haupt[2]],
-    dunkel: misch(haupt, 0.62),
-    hell:   misch(haupt, 1.35),
-    akzent: [zweite[0], zweite[1], zweite[2]],
-    bauch:  misch(haupt, 1.18),
-    auge:   [22, 20, 26]
+    haupt:   [haupt[0], haupt[1], haupt[2]],
+    dunkel:  misch(haupt, 0.62),
+    hell:    misch(haupt, 1.38),
+    akzent:  [zweite[0], zweite[1], zweite[2]],
+    bauch:   misch(haupt, 1.22),
+    auge:    [18, 16, 24],
+    weiss:   [248, 250, 252],
+    akzentD: misch(zweite, 0.66)
   };
   artFarbenSpeicher[emoji] = p;
   return p;
@@ -5502,7 +5507,7 @@ function artTextur(gl, welt, id){
   const emoji = (v && v.emoji) || "❓";
   if(artTexturen[emoji]) return artTexturen[emoji];
   const p = artFarben(emoji);
-  const reihe = [p.haupt, p.dunkel, p.hell, p.akzent, p.bauch, p.auge];
+  const reihe = [p.haupt, p.dunkel, p.hell, p.akzent, p.bauch, p.auge, p.weiss, p.akzentD];
   const c = document.createElement("canvas");
   c.width = 4; c.height = 2;
   const g = c.getContext("2d");
@@ -5541,51 +5546,102 @@ function artKasten(aus, x0, y0, z0, w, h, d, farbe, teil, bauchFarbe){
    Ursprung liegt zwischen den Füßen, vorne ist -z.
    Teil 0 steht still, 1 und 2 sind die Beinpaare über Kreuz,
    3 und 4 die Flügel, die auf und ab schlagen.                        */
+/* Farben: 0 Haupt, 1 Dunkel, 2 Hell, 3 Akzent, 4 Bauch, 5 Auge, 6 Weiß, 7 Akzent dunkel.
+   Die Figuren sind bewusst kopflastig gebaut - großer Kopf, kleiner
+   Körper, große Augen. Das ist der Kniff, der aus einem Klotz eine
+   Kreatur macht. Augen stehen ein Stück vor dem Gesicht, sonst
+   verschwinden sie in der Fläche.                                    */
+function augen(k, y, z, breit, abstand){
+  const b = breit || 3;
+  k(-abstand-b, y, z, b, b, 0.8, 6, 0);            // Weiß links
+  k(abstand,    y, z, b, b, 0.8, 6, 0);            // Weiß rechts
+  k(-abstand-b+0.6, y+0.5, z-0.5, b-1.2, b-1.2, 0.8, 5, 0);   // Pupille
+  k(abstand+0.6,    y+0.5, z-0.5, b-1.2, b-1.2, 0.8, 5, 0);
+}
 const KASTEN_PLAENE = {
+  // Fuchs- und wolfsartig: kleiner Körper, großer Kopf, buschiger Schwanz
   vierbeiner: function(k){
-    k(-5, 9, -8, 10, 8, 16, 0, 0, 4);                 // Rumpf
-    k(-4, 13, -14, 8, 8, 7, 0, 0);                    // Kopf
-    k(-2, 13, -16, 4, 4, 3, 3, 0);                    // Schnauze
-    k(-5, 21, -12, 2, 3, 2, 3, 0); k(3, 21, -12, 2, 3, 2, 3, 0);   // Ohren
-    k(-3, 16, -15.2, 2, 2, 1, 5, 0); k(1, 16, -15.2, 2, 2, 1, 5, 0); // Augen
-    k(-5, 0, -7, 3, 9, 3, 1, 1); k(2, 0, 3, 3, 9, 3, 1, 1);
-    k(2, 0, -7, 3, 9, 3, 1, 2); k(-5, 0, 3, 3, 9, 3, 1, 2);
+    k(-4.5, 6, -4, 9, 8, 11, 0, 0, 4);               // Rumpf
+    k(-5.5, 12, -12, 11, 10, 10, 0, 0, 4);           // Kopf, groß
+    k(-2.5, 12.5, -14.4, 5, 4.5, 3, 4, 0);           // Schnauze
+    k(-1.2, 15, -15.4, 2.4, 2, 1.2, 1, 0);           // Nase
+    augen(k, 17, -12.9, 3.2, 0.9);
+    k(-5.2, 20.5, -9, 3.2, 5, 2.4, 3, 0);            // Ohr links
+    k(2, 20.5, -9, 3.2, 5, 2.4, 3, 0);               // Ohr rechts
+    k(-4.4, 21.8, -8.6, 1.6, 2.6, 1.6, 7, 0);        // Ohrinneres
+    k(2.8, 21.8, -8.6, 1.6, 2.6, 1.6, 7, 0);
+    k(-2.5, 7, 6.6, 5, 5.5, 6, 3, 0);                // Schwanz
+    k(-2, 7.5, 11.6, 4, 4.5, 2.4, 2, 0);             // Schwanzspitze
+    k(-4.2, 0, -3, 3.2, 6.4, 3.2, 1, 1); k(1, 0, 4, 3.2, 6.4, 3.2, 1, 1);
+    k(1, 0, -3, 3.2, 6.4, 3.2, 1, 2);   k(-4.2, 0, 4, 3.2, 6.4, 3.2, 1, 2);
   },
+  // Aufrecht, mit Armen und einem kleinen Schopf
   zweibeiner: function(k){
-    k(-4, 10, -3, 8, 11, 6, 0, 0, 4);                 // Rumpf
-    k(-4, 21, -4, 8, 8, 8, 0, 0);                     // Kopf
-    k(-2.6, 24, -4.6, 2, 2, 1, 5, 0); k(0.6, 24, -4.6, 2, 2, 1, 5, 0);
-    k(-7, 11, -2.5, 3, 10, 3, 3, 1); k(4, 11, -2.5, 3, 10, 3, 3, 2);   // Arme
-    k(-4, 0, -2, 4, 10, 4, 1, 1); k(0, 0, -2, 4, 10, 4, 1, 2);         // Beine
+    k(-4, 8, -2.5, 8, 9, 5.5, 0, 0, 4);              // Rumpf
+    k(-5.5, 17, -5, 11, 10.5, 10, 0, 0, 4);          // Kopf
+    k(-2.4, 17.5, -6.6, 4.8, 4, 2, 4, 0);            // Kinn
+    augen(k, 22, -5.9, 3.2, 0.9);
+    k(-1.6, 27.2, -3.4, 3.2, 3.2, 3.2, 3, 0);        // Schopf
+    k(-0.8, 30, -2.8, 1.6, 2.4, 1.6, 2, 0);
+    k(-6.8, 9, -1.6, 2.8, 8.5, 2.8, 0, 1);           // Arme
+    k(4, 9, -1.6, 2.8, 8.5, 2.8, 0, 2);
+    k(-6.8, 7.4, -1.6, 2.8, 2.2, 2.8, 3, 1);         // Hände
+    k(4, 7.4, -1.6, 2.8, 2.2, 2.8, 3, 2);
+    k(-3.6, 0, -1.8, 3.4, 8, 3.4, 1, 1);             // Beine
+    k(0.2, 0, -1.8, 3.4, 8, 3.4, 1, 2);
+    k(-3.8, 0, -3.8, 3.8, 1.6, 2.2, 3, 1);           // Füße
+    k(0, 0, -3.8, 3.8, 1.6, 2.2, 3, 2);
   },
+  // Runder Klumpen mit hellem Bauch, Stummelfüßen und einer Antenne
   klumpen: function(k){
-    k(-7, 0, -7, 14, 13, 14, 0, 0, 4);
-    k(-5, 13, -5, 10, 4, 10, 2, 0);
-    k(-4, 7, -7.6, 3, 3, 1, 5, 0); k(1, 7, -7.6, 3, 3, 1, 5, 0);
-    k(-6, 0, -9, 4, 3, 3, 1, 1); k(2, 0, -9, 4, 3, 3, 1, 2);
+    k(-6.5, 1.4, -6.5, 13, 12, 13, 0, 0, 4);         // Körper
+    k(-5.2, 12.6, -5.2, 10.4, 3.4, 10.4, 2, 0);      // Kuppe
+    k(-4.4, 2.4, -7.2, 8.8, 7, 1.2, 4, 0);           // heller Bauch
+    augen(k, 8, -7.6, 3.6, 1.2);
+    k(-1.6, 6, -7.8, 3.2, 1.4, 1, 7, 0);             // Mund
+    k(-0.8, 15.6, -0.8, 1.6, 3.4, 1.6, 3, 0);        // Antenne
+    k(-1.6, 18.6, -1.6, 3.2, 3.2, 3.2, 3, 0);
+    k(-5.4, 0, -4.6, 4, 2.4, 4.6, 1, 1);             // Stummelfüße
+    k(1.4, 0, -4.6, 4, 2.4, 4.6, 1, 2);
   },
+  // Kleiner Körper, großer Kopf, weite Flügel, Schwanzfedern
   flieger: function(k){
-    k(-4, 7, -6, 8, 8, 12, 0, 0, 4);                  // Rumpf
-    k(-3.5, 14, -10, 7, 7, 7, 0, 0);                  // Kopf
-    k(-2.4, 17, -10.6, 2, 2, 1, 5, 0); k(0.4, 17, -10.6, 2, 2, 1, 5, 0);
-    k(-15, 12, -4, 11, 1.4, 9, 2, 3); k(4, 12, -4, 11, 1.4, 9, 2, 4);  // Flügel
-    k(-3, 0, -3, 2.5, 7, 2.5, 1, 1); k(0.5, 0, -3, 2.5, 7, 2.5, 1, 2);
+    k(-3.6, 6, -4.6, 7.2, 7.5, 9.5, 0, 0, 4);        // Rumpf
+    k(-5, 12.5, -11, 10, 9.5, 9, 0, 0, 4);           // Kopf
+    k(-1.8, 13.6, -13.2, 3.6, 3, 2.4, 3, 0);         // Schnabel
+    augen(k, 17.2, -11.8, 3.2, 0.9);
+    k(-15.5, 11.5, -3.5, 12, 1.6, 9.5, 3, 3);        // Flügel
+    k(3.5, 11.5, -3.5, 12, 1.6, 9.5, 3, 4);
+    k(-13, 11.9, -1, 8, 1.2, 5.5, 7, 3);             // Flügelspitzen
+    k(5, 11.9, -1, 8, 1.2, 5.5, 7, 4);
+    k(-2.8, 6.4, 4.9, 5.6, 4.4, 5, 3, 0);            // Schwanzfedern
+    k(-2, 0, -2.4, 2.2, 6.2, 2.2, 1, 1);
+    k(-0.2, 0, -2.4, 2.2, 6.2, 2.2, 1, 2);
   },
+  // Flach, sechs Beine, Fühler
   kriecher: function(k){
-    k(-6, 4, -6, 12, 6, 13, 0, 0, 4);                 // flacher Leib
-    k(-4, 4, -12, 8, 6, 6, 0, 0);                     // Kopf
-    k(-3, 7, -12.6, 2, 2, 1, 5, 0); k(1, 7, -12.6, 2, 2, 1, 5, 0);
+    k(-5.5, 3.4, -4.5, 11, 6.5, 11, 0, 0, 4);        // Leib
+    k(-4.4, 3.4, -11, 8.8, 7, 6.5, 0, 0, 4);         // Kopf
+    k(-3.4, 8.2, -3, 6.8, 1.6, 8, 3, 0);             // Rückenzeichnung
+    augen(k, 7, -11.5, 3, 0.8);
+    k(-3.2, 10.2, -9.6, 1.2, 3.4, 1.2, 7, 0);        // Fühler
+    k(2, 10.2, -9.6, 1.2, 3.4, 1.2, 7, 0);
     for(let i = 0; i < 3; i++){
-      const z = -5 + i*5;
-      k(-9, 0, z, 3, 5, 2, 1, i % 2 ? 1 : 2);
-      k(6, 0, z, 3, 5, 2, 1, i % 2 ? 2 : 1);
+      const z = -4.5 + i*4.4;
+      k(-8.4, 0, z, 3.2, 4, 2.2, 1, i % 2 ? 1 : 2);
+      k(5.2, 0, z, 3.2, 4, 2.2, 1, i % 2 ? 2 : 1);
     }
   },
+  // Aufgerichteter Kopf, Körper in Ringen nach hinten
   schlange: function(k){
-    k(-4, 2, -12, 8, 7, 8, 0, 0);                     // Kopf
-    k(-2.6, 5, -12.6, 2, 2, 1, 5, 0); k(0.6, 5, -12.6, 2, 2, 1, 5, 0);
-    const teile = [[7, -4], [6, 1], [5, 5], [4, 8]];
-    teile.forEach(([b, z], i) => k(-b/2, 1.5, z, b, b, i === 3 ? 4 : 5, 0, i % 2 ? 1 : 2, 4));
+    k(-4.6, 7, -10.5, 9.2, 8, 9, 0, 0, 4);           // Kopf
+    k(-2, 7.4, -12.2, 4, 3.4, 2, 4, 0);              // Schnauze
+    augen(k, 11.4, -11.2, 3, 0.9);
+    k(-1.4, 7.6, -12.8, 2.8, 1.2, 1, 3, 0);          // Zunge
+    k(-3.4, 2, -6, 6.8, 7, 6, 0, 0, 4);              // Hals
+    const ringe = [[6.6, -1, 5.4], [6, 3.6, 4.8], [5.2, 7.6, 4.2], [4.2, 11.2, 3.4]];
+    ringe.forEach(([b, z, h], i) =>
+      k(-b/2, 1.4, z, b, h, i === 3 ? 4.4 : 4.6, i % 2 ? 3 : 0, i % 2 ? 1 : 2, 4));
   }
 };
 const artNetze = {};
@@ -5609,7 +5665,7 @@ function artSeitenbild(welt, id){
   const schluessel = artBauplan(welt, id) + "|" + ((v && v.emoji) || "?");
   if(artBilder[schluessel]) return artBilder[schluessel];
   const p = artFarben((v && v.emoji) || "❓");
-  const reihe = [p.haupt, p.dunkel, p.hell, p.akzent, p.bauch, p.auge];
+  const reihe = [p.haupt, p.dunkel, p.hell, p.akzent, p.bauch, p.auge, p.weiss, p.akzentD];
   const kaesten = [];
   KASTEN_PLAENE[artBauplan(welt, id)]((x, y, z, w, h, d, farbe) =>
     kaesten.push({x:x, y:y, z:z, w:w, h:h, d:d, f:farbe}));
