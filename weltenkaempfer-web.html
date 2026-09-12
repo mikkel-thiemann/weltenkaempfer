@@ -161,6 +161,13 @@
     border-radius:9px; padding:9px 11px; color:var(--txt); font-family:monospace; font-size:11px;
     resize:vertical}
   #uebertragung textarea:focus{outline:none; border-color:var(--violett)}
+  .starterfeld{display:inline-block; background:rgba(255,255,255,.05); border:2px solid var(--rahmen);
+               border-radius:12px; padding:12px 10px 9px; margin:5px; width:118px; cursor:pointer;
+               transition:border-color .12s, background .12s}
+  .starterfeld:hover{border-color:var(--xp); background:rgba(126,231,135,.12)}
+  .starterfeld .zeichen{font-size:38px; line-height:1.1}
+  .starterfeld b{display:block; font-size:13px; margin-top:5px}
+  .starterfeld span{display:block; font-size:11px; color:#93a1b8; margin-top:3px}
   .addon{display:flex; gap:11px; align-items:flex-start; text-align:left;
          background:rgba(255,255,255,.05); border:1px solid var(--rahmen);
          border-radius:12px; padding:11px 13px; margin-bottom:8px}
@@ -280,7 +287,7 @@
     <div style="font-size:52px">⛏️</div>
     <h2>WELTENKÄMPFER · BLOCKWELT</h2>
     <p class="c-dim" style="margin-top:0">Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.</p>
-    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 28 · Spielart wählen, Sammlerwelt mit Biomen</p>
+    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 29 · Sammler: Starter, Stufen, Tierkämpfe</p>
     <p style="margin:0 0 4px">Willkommen, <b id="grussName" class="c-gold">Held</b>
       <button onclick="nameAendern()" style="padding:4px 10px; font-size:12px; margin-left:8px">✏️ Name &amp; Skin</button>
       <button onclick="uebertragZeigen()" style="padding:4px 10px; font-size:12px; margin-left:4px">💾 Spielstand übertragen</button></p>
@@ -347,9 +354,9 @@
     <h3 id="kampfort">Kampf</h3>
     <div class="arena">
       <div class="kaempfer">
-        <img class="figur held" id="figurP" alt="Held"><b id="nameP">Held</b>
+        <img class="figur held" id="figurP" alt="Held"><span class="figur hidden" id="figurPT"></span><b id="nameP">Held</b>
         <div class="leiste"><i class="fhp" id="klhp"></i><span id="kthp"></span></div>
-        <div class="leiste"><i class="fmp" id="klmp"></i><span id="ktmp"></span></div>
+        <div class="leiste" id="zeileMp"><i class="fmp" id="klmp"></i><span id="ktmp"></span></div>
       </div>
       <div style="font-size:20px; color:#93a1b8">⚡</div>
       <div class="kaempfer">
@@ -360,8 +367,9 @@
     <div id="kampflog"></div>
     <div class="reihe" id="kampfknoepfe">
       <button onclick="aktion('angriff')">🗡️ Angriff</button>
-      <button onclick="aktion('feuer')">🔥 Feuerball <small>8 MP</small></button>
-      <button onclick="aktion('heil')">💚 Heilung <small>10 MP</small></button>
+      <button id="knopfFeuer" onclick="aktion('feuer')">🔥 Feuerball <small>8 MP</small></button>
+      <button id="knopfHeil" onclick="aktion('heil')">💚 Heilung <small>10 MP</small></button>
+      <button id="knopfWechsel" class="hidden" onclick="aktion('wechsel')">🔄 Wechseln</button>
       <button onclick="aktion('trank')">🧪 Trank <span id="ktrank">0</span></button>
       <button id="knopfFangen" class="hidden" onclick="aktion('fangen')">🔴 Fangball</button>
       <button id="knopfBegleiter" class="hidden" onclick="aktion('begleiter')">🐾 Begleiter</button>
@@ -439,6 +447,16 @@
     <div class="reihe" style="margin-top:10px">
       <button class="primary" onclick="schliesse('uebertragung')">Weiter</button>
     </div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="starter">
+  <div class="fenster" style="text-align:center">
+    <div style="font-size:48px">🥚</div>
+    <h2>Dein erstes Tier</h2>
+    <p class="c-dim" style="margin-top:0">Such dir einen Gefährten aus. Er kämpft von jetzt an für
+      dich, wächst mit jedem Sieg und bleibt bei dir, wohin du auch gehst.</p>
+    <div id="starterListe"></div>
   </div>
 </div>
 
@@ -541,7 +559,7 @@ const EN = {
   "Eisschwert": "Ice Sword",
   "Eisspitzhacke": "Ice Pickaxe",
   "Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.": "Thirteen open block worlds. Build, dig, fight – and find the portal.",
-  "Ausgabe 28 · Spielart wählen, Sammlerwelt mit Biomen": "Build 28 · Pick a game mode, collector world with biomes",
+  "Ausgabe 29 · Sammler: Starter, Stufen, Tierkämpfe": "Build 29 · Collector: starter, levels, creature battles",
   "Endlose Dünen. Und die Kakteen hier stehen nicht nur herum – sie laufen.": "Endless dunes. And the cacti here don't just stand around – they walk.",
   "Erde": "Dirt",
   "Erlege 14 Schattenriesen": "Slay 14 shadow giants",
@@ -1055,7 +1073,21 @@ const EN = {
   "Gib ihr einen Namen und such dir aus, wie du in dieser Welt spielen willst.": "Give it a name and pick how you want to play in this world.",
   "Spielart": "Game mode",
   "Such dir eine aus. Sie gilt für diese Welt – später lässt sie sich nicht mehr umstellen.": "Pick one. It applies to this world – it cannot be changed later.",
-  "Wählen": "Choose"
+  "Wählen": "Choose",
+  " für <b>": " for <b>",
+  " ist jetzt Stufe ": " is now level ",
+  " ist jetzt dein Gefährte!": " is your companion now!",
+  " kann nicht mehr.": " cannot go on.",
+  " trifft ": " hits ",
+  " trifft für <b>": " hits for <b>",
+  " tritt an!": " steps up!",
+  "Alle Tiere erschöpft": "All animals worn out",
+  "Alle deine Tiere sind erschöpft – ruh dich am Lagerfeuer aus.": "All your animals are worn out – rest at the campfire.",
+  "Dein erstes Tier": "Your first animal",
+  "Deine Tiere brauchen eine Pause. Du bist zurück am Startpunkt, und alle sind wieder munter.": "Your animals need a rest. You are back at the starting point and they are all fresh again.",
+  "Kein anderes Tier kann kämpfen.": "No other animal can fight.",
+  "Such dir einen Gefährten aus. Er kämpft von jetzt an für dich, wächst mit jedem Sieg und bleibt bei dir, wohin du auch gehst.": "Pick a companion. From now on it fights for you, grows with every win and stays with you wherever you go.",
+  "🔄 Wechseln": "🔄 Switch"
 };
 function ue(s){
   if(sprache !== "en" || typeof s !== "string") return s;
@@ -1628,7 +1660,8 @@ let s;
 function neuerStand(){
   return {id:null, name:ue("Welt"), saat:0, level:1, xp:0, xpNext:30, hp:70, maxHp:70, mp:25, maxMp:25, atk:9, def:3, mag:7,
           gold:30, traenke:3, welt:0, freigeschaltet:0, waffe:0, ruestung:0, hacke:0, axt:0, kills:{}, sachen:{}, gesammelt:{},
-          fertig:{}, gewonnen:false, aenderungen:{}, inventar:{}, begleiter:[], addons:[], version:2};
+          fertig:{}, gewonnen:false, aenderungen:{}, inventar:{}, begleiter:[], addons:[],
+          breite:WELT_BREIT, hoch:WELT_HOCH, version:2};
 }
 /* ---------- Mehrere Spielwelten nebeneinander ----------
    "wkListe"        = Übersicht aller Welten
@@ -1947,15 +1980,33 @@ const gesDef = () => s.def + RUESTUNGEN[s.ruestung].def;
 /* =====================================================================
    WELTDATEN
    ===================================================================== */
-const WX = 192, WY = 900, WZ = 192, CH = 16;   // 900 Blöcke Bauhöhe
+/* Die Weltgröße gehört seit der Sammler-Spielart zur einzelnen Welt und
+   steht im Spielstand. Alte Welten haben keinen Eintrag und bleiben
+   darum bei 192 × 192 mit 900 Blöcken Bauhöhe - ihre gespeicherten
+   Bauten hängen an der Breite, die dürfen wir nie ändern.             */
+const WELT_BREIT = 192, WELT_HOCH = 900;
+const SAMMLER_BREIT = 432, SAMMLER_HOCH = 256;   // fünfmal so viel Fläche
+let WX = WELT_BREIT, WY = WELT_HOCH, WZ = WELT_BREIT;
+const CH = 16;
 /* Die Landschaft wurde früher von der damaligen Welthöhe (56) begrenzt. Diese
    Grenzen bleiben genau so stehen: sonst entstünden alte Welten anders und die
    Bauten der Spieler stünden plötzlich in der Luft. Nur nach oben ist jetzt
    mehr Platz zum Bauen.                                                      */
 const GELAENDE = 56;
-const CX = WX/CH, CZ = WZ/CH;
+let CX = WX/CH, CZ = WZ/CH;
 let bloecke = new Uint8Array(WX*WY*WZ);
 let hoehen  = new Int16Array(WX*WZ);
+/* Umstellen auf eine andere Weltgröße: alles, was an der Breite hängt,
+   wird neu angelegt. Die Bauhöhe darf kleiner sein - der Platz oben ist
+   ohnehin leer, und die gespeicherten Bauten zählen nicht nach Höhe.  */
+function weltGroesseSetzen(breite, hoch){
+  if(WX === breite && WY === hoch && bloecke.length === breite*hoch*breite) return;
+  WX = WZ = breite; WY = hoch;
+  CX = CZ = WX/CH;
+  bloecke = new Uint8Array(WX*WY*WZ);
+  hoehen  = new Int16Array(WX*WZ);
+  if(typeof kartenBild !== "undefined"){ kartenBild.width = WX; kartenBild.height = WZ; }
+}
 let hoechsteEbene = 0;          // höchster nicht leerer Block +1, für die ganze Welt
 const idx = (x,y,z) => (y*WZ + z)*WX + x;
 function block(x,y,z){
@@ -2058,6 +2109,7 @@ function biomVon(x, z, grund){
 
 function weltErzeugen(){
   imAufbau = true;
+  weltGroesseSetzen(s.breite || WELT_BREIT, s.hoch || WELT_HOCH);
   const w = WELTEN[s.welt];
   // In geschlossenen Höhlenwelten bleibt alles beim Alten
   biomeAn = addonAn("sammler") && !w.decke;
@@ -2065,7 +2117,7 @@ function weltErzeugen(){
   if(biomeAn) biomPunkteBauen(zufall(biomSaat));
   const saat = (w.saat + (s.saat||0)*7919) | 0;      // jede Spielwelt sieht anders aus
   const wuerfel = zufall(saat + 4711);               // fester Zufall: Orte bleiben, wo sie sind
-  bloecke = new Uint8Array(WX*WY*WZ);
+  bloecke.fill(0);
   hoechsteEbene = 0;
 
   for(let z=0; z<WZ; z++){
@@ -3185,9 +3237,19 @@ function gegnerSetzen(){
         heimat = nr;
       }
     }
+    /* Im Sammler-Modus hat jedes wilde Tier eine Stufe, die sich an deinem
+       Team orientiert. Sonst wäre nach drei Stufen alles ein Spaziergang. */
+    let hp = Math.round(v.hp*f), atk = v.atk, rue = v.def, stufe = 0;
+    if(addonAn("sammler")){
+      stufe = klemm(Math.round(wildStufe() + rnd(-2, 2)), 2, 60);
+      const sf = 0.40 + stufe*0.12;
+      hp  = Math.max(14, Math.round(v.hp*sf*f));
+      atk = Math.max(4,  Math.round(v.atk*sf));
+      rue = Math.max(1,  Math.round(v.def*sf));
+    }
     wesen.push({art:"gegner", id:zeigt.id, name:zeigt.name, emoji:zeigt.emoji, bild:zeigt.bild,
-                heimat:heimat, x:x+0.5, y:y, z:z+0.5,
-                hp:Math.round(v.hp*f), maxHp:Math.round(v.hp*f), atk:v.atk, def:v.def,
+                heimat:heimat, stufe:stufe, x:x+0.5, y:y, z:z+0.5,
+                hp:hp, maxHp:hp, atk:atk, def:rue,
                 xp:v.xp, gold:v.gold, tempo:v.tempo, gross:1.5, ruhe:0});
     return;
   }
@@ -4422,7 +4484,9 @@ function hudZeichnen(){
     + (offen === 1 ? ue("Aufgabe") : offen + ue(" Aufgaben")) + ue(" darüber erledigt ") + (offen === 1 ? ue("ist") : ue("sind"))
     + "</span></span>";
   h += "</div>";
-  $("questbox").innerHTML = h;
+  // In der Sammler-Spielart gibt es keine Quests - die Kiste bleibt leer
+  $("questbox").classList.toggle("hidden", addonAn("sammler"));
+  $("questbox").innerHTML = addonAn("sammler") ? "" : h;
 }
 function gurtBauen(){
   const g = $("gurt");
@@ -4460,10 +4524,11 @@ function meldungenAufraeumen(){
 }
 function hinweisPruefen(){
   let t = "";
+  const ohneQuests = addonAn("sammler");
   if(werkbankNah()) t = ue("[E] Werkbank – 3×3 herstellen");
   else if(naheOrt(lagerOrt, 4.5)) t = ue("[E] Lagerfeuer – rasten & handeln");
   else if(naheOrt(portalOrt, 4.5)){
-    if(!WELTEN[s.welt].quests.every(q => s.fertig[q.id])) t = ue("🔒 Portal verschlossen – erst alle Quests");
+    if(!ohneQuests && !WELTEN[s.welt].quests.every(q => s.fertig[q.id])) t = ue("🔒 Portal verschlossen – erst alle Quests");
     else if(s.welt + 1 < WELTEN.length && s.welt + 1 > s.freigeschaltet) t = ue("[E] Portal nach ") + WELTEN[s.welt+1].name;
     else t = ue("[E] Portal – Welt wechseln");
   }
@@ -4508,7 +4573,7 @@ function benutzen(){
   if(werkbankNah()){ tafelZeigen("tasche"); return; }
   if(naheOrt(lagerOrt, 4.5)){ ladenZeichnen(); oeffne("lager"); return; }
   if(naheOrt(portalOrt, 4.5)){
-    if(WELTEN[s.welt].quests.every(q => s.fertig[q.id])) portalNehmen();
+    if(addonAn("sammler") || WELTEN[s.welt].quests.every(q => s.fertig[q.id])) portalNehmen();
     else meldung(ue("Das Portal ist verschlossen. Erledige zuerst alle Quests."), "c-bad");
     return;
   }
@@ -5035,6 +5100,7 @@ function kaufe(was, preis){
 function rasten(){
   if(s.gold < 10) return;
   s.gold -= 10; s.hp = s.maxHp; s.mp = s.maxMp;
+  tiereHeilen();                          // auch deine Tiere sind wieder munter
   meldung(ue("Am Feuer gerastet. Leben und Magie voll. 🔥"), "c-good");
   speichern(); ladenZeichnen(); hudZeichnen();
 }
@@ -5089,6 +5155,152 @@ function addonListeZeichnen(){
 }
 
 /* =====================================================================
+   SAMMLER: KAEMPFE ZWISCHEN KREATUREN
+   In dieser Spielart schlaegst du nicht selbst zu. Dein Tier tritt an,
+   hat eigene Leben und eine eigene Stufe, und waechst mit jedem Sieg.
+   Die Werte kommen aus dem Monster, aus dem das Tier stammt, mal einem
+   Faktor, der an der Stufe haengt - so ist ein Wolf auf Stufe 20 stark,
+   bleibt aber ein Wolf.
+   ===================================================================== */
+const START_STUFE = 5;
+let meinTier = null;                   // der Eintrag aus s.begleiter, der kaempft
+
+function tierStamm(b){
+  const w = WELTEN[b.welt];
+  return (w && w.gegner.find(g => g.id === b.id)) || null;
+}
+function tierWerte(b){
+  const v = tierStamm(b);
+  if(!v) return null;
+  const stufe = b.stufe || START_STUFE;
+  const f = 0.40 + stufe*0.12;
+  return {
+    name: b.name || v.name, emoji: v.emoji, bild: v.bild, stufe: stufe,
+    maxHp: Math.max(14, Math.round(v.hp*f)),
+    atk:   Math.max(4,  Math.round(v.atk*f)),
+    rue:   Math.max(1,  Math.round(v.def*f))
+  };
+}
+/* Jeder Eintrag braucht Stufe und Leben - auch die, die vor dieser
+   Spielart gefangen wurden.                                          */
+function tiereOrdnen(){
+  for(const b of begleiter()){
+    if(!b.stufe) b.stufe = START_STUFE;
+    const w = tierWerte(b);
+    if(!w) continue;
+    if(b.hp === undefined || b.hp > w.maxHp) b.hp = w.maxHp;
+  }
+}
+/* Ungefähr so stark wie dein bestes Tier - ein bisschen Streuung gibt
+   es beim einzelnen Monster.                                          */
+function wildStufe(){
+  let hoechste = 0;
+  for(const b of begleiter()) hoechste = Math.max(hoechste, b.stufe || START_STUFE);
+  return hoechste || START_STUFE;
+}
+function tierBereit(){
+  tiereOrdnen();
+  for(const b of begleiter()) if(b.hp > 0 && tierWerte(b)) return b;
+  return null;
+}
+function tiereHeilen(){
+  for(const b of begleiter()){
+    const w = tierWerte(b);
+    if(w) b.hp = w.maxHp;
+  }
+  speichern();
+}
+function tierAnzeigen(){
+  const w = meinTier && tierWerte(meinTier);
+  const bild = $("figurP"), tier = $("figurPT");
+  if(!w){
+    bild.classList.remove("hidden"); tier.classList.add("hidden");
+    $("zeileMp").classList.remove("hidden");
+    return;
+  }
+  bild.classList.add("hidden");
+  tier.classList.remove("hidden");
+  $("zeileMp").classList.add("hidden");
+  if(w.bild){
+    tier.textContent = "";
+    tier.style.width = "88px"; tier.style.height = "92px";
+    tier.style.display = "block"; tier.style.margin = "0 auto 4px";
+    tier.style.backgroundSize = "88px 92px";
+    tier.style.backgroundPosition = "center";
+    tier.style.backgroundRepeat = "no-repeat";
+    tier.style.imageRendering = "pixelated";
+    tier.style.backgroundImage = "url(" + mobFigurBild(w.bild, u => {
+      tier.style.backgroundImage = "url(" + u + ")"; }) + ")";
+  } else {
+    tier.style.backgroundImage = ""; tier.style.width = ""; tier.style.height = "";
+    tier.style.display = ""; tier.style.margin = "";
+    tier.style.fontSize = "58px";
+    tier.textContent = w.emoji;
+  }
+  $("nameP").textContent = w.name + " · Lv " + w.stufe;
+}
+// Nach einem Sieg waechst das Tier
+/* Drei Tiere zur Wahl, aus den Biomen der Sammlerwelt. Wer eines
+   anklickt, hat seinen ersten Gefaehrten.                            */
+const STARTER = [["w0", "wolf"], ["w5", "affe"], ["w7", "frostwolf"]];
+function starterMoeglich(){
+  const aus = [];
+  for(const nr of BIOM_WELTEN){
+    const w = WELTEN[nr];
+    if(w && w.gegner && w.gegner.length) aus.push({welt:nr, g:w.gegner[0]});
+    if(aus.length >= 3) break;
+  }
+  return aus;
+}
+function starterZeigen(){
+  const kasten = $("starterListe");
+  kasten.innerHTML = "";
+  for(const e of starterMoeglich()){
+    const d = document.createElement("div");
+    d.className = "starterfeld";
+    const z = document.createElement("div"); z.className = "zeichen"; z.textContent = e.g.emoji;
+    const b = document.createElement("b"); b.textContent = e.g.name;
+    const sp = document.createElement("span"); sp.textContent = WELTEN[e.welt].name;
+    d.appendChild(z); d.appendChild(b); d.appendChild(sp);
+    d.onclick = () => starterNehmen(e.welt, e.g.id);
+    kasten.appendChild(d);
+  }
+  oeffne("starter");
+}
+function starterNehmen(welt, id){
+  const l = begleiter();
+  l.push({welt:welt, id:id, stufe:START_STUFE});
+  tiereOrdnen();
+  s.starter = true;
+  speichern();
+  schliesse("starter");
+  tonZahm();
+  const w = tierWerte(l[l.length-1]);
+  meldung("🥚 " + w.name + ue(" ist jetzt dein Gefährte!"), "c-gold");
+  begleiterSetzen();
+}
+function tierStaerken(g){
+  if(!meinTier) return;
+  const vorher = meinTier.stufe || START_STUFE;
+  meinTier.stufe = Math.min(60, vorher + 1);
+  const w = tierWerte(meinTier);
+  meinTier.hp = Math.min(w.maxHp, meinTier.hp + Math.round(w.maxHp*0.2));
+  kampflog("⭐ " + w.name + ue(" ist jetzt Stufe ") + meinTier.stufe + ".", "c-gold");
+  tonStufe();
+}
+// Auf das naechste gesunde Tier wechseln
+function tierWechseln(){
+  const liste = begleiter();
+  if(!liste.length) return false;
+  const start = liste.indexOf(meinTier);
+  for(let i = 1; i <= liste.length; i++){
+    const b = liste[(start + i) % liste.length];
+    if(b.hp > 0 && tierWerte(b)){ meinTier = b; tierAnzeigen(); return true; }
+  }
+  return false;
+}
+
+/* =====================================================================
    KAMPF
    ===================================================================== */
 let gegner = null, spielerDran = true;
@@ -5117,7 +5329,9 @@ function gefangen(g){
     return;
   }
   tonZahm();
-  l.push({welt: g.heimat === undefined ? s.welt : g.heimat, id: g.id});
+  l.push({welt: g.heimat === undefined ? s.welt : g.heimat, id: g.id,
+          stufe: g.stufe || (START_STUFE + rnd(0, 3))});
+  tiereOrdnen();
   g.zahm = true; g.nr = l.length - 1; g.hp = g.maxHp; g.ruhe = 0;
   kampflog("🔴 " + g.name + ue(" ist gefangen!"), "c-good");
   meldung("🔴 " + g.name + ue(" ist gefangen!"), "c-gold");
@@ -5129,10 +5343,18 @@ function gefangen(g){
 
 function kampfStarten(o){
   if(modus !== "welt") return;
+  // In der Sammler-Spielart tritt dein Tier an, nicht du selbst
+  meinTier = addonAn("sammler") ? tierBereit() : null;
+  if(addonAn("sammler") && !meinTier && begleiter().length){
+    meldung(ue("Alle deine Tiere sind erschöpft – ruh dich am Lagerfeuer aus."), "c-bad");
+    o.ruhe = 6;
+    return;
+  }
   gegner = o; spielerDran = true;
   $("kampflog").innerHTML = "";
   $("kampfort").textContent = WELTEN[s.welt].name + ue(" · Kampf");
   $("figurP").src = heldBild();
+  tierAnzeigen();
   const gf = $("figurG");
   if(o.bild){
     // Die ganze Figur von der Seite, aus denselben Stücken wie das Modell
@@ -5163,8 +5385,13 @@ function kampfStarten(o){
     kb.classList.toggle("hidden", !(sammler && mit));
     if(mit) kb.textContent = "🐾 " + tierName(mit);
   }
-  $("nameG").textContent = o.name + (o.boss ? " 👑" : "");
-  $("nameP").textContent = spielerName + ue(" (Stufe ") + s.level + ")";
+  $("nameG").textContent = o.name + (o.stufe ? " · Lv " + o.stufe : "") + (o.boss ? " 👑" : "");
+  if(!meinTier) $("nameP").textContent = spielerName + ue(" (Stufe ") + s.level + ")";
+  // Ohne eigenes Tier bleiben Zauber und Tränke, mit Tier kämpft es allein
+  for(const [id, zeigen] of [["knopfFeuer", !meinTier], ["knopfHeil", !meinTier],
+                             ["knopfWechsel", !!meinTier && begleiter().length > 1]]){
+    const k = $(id); if(k) k.classList.toggle("hidden", !zeigen);
+  }
   kampflog((o.boss ? "⚠️ " : "⚔️ ") + o.name + ue(" stellt sich dir!"), o.boss ? "c-bad" : "");
   knoepfe(false);
   oeffne("kampf");
@@ -5172,8 +5399,9 @@ function kampfStarten(o){
   kampfZeichnen();
 }
 function kampfZeichnen(){
-  balken("klhp","kthp", s.hp, s.maxHp, "❤️");
-  balken("klmp","ktmp", s.mp, s.maxMp, "💧");
+  const w = meinTier && tierWerte(meinTier);
+  if(w) balken("klhp","kthp", Math.max(0, meinTier.hp), w.maxHp, "❤️");
+  else { balken("klhp","kthp", s.hp, s.maxHp, "❤️"); balken("klmp","ktmp", s.mp, s.maxMp, "💧"); }
   balken("glhp","gthp", gegner.hp, gegner.maxHp, "❤️");
   hudZeichnen();
 }
@@ -5187,15 +5415,22 @@ function aktion(art){
   if(art === "trank" && s.traenke <= 0){ kampflog(ue("Keine Tränke mehr!"), "c-bad"); return; }
   spielerDran = false; knoepfe(true);
 
-  if(art === "angriff"){
+  if(art === "wechsel"){
     animiere("figurP","schlagA");
+    if(tierWechseln()) kampflog("🔄 " + tierWerte(meinTier).name + ue(" tritt an!"), "c-good");
+    else kampflog(ue("Kein anderes Tier kann kämpfen."), "c-dim");
+  } else if(art === "angriff"){
+    animiere(meinTier ? "figurPT" : "figurP","schlagA");
+    const eigen = meinTier && tierWerte(meinTier);
     const krit = Math.random() < 0.15;
-    let dmg = Math.max(1, gesAtk() + rnd(0,4) - Math.floor(gegner.def/2));
+    let dmg = eigen ? Math.max(1, eigen.atk + rnd(0,4) - Math.floor(gegner.def/2))
+                    : Math.max(1, gesAtk() + rnd(0,4) - Math.floor(gegner.def/2));
     if(krit) dmg = Math.round(dmg*1.9);
     gegner.hp -= dmg;
     tonTreffer(krit);
     setTimeout(() => animiere("figurG","treffer"), 110);
-    kampflog(ue("Du triffst für <b>") + dmg + ue("</b> Schaden.") + (krit?" 💥 KRITISCH!":""), krit?"c-gold":"");
+    kampflog((eigen ? eigen.name + ue(" trifft für <b>") : ue("Du triffst für <b>"))
+             + dmg + ue("</b> Schaden.") + (krit?" 💥 KRITISCH!":""), krit?"c-gold":"");
   } else if(art === "feuer"){
     s.mp -= 8; animiere("figurP","schlagA");
     const dmg = Math.max(1, Math.round(s.mag*2.1) + rnd(0,6) - Math.floor(gegner.def/4));
@@ -5211,9 +5446,17 @@ function aktion(art){
     kampflog(ue("💚 Heilung: +") + h + ue(" Leben."), "c-good");
   } else if(art === "trank"){
     s.traenke--;
-    const heil = Math.max(60, Math.round(s.maxHp*0.25));      // wächst mit dir mit
-    s.hp = Math.min(s.maxHp, s.hp + heil);
-    kampflog(ue("🧪 Trank getrunken: +") + heil + ue(" Leben."), "c-good");
+    tonTrank();
+    const eigen = meinTier && tierWerte(meinTier);
+    if(eigen){                                  // im Sammler-Modus trinkt dein Tier
+      const heil = Math.max(12, Math.round(eigen.maxHp*0.45));
+      meinTier.hp = Math.min(eigen.maxHp, meinTier.hp + heil);
+      kampflog("🧪 " + eigen.name + ue(": +") + heil + ue(" Leben."), "c-good");
+    } else {
+      const heil = Math.max(60, Math.round(s.maxHp*0.25));    // wächst mit dir mit
+      s.hp = Math.min(s.maxHp, s.hp + heil);
+      kampflog(ue("🧪 Trank getrunken: +") + heil + ue(" Leben."), "c-good");
+    }
   } else if(art === "fangen"){
     if(gegner.boss){
       kampflog(ue("Einen Boss fängst du nicht – den musst du besiegen."), "c-bad");
@@ -5264,6 +5507,31 @@ function gegnerZug(){
       kampflog("🔥 " + gegner.name + ue(" wird <b>rasend</b> und schlägt härter zu!"), "c-bad");
     }
   }
+  const eigen = meinTier && tierWerte(meinTier);
+  if(eigen){
+    // Der Schaden trifft dein Tier, seine Rüstung zählt
+    dmg = Math.max(1, gegner.atk + rnd(0,4) - Math.floor(eigen.rue*0.8));
+    meinTier.hp -= dmg;
+    tonWehTun();
+    setTimeout(() => animiere("figurPT","treffer"), 110);
+    kampflog(gegner.name + ue(" trifft ") + eigen.name + ue(" für <b>") + dmg
+             + ue("</b> Schaden.") + (wucht?" 💢 WUCHTSCHLAG!":""), "c-bad");
+    kampfZeichnen();
+    if(meinTier.hp <= 0){
+      meinTier.hp = 0;
+      kampflog("💤 " + eigen.name + ue(" kann nicht mehr."), "c-bad");
+      speichern();
+      if(tierWechseln()){
+        kampflog("🔄 " + tierWerte(meinTier).name + ue(" tritt an!"), "c-good");
+        kampfZeichnen();
+      } else {
+        setTimeout(() => tiereErschoepft(), 600);
+        return;
+      }
+    }
+    spielerDran = true; knoepfe(false);
+    return;
+  }
   s.hp -= dmg;
   tonWehTun();
   setTimeout(() => animiere("figurP","treffer"), 110);
@@ -5276,6 +5544,7 @@ function sieg(){
   if(!gegner) return;
   const g = gegner;
   tonSieg();
+  if(meinTier) tierStaerken(g);
   kampflog("🎉 " + g.name + " besiegt! +" + g.xp + " XP, +" + g.gold + " 💰", "c-good");
   meldung("🎉 " + g.name + ue(" besiegt (+") + g.xp + " XP, +" + g.gold + " 💰)", "c-good");
   s.gold += g.gold;
@@ -5296,6 +5565,21 @@ function sieg(){
   if(!g.boss) setTimeout(() => { if(modus !== "start") gegnerSetzen(); }, 10000);
   gegner = null;
   setTimeout(() => { kampfEnde(); xpGeben(g.xp); questsPruefen(); speichern(); }, 700);
+}
+/* Kein Tier kann mehr: du gehst zurueck zum Startpunkt, alle werden
+   geheilt. Kein Goldverlust - das waere doppelt bestraft.            */
+function tiereErschoepft(){
+  tonNiederlage();
+  if(gegner) gegner.ruhe = 8;
+  gegner = null; meinTier = null;
+  tiereHeilen();
+  pos.x = startOrt.x + 0.5; pos.z = startOrt.z + 0.5;
+  pos.y = bodenHoehe(startOrt.x, startOrt.z) + 1;
+  geschw = {x:0,y:0,z:0};
+  kampfEnde();
+  infoZeigen("💤", ue("Alle Tiere erschöpft"),
+    ue("Deine Tiere brauchen eine Pause. Du bist zurück am Startpunkt, und alle sind wieder munter."));
+  speichern();
 }
 function sterben(wo){
   tonNiederlage();
@@ -5443,10 +5727,17 @@ function weltLaden(){
   pos.y = bodenHoehe(startOrt.x, startOrt.z) + 1;
   geschw = {x:0,y:0,z:0};
   begleiterSetzen();                      // deine Tiere kommen mit
-  for(let i=0; i<10; i++) gegnerSetzen();
-  for(let i=0; i<8; i++) itemSetzen();
+  // In einer großen Welt muss mehr los sein, sonst ist sie leer gefegt
+  const dichteFaktor = (WX*WZ) / (WELT_BREIT*WELT_BREIT);
+  for(let i=0; i<Math.round(10*dichteFaktor); i++) gegnerSetzen();
+  for(let i=0; i<Math.round(8*dichteFaktor); i++) itemSetzen();
   const w = WELTEN[s.welt];
   if(w.quests.filter(q => q.typ !== "boss").every(q => s.fertig[q.id])) bossSetzen();
+  // In der Sammler-Spielart bekommst du zuerst dein Tier
+  if(addonAn("sammler")){
+    tiereOrdnen();
+    if(!s.starter && !begleiter().length) setTimeout(starterZeigen, 500);
+  }
   meldung(ue("Willkommen in ") + w.name + ".", "c-mag");
   meldung(w.beschreibung, "c-dim");
   if(!besitz().length)
@@ -5956,6 +6247,10 @@ function neueWeltErschaffen(){
   const saat = $("neuSaat").value;
   weltAnlegen(name, saat);
   s.addons = neueArt === "abenteuer" ? [] : [neueArt];   // gehört ab jetzt zu dieser Welt
+  if(neueArt === "sammler"){                             // eine Karte für alle Biome
+    s.breite = SAMMLER_BREIT;
+    s.hoch = SAMMLER_HOCH;
+  }
   speichern();
   $("neuName").value = ""; $("neuSaat").value = "";
   schliesse("neuewelt");
