@@ -171,6 +171,66 @@
     border-radius:9px; padding:9px 11px; color:var(--txt); font-family:monospace; font-size:11px;
     resize:vertical}
   #uebertragung textarea:focus{outline:none; border-color:var(--violett)}
+  /* ---------- Kampfbild der Sammler-Spielart ---------- */
+  .pkfenster{width:min(560px,100%); padding:0; overflow:hidden}
+  .pkfeld{position:relative; height:262px; overflow:hidden;
+          background:linear-gradient(180deg,#8fd3f4 0%,#bfe7fb 54%,#cfe8a8 54%,#a9d581 100%)}
+  .pkplatte{position:absolute; border-radius:50%; background:rgba(120,170,90,.55);
+            box-shadow:inset 0 -3px 0 rgba(0,0,0,.10)}
+  .pkplatte.oben{width:156px; height:34px; right:36px; top:112px}
+  .pkplatte.unten{width:196px; height:42px; left:26px; bottom:16px}
+  .pksprite{position:absolute; line-height:1; filter:drop-shadow(0 5px 7px rgba(0,0,0,.30));
+            transition:opacity .25s}
+  .pksprite.gegner{right:74px; top:52px; font-size:64px}
+  .pksprite.meins{left:56px; bottom:34px; font-size:86px; transform:scaleX(-1)}
+  .pksprite.bild{background-repeat:no-repeat; background-position:center bottom; background-size:contain;
+                 image-rendering:pixelated}
+  .pkkasten{position:absolute; background:rgba(12,17,26,.86); border:2px solid rgba(255,255,255,.28);
+            border-radius:11px; padding:6px 11px 7px; width:208px}
+  .pkkasten.oben{left:14px; top:14px}
+  .pkkasten.unten{right:14px; bottom:14px}
+  .pkzeile{display:flex; justify-content:space-between; align-items:baseline; gap:8px; font-size:13px}
+  .pkzeile b{white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .pkzeile span{font-size:11.5px; color:#c9d5e6}
+  .pkleiste{height:8px; background:rgba(0,0,0,.55); border-radius:5px; overflow:hidden; margin-top:5px}
+  .pkleiste > i{display:block; height:100%; width:100%; background:#5ddb6b; transition:width .12s linear}
+  .pkleiste > i.mittel{background:#f0c33c}
+  .pkleiste > i.wenig{background:#e8484f}
+  .pkzahlen{text-align:right; font-size:11px; color:#c9d5e6; margin-top:3px}
+  .pkxp{height:4px; background:rgba(0,0,0,.5); border-radius:3px; overflow:hidden; margin-top:3px}
+  .pkxp > i{display:block; height:100%; width:0; background:#5ab8ff; transition:width .35s}
+  .pktext{min-height:62px; padding:12px 16px; font-size:14.5px; line-height:1.55;
+          background:rgba(0,0,0,.32); border-top:2px solid var(--rahmen); cursor:pointer}
+  .pkmenue{display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:12px}
+  .pkmenue button{width:100%; text-align:left; padding:11px 14px}
+  .pkzug{display:flex; flex-direction:column; gap:3px; align-items:flex-start}
+  .pkzug b{font-size:13.5px}
+  .pkzug small{font-size:10.5px; color:#93a1b8}
+  .pkschaden{position:absolute; font-size:26px; font-weight:bold; color:#fff;
+             text-shadow:0 2px 6px #000, 0 0 3px #000; pointer-events:none}
+  .pkball{position:absolute; font-size:26px; filter:drop-shadow(0 2px 4px rgba(0,0,0,.5))}
+  @keyframes pkVor   {50%{transform:translate(46px,-26px)}}
+  @keyframes pkVorM  {50%{transform:scaleX(-1) translate(46px,-26px)}}
+  @keyframes pkWeh   {0%,100%{opacity:1} 20%,60%{opacity:.25} 40%,80%{opacity:1}}
+  @keyframes pkWehM  {0%,100%{opacity:1; transform:scaleX(-1)} 20%,60%{opacity:.25; transform:scaleX(-1)}}
+  @keyframes pkFallen{to{transform:translateY(60px); opacity:0}}
+  @keyframes pkFallenM{to{transform:scaleX(-1) translateY(60px); opacity:0}}
+  @keyframes pkAuf   {from{transform:translateY(46px) scale(.4); opacity:0}}
+  @keyframes pkAufM  {from{transform:scaleX(-1) translateY(46px) scale(.4); opacity:0}}
+  @keyframes pkZahl  {to{transform:translateY(-38px); opacity:0}}
+  @keyframes pkWackel{0%,100%{transform:rotate(0)} 25%{transform:rotate(-24deg)} 75%{transform:rotate(24deg)}}
+  @keyframes pkSaugen{to{transform:translate(-6px,14px) scale(.05); opacity:.2}}
+  .a-vor   {animation:pkVor .42s}
+  .a-vorM  {animation:pkVorM .42s}
+  .a-weh   {animation:pkWeh .45s}
+  .a-wehM  {animation:pkWehM .45s}
+  .a-fallen{animation:pkFallen .7s forwards}
+  .a-fallenM{animation:pkFallenM .7s forwards}
+  .a-auf   {animation:pkAuf .45s}
+  .a-aufM  {animation:pkAufM .45s}
+  .a-zahl  {animation:pkZahl .9s forwards}
+  .a-wackel{animation:pkWackel .55s}
+  .a-saugen{animation:pkSaugen .55s forwards}
   .tierkarte{display:flex; gap:10px; align-items:center; background:rgba(255,255,255,.05);
              border:1px solid var(--rahmen); border-radius:11px; padding:9px 11px; margin-bottom:7px}
   .tierkarte.kaempft{border-color:var(--gold); background:rgba(245,196,81,.12)}
@@ -308,7 +368,7 @@
     <div style="font-size:52px">⛏️</div>
     <h2>WELTENKÄMPFER · BLOCKWELT</h2>
     <p class="c-dim" style="margin-top:0">Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.</p>
-    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 30 · Sammler: Typen, Attacken, Entwicklung</p>
+    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 31 · Sammler: neuer Kampfbildschirm</p>
     <p style="margin:0 0 4px">Willkommen, <b id="grussName" class="c-gold">Held</b>
       <button onclick="nameAendern()" style="padding:4px 10px; font-size:12px; margin-left:8px">✏️ Name &amp; Skin</button>
       <button onclick="uebertragZeigen()" style="padding:4px 10px; font-size:12px; margin-left:4px">💾 Spielstand übertragen</button></p>
@@ -473,6 +533,31 @@
   </div>
 </div>
 
+<div class="overlay hidden" id="pkampf">
+  <div class="fenster pkfenster">
+    <div class="pkfeld" id="pkFeld">
+      <div class="pkplatte oben"></div>
+      <div class="pkplatte unten"></div>
+      <div class="pkkasten oben hidden" id="pkKastenG">
+        <div class="pkzeile"><b id="pkNameG">–</b><span id="pkLvG">Lv 1</span></div>
+        <div class="pkleiste"><i id="pkHpG"></i></div>
+      </div>
+      <div class="pkkasten unten hidden" id="pkKastenM">
+        <div class="pkzeile"><b id="pkNameM">–</b><span id="pkLvM">Lv 1</span></div>
+        <div class="pkleiste"><i id="pkHpM"></i></div>
+        <div class="pkzahlen"><span id="pkHpTextM">0/0</span></div>
+        <div class="pkxp"><i id="pkXpM"></i></div>
+      </div>
+      <div class="pksprite gegner" id="pkSpriteG"></div>
+      <div class="pksprite meins" id="pkSpriteM"></div>
+      <div class="pkball hidden" id="pkBall">⚪</div>
+      <div class="pkschaden hidden" id="pkSchaden"></div>
+    </div>
+    <div class="pktext" id="pkText"></div>
+    <div class="pkmenue" id="pkMenue"></div>
+  </div>
+</div>
+
 <div class="overlay hidden" id="team">
   <div class="fenster">
     <h2 style="text-align:center">🎒 Dein Team</h2>
@@ -594,7 +679,7 @@ const EN = {
   "Eisschwert": "Ice Sword",
   "Eisspitzhacke": "Ice Pickaxe",
   "Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.": "Thirteen open block worlds. Build, dig, fight – and find the portal.",
-  "Ausgabe 30 · Sammler: Typen, Attacken, Entwicklung": "Build 30 · Collector: types, moves, evolution",
+  "Ausgabe 31 · Sammler: neuer Kampfbildschirm": "Build 31 · Collector: new battle screen",
   "Endlose Dünen. Und die Kakteen hier stehen nicht nur herum – sie laufen.": "Endless dunes. And the cacti here don't just stand around – they walk.",
   "Erde": "Dirt",
   "Erlege 14 Schattenriesen": "Slay 14 shadow giants",
@@ -1189,7 +1274,44 @@ const EN = {
   "T": "T",
   "Team (nur im Sammler-Modus)": "Team (collector mode only)",
   "🎒 Dein Team": "🎒 Your team",
-  "Wuchtschlag": "Power Slam"
+  "Wuchtschlag": "Power Slam",
+  " Erfahrung.": " experience.",
+  " Leben.": " health.",
+  " ein!": "!",
+  " entwickelt sich!": " is evolving!",
+  " erholt sich um ": " recovers ",
+  " erhält ": " gains ",
+  " erreicht Stufe ": " reaches level ",
+  " erscheint!": " appears!",
+  " kann nicht mehr kämpfen!": " cannot battle any more!",
+  " schließt sich dir an!": " joins you!",
+  " setzt ": " uses ",
+  " tun?": " do?",
+  " wurde besiegt!": " was defeated!",
+  " wurde gefangen!": " was caught!",
+  " wurde zu ": " evolved into ",
+  ", komm zurück!": ", come back!",
+  "Alle deine Tiere sind erschöpft!": "All your animals are worn out!",
+  "Beutel": "Bag",
+  "Das ist sehr wirksam!": "It is super effective!",
+  "Das wirkt kaum …": "It is not very effective …",
+  "Die Flucht misslingt!": "You could not get away!",
+  "Du bist entkommen!": "You got away!",
+  "Du wirfst den Fangball!": "You throw the catch ball!",
+  "Ein wildes ": "A wild ",
+  "Es zeigt keine Wirkung …": "It has no effect …",
+  "Fangball": "Catch ball",
+  "Flucht": "Run",
+  "Glückwunsch! ": "Congratulations! ",
+  "Kampf": "Fight",
+  "Klick! ": "Click! ",
+  "Los, ": "Go, ",
+  "Mist! Es hat sich befreit!": "Oh no! It broke free!",
+  "Team": "Team",
+  "Trank": "Potion",
+  "Was soll ": "What should ",
+  "Was? ": "What? ",
+  "Zurück": "Back"
 };
 function ue(s){
   if(sprache !== "en" || typeof s !== "string") return s;
@@ -4661,7 +4783,7 @@ function oeffne(id){
 }
 function schliesse(id){
   $(id).classList.add("hidden");
-  const offen = ["kampf","tafel","lager","stufe","info","reise","uebertragung","start","team","starter","neuewelt"].some(x => !$(x).classList.contains("hidden"));
+  const offen = ["kampf","pkampf","tafel","lager","stufe","info","reise","uebertragung","start","team","starter","neuewelt"].some(x => !$(x).classList.contains("hidden"));
   if(!offen) modus = "welt";
 }
 function infoZeigen(icon, titel, text){
@@ -5255,6 +5377,464 @@ function addonListeZeichnen(){
 }
 
 
+
+/* =====================================================================
+   DER KAMPFBILDSCHIRM DER SAMMLER-SPIELART
+   Ein eigenes Bild mit Kampffeld, zwei Sprites auf ihren Plattformen,
+   Lebensbalken in Kästen, einer Textzeile, die sich Buchstabe für
+   Buchstabe schreibt, und einem Menü aus vier Feldern.
+
+   Alles läuft über eine kleine Warteschlange: jeder Schritt sagt einen
+   Satz oder spielt eine Bewegung und ruft dann den nächsten auf. So
+   kommt nie etwas durcheinander, auch wenn mehrere Dinge gleichzeitig
+   passieren - Treffer, Stufe, Entwicklung.
+   ===================================================================== */
+let pk = null;                       // Zustand des laufenden Kampfes
+let pkSchreiber = null;              // läuft, solange Text erscheint
+
+function pkAn(){ return !!pk; }
+function pkFarbe(el, anteil){
+  el.classList.toggle("mittel", anteil <= 0.5 && anteil > 0.2);
+  el.classList.toggle("wenig", anteil <= 0.2);
+}
+/* Den Balken weich leerlaufen lassen - nicht springen. */
+function pkBalken(el, von, nach, max, fertig){
+  const t0 = performance.now(), dauer = 420 + Math.abs(von-nach)/Math.max(1,max)*500;
+  function schritt(jetzt){
+    const p = Math.min(1, (jetzt - t0)/dauer);
+    const wert = von + (nach - von)*p;
+    const anteil = klemm(wert/max, 0, 1);
+    el.style.width = (anteil*100) + "%";
+    pkFarbe(el, anteil);
+    if(p < 1) requestAnimationFrame(schritt); else if(fertig) fertig();
+  }
+  requestAnimationFrame(schritt);
+}
+function pkSpriteSetzen(el, w, meins){
+  el.className = "pksprite " + (meins ? "meins" : "gegner");
+  if(w.bild){
+    el.classList.add("bild");
+    el.textContent = "";
+    el.style.width = meins ? "150px" : "108px";
+    el.style.height = meins ? "150px" : "108px";
+    el.style.backgroundImage = "url(" + mobFigurBild(w.bild, u => {
+      el.style.backgroundImage = "url(" + u + ")"; }) + ")";
+  } else {
+    el.style.backgroundImage = ""; el.style.width = ""; el.style.height = "";
+    el.textContent = w.emoji;
+  }
+}
+function pkBewegung(el, name, dauer){
+  return new Promise(f => {
+    el.classList.remove(name); void el.offsetWidth; el.classList.add(name);
+    setTimeout(() => { el.classList.remove(name); f(); }, dauer);
+  });
+}
+/* Ein Satz, Buchstabe für Buchstabe. Ein Klick springt ans Ende. */
+function pkSagen(text, warten){
+  return new Promise(fertig => {
+    const kasten = $("pkText");
+    clearInterval(pkSchreiber);
+    let i = 0;
+    kasten.textContent = "";
+    const voll = () => { kasten.textContent = text; clearInterval(pkSchreiber); pkSchreiber = null; };
+    pkSchreiber = setInterval(() => {
+      kasten.textContent = text.slice(0, ++i);
+      if(i >= text.length){
+        clearInterval(pkSchreiber); pkSchreiber = null;
+        setTimeout(fertig, warten === undefined ? 620 : warten);
+      }
+    }, 17);
+    kasten.onclick = () => { if(pkSchreiber){ voll(); setTimeout(fertig, 160); } };
+  });
+}
+function pkMenueLeeren(){ $("pkMenue").innerHTML = ""; }
+function pkKnopf(beschriftung, tun, klasse){
+  const k = document.createElement("button");
+  if(typeof beschriftung === "string") k.textContent = beschriftung;
+  else k.appendChild(beschriftung);
+  if(klasse) k.className = klasse;
+  k.onclick = tun;
+  $("pkMenue").appendChild(k);
+  return k;
+}
+function pkWerteAuffrischen(){
+  const m = pk.meinsW, g = pk.wildW;
+  $("pkNameM").textContent = m.name;
+  $("pkLvM").textContent = "Lv " + m.stufe;
+  $("pkHpTextM").textContent = Math.max(0, pk.meins.hp) + "/" + m.maxHp;
+  const am = klemm(pk.meins.hp/m.maxHp, 0, 1);
+  $("pkHpM").style.width = (am*100) + "%"; pkFarbe($("pkHpM"), am);
+  $("pkNameG").textContent = pk.wild.name;
+  $("pkLvG").textContent = "Lv " + g.stufe;
+  const ag = klemm(pk.wild.hp/pk.wild.maxHp, 0, 1);
+  $("pkHpG").style.width = (ag*100) + "%"; pkFarbe($("pkHpG"), ag);
+  const noetig = xpNoetig(m.stufe);
+  $("pkXpM").style.width = klemm((pk.meins.xp||0)/noetig, 0, 1)*100 + "%";
+}
+function pkSchadenZeigen(el, wert){
+  const z = $("pkSchaden");
+  const r = el.getBoundingClientRect(), f = $("pkFeld").getBoundingClientRect();
+  z.textContent = "-" + wert;
+  z.style.left = (r.left - f.left + r.width/2 - 14) + "px";
+  z.style.top  = (r.top - f.top + 8) + "px";
+  z.classList.remove("hidden", "a-zahl"); void z.offsetWidth; z.classList.add("a-zahl");
+  setTimeout(() => z.classList.add("hidden"), 900);
+}
+
+/* ---------- Ein Kampf beginnt ---------- */
+async function pkampfStarten(o){
+  const b = tierBereit();
+  if(!b){
+    meldung(ue("Alle deine Tiere sind erschöpft – ruh dich am Lagerfeuer aus."), "c-bad");
+    o.ruhe = 6;
+    return;
+  }
+  const heim = o.heimat === undefined ? s.welt : o.heimat;
+  const st = o.stufe || wildStufe();
+  const gw = werteAuf(heim, o.id, st);
+  o.maxHp = gw.maxHp;
+  if(o.hp === undefined || o.hp > o.maxHp) o.hp = o.maxHp;
+  pk = {wild:o, meins:b,
+        wildW: {name:o.name, emoji:o.emoji, bild:o.bild, stufe:st, typ:artTyp(heim, o.id),
+                atk:gw.atk, def:gw.def, init:gw.init, attacken:attackenAuf(heim, o.id, st)},
+        meinsW: tierWerte(b), geflohen:false};
+  gegner = o; meinTier = b; modus = "kampf";
+  pkMenueLeeren();
+  $("pkKastenG").classList.add("hidden");
+  $("pkKastenM").classList.add("hidden");
+  pkSpriteSetzen($("pkSpriteG"), pk.wildW, false);
+  $("pkSpriteM").textContent = "";
+  $("pkSpriteM").style.backgroundImage = "";
+  oeffne("pkampf");
+  tonBoss && o.boss && tonBoss();
+  pkBewegung($("pkSpriteG"), "a-auf", 450);
+  await pkSagen(ue("Ein wildes ") + o.name + ue(" erscheint!"));
+  $("pkKastenG").classList.remove("hidden");
+  pkSpriteSetzen($("pkSpriteM"), pk.meinsW, true);
+  pkBewegung($("pkSpriteM"), "a-aufM", 450);
+  await pkSagen(ue("Los, ") + pk.meinsW.name + "!");
+  $("pkKastenM").classList.remove("hidden");
+  pkWerteAuffrischen();
+  pkHauptmenue();
+}
+
+/* ---------- Die Menüs ---------- */
+function pkHauptmenue(){
+  pkMenueLeeren();
+  pkKnopf("⚔️ " + ue("Kampf"), pkZugmenue, "primary");
+  pkKnopf("🎒 " + ue("Beutel"), pkBeutel);
+  pkKnopf("🔄 " + ue("Team"), pkTeammenue);
+  pkKnopf("🏃 " + ue("Flucht"), pkFliehen);
+  pkSagen(ue("Was soll ") + pk.meinsW.name + ue(" tun?"), 0);
+}
+function pkZugmenue(){
+  pkMenueLeeren();
+  pk.meinsW = tierWerte(pk.meins);
+  pk.meinsW.attacken.forEach((a, i) => {
+    const rest = pk.meins.ap[i];
+    const kasten = document.createElement("span");
+    kasten.className = "pkzug";
+    kasten.innerHTML = "<b>" + ue(a.n) + "</b><small>" + typMarke(a.typ)
+                     + " &nbsp; " + rest + "/" + a.ap + " AP</small>";
+    const k = pkKnopf(kasten, () => pkRunde(i));
+    k.disabled = rest <= 0;
+  });
+  pkKnopf("↩︎ " + ue("Zurück"), pkHauptmenue);
+}
+function pkBeutel(){
+  pkMenueLeeren();
+  pkKnopf("🔴 " + ue("Fangball") + " (" + Math.round(pkFangChance()*100) + "%)",
+          pkFangen).disabled = !!pk.wild.boss;
+  pkKnopf("🧪 " + ue("Trank") + " (" + s.traenke + ")", pkTrank).disabled = s.traenke <= 0;
+  pkKnopf("↩︎ " + ue("Zurück"), pkHauptmenue);
+}
+function pkTeammenue(){
+  pkMenueLeeren();
+  for(const b of begleiter()){
+    const w = tierWerte(b);
+    if(!w) continue;
+    const kasten = document.createElement("span");
+    kasten.className = "pkzug";
+    kasten.innerHTML = "<b>" + w.name + "</b><small>Lv " + w.stufe + " · "
+                     + Math.max(0,b.hp) + "/" + w.maxHp + " ❤️</small>";
+    const k = pkKnopf(kasten, () => pkWechseln(b));
+    k.disabled = b.hp <= 0 || b === pk.meins;
+  }
+  pkKnopf("↩︎ " + ue("Zurück"), pkHauptmenue);
+}
+
+/* ---------- Eine Runde ---------- */
+function pkSperren(){ document.querySelectorAll("#pkMenue button").forEach(k => k.disabled = true); }
+async function pkAngriff(vonMir, attacke){
+  const an  = vonMir ? pk.meinsW : pk.wildW;
+  const ver = vonMir ? pk.wildW  : pk.meinsW;
+  const spriteAn  = vonMir ? $("pkSpriteM") : $("pkSpriteG");
+  const spriteVer = vonMir ? $("pkSpriteG") : $("pkSpriteM");
+  await pkSagen(an.name + ue(" setzt ") + ue(attacke.n) + ue(" ein!"), 260);
+  await pkBewegung(spriteAn, vonMir ? "a-vorM" : "a-vor", 420);
+  const wirkung = typWirkung(attacke.typ, ver.typ);
+  if(wirkung === 0){
+    await pkSagen(ue("Es zeigt keine Wirkung …"));
+    return false;
+  }
+  const dmg = schadenRechnen(an.stufe, an.atk, ver.def, attacke.s, wirkung);
+  tonTreffer(wirkung >= 2);
+  pkSchadenZeigen(spriteVer, dmg);
+  pkBewegung(spriteVer, vonMir ? "a-weh" : "a-wehM", 450);
+  await new Promise(f => {
+    if(vonMir){
+      const vorher = pk.wild.hp;
+      pk.wild.hp = Math.max(0, pk.wild.hp - dmg);
+      pkBalken($("pkHpG"), vorher, pk.wild.hp, pk.wild.maxHp, f);
+    } else {
+      const vorher = pk.meins.hp;
+      pk.meins.hp = Math.max(0, pk.meins.hp - dmg);
+      $("pkHpTextM").textContent = pk.meins.hp + "/" + pk.meinsW.maxHp;
+      pkBalken($("pkHpM"), vorher, pk.meins.hp, pk.meinsW.maxHp, f);
+    }
+  });
+  if(wirkung >= 2) await pkSagen(ue("Das ist sehr wirksam!"), 420);
+  else if(wirkung <= 0.5) await pkSagen(ue("Das wirkt kaum …"), 420);
+  return true;
+}
+async function pkRunde(nr){
+  pkSperren();
+  const attacke = pk.meinsW.attacken[nr];
+  pk.meins.ap[nr]--;
+  const ichZuerst = pk.meinsW.init > pk.wildW.init
+    || (pk.meinsW.init === pk.wildW.init && Math.random() < 0.5);
+  const meinZug = async () => {
+    await pkAngriff(true, attacke);
+    if(pk.wild.hp <= 0){ await pkGewonnen(); return true; }
+    return false;
+  };
+  const wildZug = async () => {
+    const a = pk.wildW.attacken[rnd(0, pk.wildW.attacken.length-1)];
+    await pkAngriff(false, a);
+    if(pk.meins.hp <= 0){ await pkUmgefallen(); return true; }
+    return false;
+  };
+  if(ichZuerst){ if(await meinZug()) return; if(await wildZug()) return; }
+  else         { if(await wildZug()) return; if(await meinZug()) return; }
+  speichern();
+  pkHauptmenue();
+}
+async function pkWildZugAllein(){
+  const a = pk.wildW.attacken[rnd(0, pk.wildW.attacken.length-1)];
+  await pkAngriff(false, a);
+  if(pk.meins.hp <= 0){ await pkUmgefallen(); return; }
+  speichern();
+  pkHauptmenue();
+}
+
+/* ---------- Wechseln, Trank, Flucht ---------- */
+async function pkWechseln(b){
+  pkSperren();
+  await pkSagen(pk.meinsW.name + ue(", komm zurück!"), 320);
+  await pkBewegung($("pkSpriteM"), "a-fallenM", 500);
+  pk.meins = b; meinTier = b; pk.meinsW = tierWerte(b);
+  pkSpriteSetzen($("pkSpriteM"), pk.meinsW, true);
+  pkWerteAuffrischen();
+  await pkBewegung($("pkSpriteM"), "a-aufM", 450);
+  await pkSagen(ue("Los, ") + pk.meinsW.name + "!");
+  await pkWildZugAllein();
+}
+async function pkTrank(){
+  pkSperren();
+  s.traenke--;
+  tonTrank();
+  const heil = Math.max(12, Math.round(pk.meinsW.maxHp*0.45));
+  const vorher = pk.meins.hp;
+  pk.meins.hp = Math.min(pk.meinsW.maxHp, pk.meins.hp + heil);
+  await pkSagen(pk.meinsW.name + ue(" erholt sich um ") + (pk.meins.hp - vorher) + ue(" Leben."), 260);
+  await new Promise(f => {
+    $("pkHpTextM").textContent = pk.meins.hp + "/" + pk.meinsW.maxHp;
+    pkBalken($("pkHpM"), vorher, pk.meins.hp, pk.meinsW.maxHp, f);
+  });
+  await pkWildZugAllein();
+}
+async function pkFliehen(){
+  pkSperren();
+  if(pk.wild.boss){ await pkSagen(ue("Vor einem Boss gibt es kein Entkommen!")); pkHauptmenue(); return; }
+  if(Math.random() < 0.62){
+    await pkSagen(ue("Du bist entkommen!"));
+    pk.wild.ruhe = 5;
+    pkEnde();
+  } else {
+    await pkSagen(ue("Die Flucht misslingt!"), 420);
+    await pkWildZugAllein();
+  }
+}
+
+/* ---------- Der Fangball ---------- */
+function pkFangChance(){
+  const anteil = pk.wild.hp / pk.wild.maxHp;
+  const stufenHilfe = klemm(1 + (pk.meinsW.stufe - pk.wildW.stufe)*0.02, 0.7, 1.3);
+  return klemm((0.95 - anteil*1.25) * stufenHilfe, 0.03, 0.92);
+}
+async function pkFangen(){
+  pkSperren();
+  const chance = pkFangChance();
+  await pkSagen(ue("Du wirfst den Fangball!"), 200);
+  tonWurf();
+  // Der Ball fliegt im Bogen zum Gegner
+  const ball = $("pkBall"), ziel = $("pkSpriteG"), feld = $("pkFeld");
+  const zr = ziel.getBoundingClientRect(), fr = feld.getBoundingClientRect();
+  const zx = zr.left - fr.left + zr.width/2 - 13, zy = zr.top - fr.top + zr.height/2 - 13;
+  ball.classList.remove("hidden");
+  ball.style.left = "60px"; ball.style.top = "190px"; ball.style.transform = "";
+  await new Promise(f => {
+    const t0 = performance.now(), x0 = 60, y0 = 190;
+    (function schritt(jetzt){
+      const p = Math.min(1, (jetzt-t0)/560);
+      ball.style.left = (x0 + (zx-x0)*p) + "px";
+      ball.style.top  = (y0 + (zy-y0)*p - Math.sin(p*Math.PI)*80) + "px";
+      ball.style.transform = "rotate(" + (p*540) + "deg)";
+      if(p < 1) requestAnimationFrame(schritt); else f();
+    })(t0);
+  });
+  await pkBewegung(ziel, "a-saugen", 560);
+  ziel.style.opacity = "0";
+  ball.style.left = zx + "px"; ball.style.top = (zy + 26) + "px"; ball.style.transform = "";
+  // Dreimal wackeln
+  const treffer = Math.random() < chance;
+  const wackler = treffer ? 3 : 1 + rnd(0, 2);
+  for(let i = 0; i < wackler; i++){
+    await pkBewegung(ball, "a-wackel", 560);
+    klang("sine", 420, 0.08, 0.11);
+    await new Promise(f => setTimeout(f, 170));
+  }
+  if(treffer){
+    tonZahm();
+    await pkSagen(ue("Klick! ") + pk.wild.name + ue(" wurde gefangen!"));
+    ball.classList.add("hidden");
+    ziel.style.opacity = "";
+    pkGefangen();
+  } else {
+    klang("square", 300, 0.14, 0.12, 180);
+    ball.classList.add("hidden");
+    ziel.style.opacity = "";
+    await pkBewegung(ziel, "a-auf", 450);
+    await pkSagen(ue("Mist! Es hat sich befreit!"), 420);
+    await pkWildZugAllein();
+  }
+}
+function pkGefangen(){
+  const l = begleiter();
+  const eintrag = {welt: pk.wild.heimat === undefined ? s.welt : pk.wild.heimat,
+                   id: pk.wild.id, stufe: pk.wildW.stufe, xp: 0};
+  if(l.length >= TEAM_MAX){
+    box().push(eintrag);
+    tiereOrdnen();
+    pkSagen("📦 " + pk.wild.name + ue(" wandert in die Box.")).then(pkEnde);
+  } else {
+    l.push(eintrag);
+    tiereOrdnen();
+    pk.wild.zahm = true; pk.wild.nr = l.length - 1;
+    pkSagen(pk.wild.name + ue(" schließt sich dir an!")).then(pkEnde);
+  }
+  speichern();
+}
+
+/* ---------- Sieg, Ohnmacht, Ende ---------- */
+async function pkGewonnen(){
+  tonSieg();
+  await pkBewegung($("pkSpriteG"), "a-fallen", 700);
+  $("pkSpriteG").style.opacity = "0";
+  await pkSagen(pk.wild.name + ue(" wurde besiegt!"));
+  const gewinn = Math.round(12 + pk.wildW.stufe * 9);
+  pk.meins.xp = (pk.meins.xp || 0) + gewinn;
+  await pkSagen(pk.meinsW.name + ue(" erhält ") + gewinn + ue(" Erfahrung."), 300);
+  let neueStufe = false;
+  while(pk.meins.xp >= xpNoetig(pk.meins.stufe) && pk.meins.stufe < 80){
+    pk.meins.xp -= xpNoetig(pk.meins.stufe);
+    pk.meins.stufe++;
+    neueStufe = true;
+  }
+  pkWerteAuffrischen();
+  if(neueStufe){
+    tonStufe();
+    pk.meinsW = tierWerte(pk.meins);
+    pk.meins.hp = Math.min(pk.meinsW.maxHp, pk.meins.hp + Math.round(pk.meinsW.maxHp*0.25));
+    pk.meins.ap = pk.meinsW.attacken.map((a,i) =>
+      (pk.meins.ap && pk.meins.ap[i] !== undefined) ? pk.meins.ap[i] : a.ap);
+    pkWerteAuffrischen();
+    await pkSagen(pk.meinsW.name + ue(" erreicht Stufe ") + pk.meins.stufe + "!");
+    const neu = entwicklungZu(pk.meins.welt, pk.meins.id, pk.meins.stufe);
+    if(neu) await pkEntwickeln(neu);
+  }
+  // Der Gegner ist erledigt und verschwindet aus der Welt
+  const i = wesen.indexOf(pk.wild);
+  if(i >= 0) wesen.splice(i, 1);
+  if(!pk.wild.boss) setTimeout(() => { if(modus !== "start") gegnerSetzen(); }, 10000);
+  if(pk.wild.boss) s.fertig[WELTEN[s.welt].quests.find(q => q.typ === "boss").id] = "besiegt";
+  s.gold += pk.wild.gold || 0;
+  s.kills[pk.wild.id] = (s.kills[pk.wild.id] || 0) + 1;
+  speichern();
+  pkEnde();
+}
+async function pkEntwickeln(neueId){
+  const alt = pk.meinsW.name;
+  await pkSagen(ue("Was? ") + alt + ue(" entwickelt sich!"), 500);
+  const sprite = $("pkSpriteM");
+  for(let i = 0; i < 4; i++){
+    sprite.style.filter = "brightness(6) saturate(0)";
+    await new Promise(f => setTimeout(f, 130));
+    sprite.style.filter = "";
+    await new Promise(f => setTimeout(f, 130));
+  }
+  pk.meins.id = neueId;
+  if(pk.meins.name === alt) pk.meins.name = null;
+  pk.meinsW = tierWerte(pk.meins);
+  pk.meins.hp = pk.meinsW.maxHp;
+  pk.meins.ap = pk.meinsW.attacken.map(a => a.ap);
+  pkSpriteSetzen(sprite, pk.meinsW, true);
+  pkWerteAuffrischen();
+  tonSieg();
+  await pkSagen(ue("Glückwunsch! ") + alt + ue(" wurde zu ") + pk.meinsW.name + "!");
+  speichern();
+}
+async function pkUmgefallen(){
+  tonNiederlage();
+  await pkBewegung($("pkSpriteM"), "a-fallenM", 700);
+  $("pkSpriteM").style.opacity = "0";
+  pk.meins.hp = 0;
+  speichern();
+  await pkSagen(pk.meinsW.name + ue(" kann nicht mehr kämpfen!"));
+  const naechstes = begleiter().find(b => b.hp > 0 && tierWerte(b));
+  if(naechstes){
+    pk.meins = naechstes; meinTier = naechstes; pk.meinsW = tierWerte(naechstes);
+    $("pkSpriteM").style.opacity = "";
+    pkSpriteSetzen($("pkSpriteM"), pk.meinsW, true);
+    pkWerteAuffrischen();
+    await pkBewegung($("pkSpriteM"), "a-aufM", 450);
+    await pkSagen(ue("Los, ") + pk.meinsW.name + "!");
+    pkHauptmenue();
+  } else {
+    await pkSagen(ue("Alle deine Tiere sind erschöpft!"));
+    pkEnde();
+    tiereHeilen();
+    pos.x = startOrt.x + 0.5; pos.z = startOrt.z + 0.5;
+    pos.y = bodenHoehe(startOrt.x, startOrt.z) + 1;
+    geschw = {x:0,y:0,z:0};
+    infoZeigen("💤", ue("Alle Tiere erschöpft"),
+      ue("Deine Tiere brauchen eine Pause. Du bist zurück am Startpunkt, und alle sind wieder munter."));
+    speichern();
+  }
+}
+function pkEnde(){
+  clearInterval(pkSchreiber); pkSchreiber = null;
+  $("pkSpriteG").style.opacity = ""; $("pkSpriteM").style.opacity = "";
+  $("pkSpriteM").style.filter = "";
+  $("pkBall").classList.add("hidden");
+  pkMenueLeeren();
+  pk = null; gegner = null; meinTier = null; wildKampf = null;
+  schliesse("pkampf");
+  hudZeichnen();
+  questsPruefen();
+}
+
 /* =====================================================================
    SAMMLER: ARTEN, TYPEN UND ATTACKEN
    Das Regelwerk ist dem großen Vorbild nachgebaut: jede Art hat einen
@@ -5791,6 +6371,7 @@ function gefangen(g){
 
 function kampfStarten(o){
   if(modus !== "welt") return;
+  if(addonAn("sammler")){ pkampfStarten(o); return; }   // eigener Kampfbildschirm
   // In der Sammler-Spielart tritt dein Tier an, nicht du selbst
   meinTier = addonAn("sammler") ? tierBereit() : null;
   wildKampf = null;
