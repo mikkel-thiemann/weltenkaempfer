@@ -231,6 +231,24 @@
   .a-zahl  {animation:pkZahl .9s forwards}
   .a-wackel{animation:pkWackel .55s}
   .a-saugen{animation:pkSaugen .55s forwards}
+  .rezeptkarte{display:grid; grid-template-columns:auto 1fr; gap:14px; align-items:start;
+               background:rgba(255,255,255,.05); border:1px solid var(--rahmen); border-radius:12px;
+               padding:12px 14px; margin-bottom:10px}
+  .rezeptkarte.kann{border-color:var(--xp)}
+  .rezeptkopf{display:flex; align-items:center; gap:10px; margin-bottom:6px}
+  .rezeptkopf img{width:44px; height:44px; image-rendering:pixelated}
+  .rezeptkopf b{font-size:15px}
+  .rezeptkopf span{display:block; font-size:12px; color:#c9d5e6}
+  .rezeptgitter{display:grid; grid-template-columns:repeat(3,38px); gap:3px;
+                background:rgba(0,0,0,.35); padding:5px; border-radius:8px}
+  .rezeptgitter div{width:38px; height:38px; background:rgba(255,255,255,.08); border-radius:5px;
+                    display:flex; align-items:center; justify-content:center}
+  .rezeptgitter img{width:30px; height:30px; image-rendering:pixelated}
+  .zutaten{font-size:12.5px; line-height:1.75}
+  .zutaten img{width:18px; height:18px; image-rendering:pixelated; vertical-align:middle; margin-right:5px}
+  .zutaten .fehlt{color:#ff9a9a}
+  .zutaten .ok{color:var(--xp)}
+  .zutaten small{color:#93a1b8}
   .buchgitter{display:grid; grid-template-columns:repeat(auto-fill,minmax(106px,1fr)); gap:8px;
               max-height:56vh; overflow-y:auto; padding-right:4px}
   .buchfeld{background:rgba(255,255,255,.05); border:1px solid var(--rahmen); border-radius:10px;
@@ -378,7 +396,7 @@
     <div style="font-size:52px">⛏️</div>
     <h2>WELTENKÄMPFER · BLOCKWELT</h2>
     <p class="c-dim" style="margin-top:0">Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.</p>
-    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 40 · Bälle wie auf den Karten, Reiten auf Z</p>
+    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 41 · Ballrezepte auf Y</p>
     <p style="margin:0 0 4px">Willkommen, <b id="grussName" class="c-gold">Held</b>
       <button onclick="nameAendern()" style="padding:4px 10px; font-size:12px; margin-left:8px">✏️ Name &amp; Skin</button>
       <button onclick="uebertragZeigen()" style="padding:4px 10px; font-size:12px; margin-left:4px">💾 Spielstand übertragen</button></p>
@@ -389,7 +407,7 @@
       <span class="taste">E</span> benutzen &nbsp; <span class="taste">Q</span> Quests &nbsp; <span class="taste">I</span> oder <span class="taste">B</span> Inventar &amp; Herstellen &nbsp; <span class="taste">Esc</span> Maus frei<br>
       <span class="taste">M</span> werfen &nbsp; <span class="taste">Z</span> auf ein gezähmtes Tier steigen &nbsp;
       <span class="taste">G</span> sitzen bleiben &nbsp; <span class="taste">N</span> Namen geben &nbsp;
-      <span class="taste">K</span> Tiere &nbsp; <span class="taste">P</span> Kreaturenbuch
+      <span class="taste">K</span> Tiere &nbsp; <span class="taste">P</span> Kreaturenbuch &nbsp; <span class="taste">Y</span> Ballrezepte
       <span class="c-dim">(nur im Sammler-Modus)</span><br>
       Oben links neben „🌍 Welten“ schaltet 🔊 den Ton an und aus.
       <div class="c-dim" style="line-height:1.6; margin-top:8px">
@@ -569,6 +587,16 @@
   </div>
 </div>
 
+<div class="overlay hidden" id="rezepte">
+  <div class="fenster" style="width:min(720px,100%)">
+    <h2 style="text-align:center">📜 Ballrezepte</h2>
+    <p class="c-dim" style="margin-top:0; text-align:center">Gebaut wird an der <b>Werkbank</b>.
+      Stell dich davor und klick auf „Ins Gitter legen“ – oder leg das Muster selbst.</p>
+    <div id="rezeptListe"></div>
+    <div class="reihe" style="margin-top:12px"><button class="primary" onclick="schliesse('rezepte')">Weiter</button></div>
+  </div>
+</div>
+
 <div class="overlay hidden" id="buch">
   <div class="fenster">
     <h2 style="text-align:center">📕 Kreaturenbuch</h2>
@@ -699,7 +727,7 @@ const EN = {
   "Eisschwert": "Ice Sword",
   "Eisspitzhacke": "Ice Pickaxe",
   "Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.": "Thirteen open block worlds. Build, dig, fight – and find the portal.",
-  "Ausgabe 40 · Bälle wie auf den Karten, Reiten auf Z": "Build 40 · Balls like the cards, ride on Z",
+  "Ausgabe 41 · Ballrezepte auf Y": "Build 41 · Ball recipes on Y",
   "Endlose Dünen. Und die Kakteen hier stehen nicht nur herum – sie laufen.": "Endless dunes. And the cacti here don't just stand around – they walk.",
   "Erde": "Dirt",
   "Erlege 14 Schattenriesen": "Slay 14 shadow giants",
@@ -1415,7 +1443,27 @@ const EN = {
   "Terra-Ball": "Terra Ball",
   "Wird mit jeder Runde besser": "Gets better every round",
   "Wolle": "Wool",
-  "Zen-Ball": "Zen Ball"
+  "Zen-Ball": "Zen Ball",
+  "Ballrezepte": "Ball recipes",
+  "Böden der Ruinen in der Wüste": "floors of the desert ruins",
+  "Ins Gitter legen": "Put in the grid",
+  "Kristallgruppen im Pilzland und in der Wüste": "crystal clusters in the mushroom land and the desert",
+  "Quarzerz unter der Erde abbauen": "mine quartz ore underground",
+  "Ruinen am Grund der Seen": "ruins on the lake beds",
+  "Säulen der Ruinen in der Wüste": "pillars of the desert ruins",
+  "Y": "Y",
+  "an jedem Baum": "on every tree",
+  "aus Bambus aus dem Dschungel herstellen": "craft from jungle bamboo",
+  "aus Holz herstellen": "craft from wood",
+  "aus Sand herstellen": "craft from sand",
+  "du hast ": "you have ",
+  "dunkle Flecken im Sumpf": "dark patches in the swamp",
+  "im Beutel: ": "in the bag: ",
+  "in der Mitte der Seeruinen": "in the middle of the lake ruins",
+  "unter dem Gras": "under the grass",
+  "unter der Erde, überall": "underground, everywhere",
+  "weiße Büsche im Wald und bei den Kirschblüten": "white bushes in the forest and among the cherry blossoms",
+  "📜 Ballrezepte": "📜 Ball recipes"
 };
 function ue(s){
   if(sprache !== "en" || typeof s !== "string") return s;
@@ -5082,7 +5130,7 @@ function oeffne(id){
 }
 function schliesse(id){
   $(id).classList.add("hidden");
-  const offen = ["kampf","pkampf","tafel","lager","stufe","info","reise","uebertragung","start","team","buch","starter","neuewelt"].some(x => !$(x).classList.contains("hidden"));
+  const offen = ["kampf","pkampf","tafel","lager","stufe","info","reise","uebertragung","start","team","buch","rezepte","starter","neuewelt"].some(x => !$(x).classList.contains("hidden"));
   if(!offen) modus = "welt";
 }
 function infoZeigen(icon, titel, text){
@@ -7168,6 +7216,100 @@ function ballKaufen(id){
   speichern(); ladenZeichnen(); hudZeichnen();
 }
 
+/* ---------- Ballrezepte ----------
+   Jede Karte zeigt das Muster, was man dafür braucht, was man schon hat
+   und wo man es findet - so muss niemand raten.                      */
+const FUNDORTE = {};
+function fundorteAnlegen(){
+  if(FUNDORTE.fertig) return;
+  Object.assign(FUNDORTE, {
+    [B_LAUB]: "an jedem Baum",
+    [B_STEIN]: "unter der Erde, überall",
+    [B_ERDE]: "unter dem Gras",
+    [B_BRETTER]: "aus Holz herstellen",
+    [B_AMETHYST]: "Kristallgruppen im Pilzland und in der Wüste",
+    [B_QUARZ]: "Quarzerz unter der Erde abbauen",
+    [B_GLAS]: "aus Sand herstellen",
+    [B_SCULK]: "dunkle Flecken im Sumpf",
+    [B_PRISMARIN]: "Ruinen am Grund der Seen",
+    [B_MEERESLATERNE]: "in der Mitte der Seeruinen",
+    [B_OBSIDIAN]: "Böden der Ruinen in der Wüste",
+    [B_PURPUR]: "Säulen der Ruinen in der Wüste",
+    [B_WOLLE]: "weiße Büsche im Wald und bei den Kirschblüten",
+    [B_BAMBUSBRETTER]: "aus Bambus aus dem Dschungel herstellen"
+  });
+  FUNDORTE.fertig = true;
+}
+// Zutaten zählen, die das Muster braucht
+function rezeptZutaten(plan){
+  const n = {};
+  plan.form.forEach(reihe => reihe.forEach(k => { if(k){ const id = plan.schluessel[k]; n[id] = (n[id]||0) + 1; } }));
+  return n;
+}
+// Wie viel hat man davon? Laub jeder Art zählt als Laub
+function vorratVon(id){
+  if(id === B_LAUB)
+    return [B_LAUB, B_KIRSCHLAUB, B_DSCHUNGELLAUB, B_SCHATTENLAUB, B_HIMMELSLAUB].reduce((s2, x) => s2 + habe(x), 0);
+  if(id === B_BRETTER) return habe(B_BRETTER);
+  return habe(id);
+}
+function rezepteZeichnen(){
+  fundorteAnlegen();
+  const kasten = $("rezeptListe");
+  kasten.innerHTML = "";
+  const nahe = werkbankNah();
+  for(const plan of BAUPLAENE){
+    if(!plan.ergebnis || !plan.ergebnis.ball) continue;
+    const ball = BAELLE.find(b => b.id === plan.ergebnis.ball);
+    const noetig = rezeptZutaten(plan);
+    const kann = Object.keys(noetig).every(id => vorratVon(+id) >= noetig[id]);
+
+    const karte = document.createElement("div");
+    karte.className = "rezeptkarte" + (kann ? " kann" : "");
+
+    const gitter = document.createElement("div");
+    gitter.className = "rezeptgitter";
+    plan.form.forEach(reihe => reihe.forEach(k => {
+      const feld = document.createElement("div");
+      if(k){
+        const id = plan.schluessel[k];
+        feld.title = dingName(id);
+        feld.innerHTML = '<img src="' + symbolBild(id) + '">';
+      }
+      gitter.appendChild(feld);
+    }));
+
+    const rechts = document.createElement("div");
+    rechts.innerHTML = '<div class="rezeptkopf"><img src="' + ballBild(ball.id, 88) + '">'
+      + "<div><b>" + ue(ball.name) + "</b><span>" + ue(ball.text || "") + " · "
+      + ue("im Beutel: ") + ballZahl(ball.id) + "</span></div></div>";
+    const liste = document.createElement("div");
+    liste.className = "zutaten";
+    for(const id in noetig){
+      const hat = vorratVon(+id), braucht = noetig[id];
+      liste.innerHTML += '<div><img src="' + symbolBild(+id) + '">'
+        + braucht + " × " + dingName(+id) + ' <span class="' + (hat >= braucht ? "ok" : "fehlt") + '">('
+        + ue("du hast ") + hat + ")</span>"
+        + (hat < braucht && FUNDORTE[id] ? " <small>– " + ue(FUNDORTE[id]) + "</small>" : "") + "</div>";
+    }
+    rechts.appendChild(liste);
+    if(nahe){
+      const k = document.createElement("button");
+      k.textContent = "📥 " + ue("Ins Gitter legen");
+      k.style.marginTop = "6px";
+      k.onclick = () => { schliesse("rezepte"); tafelZeigen("tasche"); planLegen(BAUPLAENE.indexOf(plan), true); };
+      rechts.appendChild(k);
+    }
+    karte.appendChild(gitter); karte.appendChild(rechts);
+    kasten.appendChild(karte);
+  }
+}
+function rezepteZeigen(){
+  if(!addonAn("sammler")){ meldung(ue("Das gibt es nur in der Sammler-Spielart."), "c-dim"); return; }
+  rezepteZeichnen();
+  oeffne("rezepte");
+}
+
 /* ---------- Das Kreaturenbuch ----------
    0 = nie gesehen, 1 = im Kampf begegnet, 2 = gefangen.              */
 function buch(){
@@ -8150,11 +8292,12 @@ addEventListener("keydown", e => {
   tonWecken();                                 // Browser erlauben Ton erst nach einer Eingabe
   tasten[k] = true;
   if(modus === "menue"){                       // offene Fenster mit Esc / I / Q schliessen
-    if(k === "Escape" || k === "i" || k === "q" || k === "t" || k === "k" || k === "p"){
+    if(k === "Escape" || k === "i" || k === "q" || k === "t" || k === "k" || k === "p" || k === "y"){
       if(!$("tafel").classList.contains("hidden")) tafelSchliessen();
       else if(!$("lager").classList.contains("hidden")) schliesse("lager");
       else if(!$("team").classList.contains("hidden")) schliesse("team");
       else if(!$("buch").classList.contains("hidden")) schliesse("buch");
+      else if(!$("rezepte").classList.contains("hidden")) schliesse("rezepte");
     }
     return;
   }
@@ -8171,6 +8314,7 @@ addEventListener("keydown", e => {
   if(k === "n") tierBenennen();
   if(k === "k" || k === "t") teamZeigen();      // K ist die Taste, T geht weiter
   if(k === "p") buchZeigen();
+  if(k === "y") rezepteZeigen();
   if(k === "i") tafelZeigen("tasche");
   // Z setzt dich auf ein gezähmtes Tier und wieder herunter
   if(k === "z" && !aufsteigen()) meldung(ue("Kein gezähmtes Tier in der Nähe."), "c-dim");
