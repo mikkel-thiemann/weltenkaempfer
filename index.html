@@ -378,7 +378,7 @@
     <div style="font-size:52px">⛏️</div>
     <h2>WELTENKÄMPFER · BLOCKWELT</h2>
     <p class="c-dim" style="margin-top:0">Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.</p>
-    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 38 · Entwickeln im Tiermenü ab Stufe 15</p>
+    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 39 · Acht neue Bälle zum Bauen</p>
     <p style="margin:0 0 4px">Willkommen, <b id="grussName" class="c-gold">Held</b>
       <button onclick="nameAendern()" style="padding:4px 10px; font-size:12px; margin-left:8px">✏️ Name &amp; Skin</button>
       <button onclick="uebertragZeigen()" style="padding:4px 10px; font-size:12px; margin-left:4px">💾 Spielstand übertragen</button></p>
@@ -699,7 +699,7 @@ const EN = {
   "Eisschwert": "Ice Sword",
   "Eisspitzhacke": "Ice Pickaxe",
   "Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.": "Thirteen open block worlds. Build, dig, fight – and find the portal.",
-  "Ausgabe 38 · Entwickeln im Tiermenü ab Stufe 15": "Build 38 · Evolve from the creature menu at level 15",
+  "Ausgabe 39 · Acht neue Bälle zum Bauen": "Build 39 · Eight new craftable balls",
   "Endlose Dünen. Und die Kakteen hier stehen nicht nur herum – sie laufen.": "Endless dunes. And the cacti here don't just stand around – they walk.",
   "Erde": "Dirt",
   "Erlege 14 Schattenriesen": "Slay 14 shadow giants",
@@ -1388,7 +1388,34 @@ const EN = {
   " wurde zu <b>": " became <b>",
   "Bereit zur Entwicklung zu ": "Ready to evolve into ",
   "Entwickeln": "Evolve",
-  "Entwickelt sich ab Stufe ": "Evolves from level "
+  "Entwickelt sich ab Stufe ": "Evolves from level ",
+  " gebaut! ": " crafted! ",
+  "Amethyst": "Amethyst",
+  "Aqua-Ball": "Aqua Ball",
+  "Aurora-Ball": "Aurora Ball",
+  "Bambus": "Bamboo",
+  "Bambusbretter": "Bamboo Planks",
+  "Chrono-Ball": "Chrono Ball",
+  "Glas": "Glass",
+  "Lumi-Ball": "Lumi Ball",
+  "Meereslaterne": "Sea Lantern",
+  "Nexus-Ball": "Nexus Ball",
+  "Passt sich jedem Typ an": "Adapts to every type",
+  "Prismarin": "Prismarine",
+  "Purpur": "Purpur",
+  "Quarz": "Quartz",
+  "Quarzerz": "Quartz Ore",
+  "Schatten-Ball": "Shadow Ball",
+  "Stark am Wasser und bei Fischen": "Strong near water and against fish",
+  "Stark gegen Geist und Unlicht": "Strong against ghost and dark",
+  "Stark gegen Pflanze und Boden": "Strong against grass and ground",
+  "Stark gegen schwächere Tiere": "Strong against weaker creatures",
+  "Stark im Dunkeln und unter Tage": "Strong in the dark and underground",
+  "Stark in Eis und Wüste": "Strong in ice and desert",
+  "Terra-Ball": "Terra Ball",
+  "Wird mit jeder Runde besser": "Gets better every round",
+  "Wolle": "Wool",
+  "Zen-Ball": "Zen Ball"
 };
 function ue(s){
   if(sprache !== "en" || typeof s !== "string") return s;
@@ -1482,7 +1509,7 @@ const klemm = (v,a,b) => v<a?a:(v>b?b:v);
 /* =====================================================================
    BLÖCKE   (Kachel-Nummern im Atlas: 4×4 Raster)
    ===================================================================== */
-const AN = 8;                       // Atlas ist AN x AN Kacheln gross
+const AN = 10;                      // Atlas ist AN x AN Kacheln gross (war 8, für die Ballstoffe erweitert)
 const UVW = 1/AN - 0.0016;          // Breite einer Kachel im UV-Raum (mit kleinem Rand)
 const K = {gras:0, grasSeite:1, erde:2, stein:3, sand:4, wasser:5, holz:6, holzOben:7,
            laub:8, bretter:9, glut:10, obsidian:11, portal:12, lava:13, dunkel:14, kristall:15,
@@ -1494,7 +1521,9 @@ const K = {gras:0, grasSeite:1, erde:2, stein:3, sand:4, wasser:5, holz:6, holzO
            knochen:39, seelenKristall:40, dunkelHolz:41, schattenLaub:42, moosBoden:43, rotFels:44, hoehlenWasser:45,
            sculk:46, sculkAder:47, tiefenschiefer:48, sculkAuge:49,
            heiligstein:50, wolke:51, himmelsholz:52, himmelsholzOben:53, himmelslaub:54, zanit:55,
-           leuchtstein:56};
+           leuchtstein:56,
+           amethyst:57, quarzerz:58, quarz:59, glas:60, prismarin:61, meereslaterne:62,
+           purpur:63, wolle:64, bambus:65, bambusOben:66, bambusbretter:67};
 // [oben, unten, seite] · haerte = Sekunden mit bloßen Händen · gibt = was beim Abbau herausfällt
 const BLOECKE = [
   null,
@@ -1556,7 +1585,23 @@ const BLOECKE = [
   {name:"Zanit",      kacheln:[K.zanit,K.zanit,K.zanit], fest:true, dicht:true,
                       leuchtet:true, haerte:24, gibt:50, werkzeug:"hacke"},
   {name:"Leuchtstein",kacheln:[K.leuchtstein,K.leuchtstein,K.leuchtstein], fest:true, dicht:true,
-                      leuchtet:true, haerte:5.0, gibt:51, werkzeug:"hacke"}
+                      leuchtet:true, haerte:5.0, gibt:51, werkzeug:"hacke"},
+  {name:"Amethyst",   kacheln:[K.amethyst,K.amethyst,K.amethyst], fest:true, dicht:true,
+                      leuchtet:true, haerte:3.2, gibt:52, werkzeug:"hacke"},
+  {name:"Quarzerz",   kacheln:[K.quarzerz,K.quarzerz,K.quarzerz], fest:true, dicht:true,
+                      haerte:4.0, gibt:54, werkzeug:"hacke"},
+  {name:"Quarz",      kacheln:[K.quarz,K.quarz,K.quarz], fest:true, dicht:true, haerte:3.0, gibt:54, werkzeug:"hacke"},
+  {name:"Glas",       kacheln:[K.glas,K.glas,K.glas], fest:true, dicht:true, haerte:0.8, gibt:55},
+  {name:"Prismarin",  kacheln:[K.prismarin,K.prismarin,K.prismarin], fest:true, dicht:true,
+                      haerte:3.6, gibt:56, werkzeug:"hacke"},
+  {name:"Meereslaterne",kacheln:[K.meereslaterne,K.meereslaterne,K.meereslaterne], fest:true, dicht:true,
+                      leuchtet:true, haerte:1.2, gibt:57},
+  {name:"Purpur",     kacheln:[K.purpur,K.purpur,K.purpur], fest:true, dicht:true, haerte:3.4, gibt:58, werkzeug:"hacke"},
+  {name:"Wolle",      kacheln:[K.wolle,K.wolle,K.wolle], fest:true, dicht:true, haerte:0.7, gibt:59},
+  {name:"Bambus",     kacheln:[K.bambusOben,K.bambusOben,K.bambus], fest:true, dicht:true,
+                      haerte:0.9, gibt:60, werkzeug:"axt"},
+  {name:"Bambusbretter",kacheln:[K.bambusbretter,K.bambusbretter,K.bambusbretter], fest:true, dicht:true,
+                      haerte:1.8, gibt:61, werkzeug:"axt"}
 ];
 const B_LUFT=0, B_GRAS=1, B_ERDE=2, B_STEIN=3, B_SAND=4, B_WASSER=5, B_HOLZ=6,
       B_LAUB=7, B_BRETTER=8, B_GLUT=9, B_OBSIDIAN=10, B_PORTAL=11, B_LAVA=12,
@@ -1568,7 +1613,9 @@ const B_LUFT=0, B_GRAS=1, B_ERDE=2, B_STEIN=3, B_SAND=4, B_WASSER=5, B_HOLZ=6,
       B_SCHATTENHOLZ=37, B_SCHATTENLAUB=38, B_MOOSBODEN=39, B_ROTFELS=40, B_HOEHLENWASSER=41,
       B_SCULK=42, B_SCULKADER=43, B_TIEFENSCHIEFER=44, B_SCULKAUGE=45,
       B_HEILIGSTEIN=46, B_WOLKE=47, B_HIMMELSHOLZ=48, B_HIMMELSLAUB=49, B_ZANIT=50,
-      B_LEUCHTSTEIN=51;
+      B_LEUCHTSTEIN=51,
+      B_AMETHYST=52, B_QUARZERZ=53, B_QUARZ=54, B_GLAS=55, B_PRISMARIN=56, B_MEERESLATERNE=57,
+      B_PURPUR=58, B_WOLLE=59, B_BAMBUS=60, B_BAMBUSBRETTER=61;
 
 // Gegenstände (keine Blöcke – kann man nicht setzen). IDs ab 100.
 const I_STOCK = 100;
@@ -1926,7 +1973,27 @@ const BAUPLAENE = [
   {name:"Werkbank",  ergebnis:{b:B_WERKBANK, n:1},form:[["p","p"],["p","p"]],   schluessel:{p:B_BRETTER}},
   {name:"Gras",      ergebnis:{b:B_GRAS, n:2},    formlos:[B_ERDE,B_ERDE,B_ERDE,B_ERDE,B_LAUB], gross:true},
   {name:"Obsidian",  ergebnis:{b:B_OBSIDIAN, n:2},formlos:[B_STEIN,B_STEIN,B_STEIN,B_STEIN,B_GLUT], gross:true},
-  {name:"Heiltrank", ergebnis:{trank:1},          formlos:[B_GLUT,B_GLUT]}
+  {name:"Heiltrank", ergebnis:{trank:1},          formlos:[B_GLUT,B_GLUT]},
+  // Stoffe für die Bälle
+  {name:"Glas",          ergebnis:{b:B_GLAS, n:1},          formlos:[B_SAND]},
+  {name:"Bambusbretter", ergebnis:{b:B_BAMBUSBRETTER, n:2}, formlos:[B_BAMBUS]},
+  // Die besonderen Bälle - Muster genau wie auf den Rezeptkarten
+  {name:"Aurora-Ball",  ergebnis:{ball:"aurora", n:1}, gross:true, nurSammler:true,
+   form:[["l","s","l"],["a","s","a"],["l","s","l"]], schluessel:{l:B_LAUB, s:B_STEIN, a:B_AMETHYST}},
+  {name:"Chrono-Ball",  ergebnis:{ball:"chrono", n:1}, gross:true, nurSammler:true,
+   form:[["p","s","p"],["q","s","q"],["p","s","p"]], schluessel:{p:B_BRETTER, s:B_STEIN, q:B_QUARZ}},
+  {name:"Terra-Ball",   ergebnis:{ball:"terra", n:1}, gross:true, nurSammler:true,
+   form:[["l","s","l"],["e","s","e"],["l","s","l"]], schluessel:{l:B_LAUB, s:B_STEIN, e:B_ERDE}},
+  {name:"Lumi-Ball",    ergebnis:{ball:"lumi", n:1}, gross:true, nurSammler:true,
+   form:[["g","s","g"],["q","s","q"],["g","s","g"]], schluessel:{g:B_GLAS, s:B_STEIN, q:B_QUARZ}},
+  {name:"Schatten-Ball",ergebnis:{ball:"schatten", n:1}, gross:true, nurSammler:true,
+   form:[["c","s","c"],["a","s","a"],["c","s","c"]], schluessel:{c:B_SCULK, s:B_STEIN, a:B_AMETHYST}},
+  {name:"Aqua-Ball",    ergebnis:{ball:"aqua", n:1}, gross:true, nurSammler:true,
+   form:[["p","s","p"],["m","s","m"],["p","s","p"]], schluessel:{p:B_PRISMARIN, s:B_STEIN, m:B_MEERESLATERNE}},
+  {name:"Nexus-Ball",   ergebnis:{ball:"nexus", n:1}, gross:true, nurSammler:true,
+   form:[["o","s","o"],["u","s","u"],["o","s","o"]], schluessel:{o:B_OBSIDIAN, s:B_STEIN, u:B_PURPUR}},
+  {name:"Zen-Ball",     ergebnis:{ball:"zen", n:1}, gross:true, nurSammler:true,
+   form:[["w","s","w"],["b","s","b"],["w","s","w"]], schluessel:{w:B_WOLLE, s:B_STEIN, b:B_BAMBUSBRETTER}}
 ];
 
 /* Werkzeuge und Waffen – für jeden Werkstoff dieselben drei Muster wie im Original:
@@ -2165,7 +2232,10 @@ function ausschnitt(){
 const HOLZARTEN = [B_HOLZ, B_KIRSCHHOLZ, B_DSCHUNGELHOLZ, B_SCHATTENHOLZ,
                    B_KNOCHEN, B_PILZSTIEL, B_BRETTER];
 const istHolz = id => HOLZARTEN.indexOf(id) >= 0;
-const passtZutat = (soll, ist) => ist === soll || (soll === B_BRETTER && istHolz(ist));
+const istLaub = id => [B_LAUB, B_KIRSCHLAUB, B_DSCHUNGELLAUB, B_SCHATTENLAUB, B_HIMMELSLAUB].indexOf(id) >= 0;
+const passtZutat = (soll, ist) => ist === soll
+  || (soll === B_BRETTER && istHolz(ist))
+  || (soll === B_LAUB && istLaub(ist));
 
 function passtPlan(plan){
   const belegt = gitter.filter(x => x > 0);
@@ -2201,6 +2271,7 @@ function passtPlan(plan){
 function findePlan(gross){
   for(const plan of BAUPLAENE){
     if(plan.gross && !gross) continue;
+    if(plan.nurSammler && !addonAn("sammler")) continue;
     if(passtPlan(plan)) return plan;
   }
   return null;
@@ -2219,10 +2290,16 @@ function bauen(gross){
   if(e.b !== undefined) gibMaterial(e.b, e.n);
   if(e.i !== undefined) gibMaterial(e.i, e.n);
   if(e.trank) s.traenke += e.trank;
+  if(e.ball){
+    baelle()[e.ball] = ballZahl(e.ball) + (e.n || 1);
+    const b = BAELLE.find(x => x.id === e.ball);
+    tonZahm();
+    meldung(b.zeichen + " " + ue(b.name) + ue(" gebaut! ") + ue(b.text || ""), "c-gold");
+  }
   if(e.hacke !== undefined)      werkzeugAnlegen("hacke", e.hacke, HACKEN, "⛏️", "Spitzhacke");
   else if(e.axt !== undefined)    werkzeugAnlegen("axt",   e.axt,   AEXTE,  "🪓", "Axt");
   else if(e.waffe !== undefined)  werkzeugAnlegen("waffe", e.waffe, WAFFEN, "🗡️", "Waffe");
-  else meldung(ue("🔨 Hergestellt: ") + plan.name, "c-gold");
+  else if(!e.ball) meldung(ue("🔨 Hergestellt: ") + plan.name, "c-gold");
   gitterLeeren();
   speichern(); hudZeichnen(); bastelZeichnen();
 }
@@ -2511,6 +2588,51 @@ function weltErzeugen(){
       else if(bw.bewuchs && r > 1 - bw.dichte) BEWUCHS[bw.bewuchs](x, h, z);
     }
   }
+  /* Ballstoffe in der Sammlerwelt: jedes Biom liefert etwas anderes.
+     Amethyst in Pilzland und Wüste, Wolle im Wald und in den Blüten,
+     Bambus im Dschungel, Sculk im Sumpf, Purpur-Ruinen in der Wüste,
+     Prismarin-Ruinen am Grund der Seen. Quarz steckt überall im Stein. */
+  if(biomeAn){
+    for(let z=3; z<WZ-3; z++) for(let x=3; x<WX-3; x++){
+      const nr = biomNummer(x, z);
+      const h = hoehen[z*WX+x];                 // oberster fester Block
+      const r = (hashZ(x*3+11, z*5-7, saat+2024)+1)/2;
+      const oben = h + 1;                         // erste freie Ebene darüber
+      const unter = h <= w.seehoehe;
+      if(unter){
+        // Meeresruine: Prismarinboden mit einer Laterne in der Mitte
+        if(r > 0.9975){
+          for(let dz=-1; dz<=1; dz++) for(let dx=-1; dx<=1; dx++)
+            setzeBlock(x+dx, h, z+dz, (dx===0 && dz===0) ? B_MEERESLATERNE : B_PRISMARIN);
+          setzeBlock(x+1, oben, z+1, B_PRISMARIN); setzeBlock(x-1, oben, z-1, B_PRISMARIN);
+        }
+        continue;
+      }
+      if(nr === 4 && r > 0.9981 && r < 0.9985){             // Purpurruine auf Obsidian
+        for(let dz=-2; dz<=2; dz++) for(let dx=-2; dx<=2; dx++) setzeBlock(x+dx, h, z+dz, B_OBSIDIAN);
+        for(const [px, pz] of [[-2,-2],[2,-2],[-2,2],[2,2]])
+          for(let y=0; y<4; y++) setzeBlock(x+px, oben+y, z+pz, B_PURPUR);
+        setzeBlock(x, oben, z, B_OBSIDIAN);
+      } else if((nr === 8 || nr === 4) && r > 0.9968){      // Amethystgruppe
+        setzeBlock(x, oben, z, B_AMETHYST); setzeBlock(x, oben+1, z, B_AMETHYST);
+        setzeBlock(x+1, oben, z, B_AMETHYST); setzeBlock(x, oben, z+1, B_AMETHYST);
+      } else if((nr === 0 || nr === 1) && r > 0.9955){      // Wollbusch
+        setzeBlock(x, oben, z, B_WOLLE);
+        if(r > 0.998) setzeBlock(x, oben+1, z, B_WOLLE);
+      } else if(nr === 5 && r > 0.986){                     // Bambusstange
+        const hoch = 3 + Math.floor(r*1000) % 4;
+        for(let y=0; y<hoch; y++) if(block(x, oben+y, z) === B_LUFT) setzeBlock(x, oben+y, z, B_BAMBUS);
+      } else if(nr === 6 && r > 0.991){                     // Sculkfleck
+        for(let dz=-1; dz<=1; dz++) for(let dx=-1; dx<=1; dx++)
+          if(fest(block(x+dx, h, z+dz))) setzeBlock(x+dx, h, z+dz, B_SCULK);
+      }
+      // Quarzerz im Stein unter der Oberfläche
+      for(let y = 2; y < h-3; y += 3)
+        if((hashZ(x + y*131, z - y*57, saat+7171)+1)/2 > 0.985 && block(x, y, z) === B_STEIN)
+          setzeBlock(x, y, z, B_QUARZERZ);
+    }
+  }
+
   // Orte bestimmen (immer an Land, geglättet)
   startOrt  = platzSuchen(WX/2, WZ/2, w, wuerfel);
   lagerOrt  = platzSuchen(WX*0.30, WZ*0.62, w, wuerfel);
@@ -2884,6 +3006,40 @@ function atlasBauen(){
   kachel(K.leuchtstein, (g,T)=>{ grund(g,T,"#e8b74a"); rauschen(g,T,["#f6ce68","#d29a30","#ffe293"],.8);
                                  for(let i=0;i<9;i++){ const x=Math.random()*T, y=Math.random()*T;
                                    g.fillStyle="#fff3c4"; g.beginPath(); g.arc(x,y,1.6+Math.random()*1.8,0,6.3); g.fill(); } });
+  // ---- Stoffe für die Bälle ----
+  kachel(K.amethyst,     (g,T)=>{ grund(g,T,"#7b3fc4"); rauschen(g,T,["#9b5fe8","#5d2a9e","#b98af5"],.75);
+                                  g.fillStyle="#e3c8ff";
+                                  for(let i=0;i<6;i++){ const x=Math.random()*(T-6), y=Math.random()*(T-6);
+                                    g.fillRect(x,y,3,5); g.fillRect(x+1,y-1,1,1); } });
+  kachel(K.quarzerz,     (g,T)=>{ grund(g,T,"#8f8f96"); rauschen(g,T,["#a3a3aa","#7b7b82"],.8);
+                                  g.fillStyle="#f3efe6";
+                                  for(let i=0;i<5;i++){ const x=Math.random()*(T-6)+2, y=Math.random()*(T-6)+2;
+                                    g.fillRect(x,y,4,2); g.fillRect(x+1,y-1,2,4); } });
+  kachel(K.quarz,        (g,T)=>{ grund(g,T,"#ece7dc"); rauschen(g,T,["#f7f3ea","#dcd5c6"],.55);
+                                  g.strokeStyle="#cfc6b3"; g.lineWidth=1; g.strokeRect(1.5,1.5,T-3,T-3); });
+  kachel(K.glas,         (g,T)=>{ grund(g,T,"#bfe6f2"); rauschen(g,T,["#d6f1f8","#aad9e8"],.3);
+                                  g.strokeStyle="#e9fbff"; g.lineWidth=2; g.strokeRect(1,1,T-2,T-2);
+                                  g.strokeStyle="#ffffff"; g.lineWidth=1.4;
+                                  g.beginPath(); g.moveTo(6,10); g.lineTo(12,4); g.moveTo(8,16); g.lineTo(18,6); g.stroke(); });
+  kachel(K.prismarin,    (g,T)=>{ grund(g,T,"#4fa593"); rauschen(g,T,["#63bba7","#3d8a7a","#79cfbb"],.8);
+                                  g.strokeStyle="#2f6f62"; g.lineWidth=1;
+                                  for(let i=8;i<T;i+=8){ g.beginPath(); g.moveTo(i,0); g.lineTo(i,T); g.moveTo(0,i); g.lineTo(T,i); g.stroke(); } });
+  kachel(K.meereslaterne,(g,T)=>{ grund(g,T,"#d8f4ec"); rauschen(g,T,["#eafff8","#bfe9dc"],.5);
+                                  g.fillStyle="#9fe0cf"; g.fillRect(0,0,T,3); g.fillRect(0,T-3,T,3); g.fillRect(0,0,3,T); g.fillRect(T-3,0,3,T);
+                                  g.fillStyle="#ffffff"; g.fillRect(T/2-5,T/2-5,10,10); });
+  kachel(K.purpur,       (g,T)=>{ grund(g,T,"#a878a8"); rauschen(g,T,["#bb8dbb","#946494"],.7);
+                                  g.strokeStyle="#7f537f"; g.lineWidth=1.2;
+                                  g.strokeRect(2,2,T/2-3,T/2-3); g.strokeRect(T/2+1,2,T/2-3,T/2-3);
+                                  g.strokeRect(2,T/2+1,T/2-3,T/2-3); g.strokeRect(T/2+1,T/2+1,T/2-3,T/2-3); });
+  kachel(K.wolle,        (g,T)=>{ grund(g,T,"#eeeeea"); rauschen(g,T,["#ffffff","#dcdcd6","#e6e6e0"],.9); });
+  kachel(K.bambus,       (g,T)=>{ grund(g,T,"#8ab83e"); rauschen(g,T,["#9dcc4c","#6f9a2e"],.55);
+                                  g.fillStyle="#5d8424"; g.fillRect(0,T*0.3,T,2); g.fillRect(0,T*0.75,T,2);
+                                  g.fillStyle="#b3dc6a"; g.fillRect(T*0.2,0,2,T); });
+  kachel(K.bambusOben,   (g,T)=>{ grund(g,T,"#9dcc4c"); g.strokeStyle="#6f9a2e"; g.lineWidth=2;
+                                  g.beginPath(); g.arc(T/2,T/2,T*0.32,0,6.3); g.stroke(); });
+  kachel(K.bambusbretter,(g,T)=>{ grund(g,T,"#e3c874"); rauschen(g,T,["#edd689","#cfb35c"],.6);
+                                  g.fillStyle="#b89a47";
+                                  for(let i=0;i<T;i+=8) g.fillRect(0,i,T,1.2); });
   kachel(K.hoehlenWasser,      (g,T)=>{ grund(g,T,"#2fb89a"); rauschen(g,T,["#48d6b4","#1e9c82","#7ff0d8"],.7);
                                  g.fillStyle="#b6ffee"; for(let i=0;i<5;i++){ const x=Math.random()*T,y=Math.random()*T;
                                    g.beginPath(); g.arc(x,y,1.5+Math.random()*2,0,6.3); g.fill(); } });
@@ -5283,11 +5439,32 @@ const SONDER = {
     g.fillStyle = "rgba(255,255,255,.45)"; g.fillRect(T*0.34, T*0.42, T*0.08, T*0.4);
   }
 };
+/* Jeder Ball als kleines Bild: obere Farbe, untere Farbe, Band und Knopf.
+   Erst beim ersten Bedarf eingetragen - die Ballliste steht weiter unten
+   in der Datei und ist beim Laden dieser Stelle noch nicht da.      */
+function ballSymboleEintragen(){
+ if(SONDER.ball_normal) return;
+ for(const b of BAELLE){
+  SONDER["ball_" + b.id] = (g, T) => {
+    const r = T*0.4, cx = T/2, cy = T/2;
+    g.fillStyle = b.farben[0];
+    g.beginPath(); g.arc(cx, cy, r, Math.PI, 0); g.fill();
+    g.fillStyle = b.farben[1];
+    g.beginPath(); g.arc(cx, cy, r, 0, Math.PI); g.fill();
+    g.fillStyle = "#1a1a1a"; g.fillRect(cx - r, cy - T*0.045, r*2, T*0.09);
+    g.beginPath(); g.arc(cx, cy, T*0.13, 0, 6.3); g.fill();
+    g.fillStyle = "#f4f4f4"; g.beginPath(); g.arc(cx, cy, T*0.075, 0, 6.3); g.fill();
+    g.strokeStyle = "rgba(0,0,0,.5)"; g.lineWidth = 1.2;
+    g.beginPath(); g.arc(cx, cy, r, 0, 6.3); g.stroke();
+  };
+ }
+}
 const symbolCache = {};
 function symbolBild(id){
   if(symbolCache[id]) return symbolCache[id];
   let url;
   if(typeof id === "string"){
+    if(id.indexOf("ball_") === 0) ballSymboleEintragen();
     const c = document.createElement("canvas");
     c.width = c.height = 32;
     SONDER[id](c.getContext("2d"), 32);
@@ -5308,6 +5485,7 @@ function ergebnisSymbol(plan){
   if(e.hacke !== undefined) return "hacke";
   if(e.axt !== undefined) return "axt";
   if(e.waffe !== undefined) return "schwert";
+  if(e.ball) return "ball_" + e.ball;
   return "trank";
 }
 function bastelZeichnen(){
@@ -5432,7 +5610,7 @@ function ladenZeichnen(){
           : ue('<div class="karte2"><span>🛡️ Beste Rüstung getragen</span></div>');
   if(addonAn("sammler")){
     h += '<h3 style="margin-top:16px">' + ue("Bälle") + "</h3>";
-    for(const b of BAELLE)
+    for(const b of BAELLE.filter(x => x.preis))
       h += ladenZeile(b.zeichen + " " + ue(b.name) + " <span class='c-dim'>×"
                       + ballZahl(b.id) + "</span>", b.preis, "ball:" + b.id);
   }
@@ -6098,7 +6276,7 @@ async function pkampfStarten(o){
   pk = {wild:o, meins:b,
         wildW: {name:o.name, emoji:o.emoji, bild:o.bild, welt:heim, id:o.id, stufe:st, typ:artTyp(heim, o.id),
                 atk:gw.atk, def:gw.def, init:gw.init, attacken:attackenAuf(heim, o.id, st)},
-        meinsW: tierWerte(b), geflohen:false};
+        meinsW: tierWerte(b), geflohen:false, runden:0};
   gegner = o; meinTier = b; modus = "kampf";
   pk.wildW.schillernd = !!o.schillernd;
   buchEintragen(heim, o.id, false);
@@ -6152,11 +6330,14 @@ function pkBeutel(){
   pkMenueLeeren();
   for(const b of BAELLE){
     const zahl = ballZahl(b.id);
+    if(!zahl && !b.preis) continue;             // besondere Bälle erst zeigen, wenn man welche hat
+    const faktor = ballFaktor(b);
     const kasten = document.createElement("span");
     kasten.className = "pkzug";
     kasten.innerHTML = "<b>" + b.zeichen + " " + ue(b.name) + "</b><small>"
       + zahl + ue(" Stück") + " · "
-      + Math.round(klemm(pkFangChance()*b.faktor, 0.03, 0.98)*100) + "%</small>";
+      + Math.round(klemm(pkFangChance()*faktor, 0.03, 0.98)*100) + "%"
+      + (b.wirkung && faktor > 1.05 ? ' <span style="color:#7ee787">▲</span>' : "") + "</small>";
     const k = pkKnopf(kasten, () => pkFangen(b));
     k.disabled = zahl <= 0 || !!pk.wild.boss;
   }
@@ -6217,6 +6398,7 @@ async function pkAngriff(vonMir, attacke){
 }
 async function pkRunde(nr){
   pkSperren();
+  pk.runden++;
   const attacke = pk.meinsW.attacken[nr];
   pk.meins.ap[nr]--;
   const ichZuerst = pk.meinsW.init > pk.wildW.init
@@ -6294,7 +6476,7 @@ async function pkFangen(sorte){
   pkSperren();
   sorte = sorte || BAELLE[0];
   baelle()[sorte.id] = Math.max(0, ballZahl(sorte.id) - 1);
-  const chance = klemm(pkFangChance() * sorte.faktor, 0.03, 0.98);
+  const chance = klemm(pkFangChance() * ballFaktor(sorte), 0.03, 0.98);
   $("pkBall").textContent = sorte.zeichen;
   await pkSagen(ue("Du wirfst den ") + ue(sorte.name) + "!", 200);
   tonWurf();
@@ -6795,11 +6977,41 @@ function typMarke(typ){
 /* ---------- Bälle ----------
    Drei Sorten, von einfach bis richtig gut. Der Faktor geht direkt in
    die Fangrechnung.                                                  */
+/* Die besonderen Bälle kann man nicht kaufen, nur an der Werkbank bauen.
+   Jeder ist in einer Lage besonders gut - sonst ist er ein ganz normaler
+   Fangball. "wirkung" rechnet den Faktor im laufenden Kampf aus.      */
+function wildBiom(){ return pk ? biomNummer(Math.floor(pk.wild.x), Math.floor(pk.wild.z)) : -1; }
+function wildNahWasser(){
+  if(!pk) return false;
+  const x = Math.floor(pk.wild.x), z = Math.floor(pk.wild.z), y = Math.floor(pk.wild.y);
+  for(let dz=-4; dz<=4; dz++) for(let dx=-4; dx<=4; dx++) for(let dy=-2; dy<=1; dy++){
+    const b = BLOECKE[block(x+dx, y+dy, z+dz)];
+    if(b && b.fluessig) return true;
+  }
+  return false;
+}
 const BAELLE = [
-  {id:"normal", name:"Fangball",  zeichen:"🔴", faktor:1.0, preis:120},
-  {id:"super",  name:"Superball", zeichen:"🔵", faktor:1.6, preis:420},
-  {id:"hyper",  name:"Hyperball", zeichen:"🟡", faktor:2.4, preis:1100}
+  {id:"normal", name:"Fangball",  zeichen:"🔴", farben:["#e8484f","#f4f4f4"], faktor:1.0, preis:120},
+  {id:"super",  name:"Superball", zeichen:"🔵", farben:["#3a7be8","#f4f4f4"], faktor:1.6, preis:420},
+  {id:"hyper",  name:"Hyperball", zeichen:"🟡", farben:["#f2c230","#242424"], faktor:2.4, preis:1100},
+  {id:"aurora", name:"Aurora-Ball", zeichen:"🌌", farben:["#2c3fae","#29d3e6"], text:"Stark in Eis und Wüste",
+   wirkung:() => (wildBiom() === 7 || wildBiom() === 4) ? 3.0 : 1.0},
+  {id:"chrono", name:"Chrono-Ball", zeichen:"⏳", farben:["#f2f0ea","#d9a52a"], text:"Wird mit jeder Runde besser",
+   wirkung:() => Math.min(4, 1 + (pk ? pk.runden : 0) * 0.3)},
+  {id:"terra",  name:"Terra-Ball",  zeichen:"🌿", farben:["#3f8f2f","#8a8a8a"], text:"Stark gegen Pflanze und Boden",
+   wirkung:() => (pk && (pk.wildW.typ === "pflanze" || pk.wildW.typ === "boden")) ? 3.0 : 1.0},
+  {id:"lumi",   name:"Lumi-Ball",   zeichen:"💠", farben:["#cfd9ff","#3aa3ff"], text:"Stark im Dunkeln und unter Tage",
+   wirkung:() => (pk && (wildBiom() === 8 || pk.wild.y < bodenHoehe(pk.wild.x, pk.wild.z) - 3)) ? 3.0 : 1.0},
+  {id:"schatten",name:"Schatten-Ball",zeichen:"🔮", farben:["#241a36","#b04cf0"], text:"Stark gegen Geist und Unlicht",
+   wirkung:() => (pk && (pk.wildW.typ === "geist" || pk.wildW.typ === "unlicht")) ? 3.5 : 1.0},
+  {id:"aqua",   name:"Aqua-Ball",   zeichen:"💧", farben:["#1e5fd0","#79d8f0"], text:"Stark am Wasser und bei Fischen",
+   wirkung:() => (pk && (wildNahWasser() || ["fisch","schlange"].indexOf(artBauplan(pk.wildW.welt, pk.wildW.id)) >= 0)) ? 3.0 : 1.0},
+  {id:"nexus",  name:"Nexus-Ball",  zeichen:"🌀", farben:["#1b1238","#35e0f0"], text:"Passt sich jedem Typ an",
+   wirkung:() => 2.0},
+  {id:"zen",    name:"Zen-Ball",    zeichen:"☯️", farben:["#f4f2ec","#e2b640"], text:"Stark gegen schwächere Tiere",
+   wirkung:() => (pk && pk.wildW.stufe < pk.meinsW.stufe) ? 3.5 : 1.2}
 ];
+function ballFaktor(b){ return b.wirkung ? b.wirkung() : b.faktor; }
 function baelle(){
   if(!s.baelle || typeof s.baelle !== "object") s.baelle = {normal:8};
   return s.baelle;
