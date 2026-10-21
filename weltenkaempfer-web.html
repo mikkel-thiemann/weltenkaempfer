@@ -461,7 +461,7 @@
     <div style="font-size:52px">⛏️</div>
     <h2>WELTENKÄMPFER · BLOCKWELT</h2>
     <p class="c-dim" style="margin-top:0">Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.</p>
-    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 43 · Konten mit Passwort</p>
+    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 44 · Weltweiter Zähler vorbereitet</p>
     <p style="margin:0 0 4px">Willkommen, <b id="grussName" class="c-gold">Held</b>
       <button onclick="nameAendern()" style="padding:4px 10px; font-size:12px; margin-left:8px">✏️ Name &amp; Skin</button>
       <button onclick="passwortZeigen()" style="padding:4px 10px; font-size:12px; margin-left:4px">🔒 Passwort</button>
@@ -795,7 +795,7 @@ const EN = {
   "Eisschwert": "Ice Sword",
   "Eisspitzhacke": "Ice Pickaxe",
   "Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.": "Thirteen open block worlds. Build, dig, fight – and find the portal.",
-  "Ausgabe 43 · Konten mit Passwort": "Build 43 · Accounts with passwords",
+  "Ausgabe 44 · Weltweiter Zähler vorbereitet": "Build 44 · Worldwide counter ready",
   "Endlose Dünen. Und die Kakteen hier stehen nicht nur herum – sie laufen.": "Endless dunes. And the cacti here don't just stand around – they walk.",
   "Erde": "Dirt",
   "Erlege 14 Schattenriesen": "Slay 14 shadow giants",
@@ -1571,7 +1571,8 @@ const EN = {
   "🔒 Passwort": "🔒 Password",
   "🔒 Passwort gesetzt – merk es dir gut!": "🔒 Password set – remember it well!",
   "🔓 Das Konto hat jetzt kein Passwort mehr.": "🔓 This account has no password any more.",
-  "🚪 Konto wechseln": "🚪 Switch account"
+  "🚪 Konto wechseln": "🚪 Switch account",
+  "Spieler weltweit": "players worldwide"
 };
 function ue(s){
   if(sprache !== "en" || typeof s !== "string") return s;
@@ -2287,6 +2288,50 @@ function salzMachen(){
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
 
+/* ---------- Der weltweite Zähler ----------
+   Steht unten eine Serveradresse, fragt das Spiel dort nach, wie viele
+   Konten es auf der ganzen Welt gibt und wer gerade spielt. Geschickt
+   wird dabei nur eine zufällige Nummer je Konto - nie der Name, nie das
+   Passwort, nie eine Welt. Fehlt die Adresse oder ist der Server nicht
+   erreichbar, zählt das Spiel einfach wieder nur dieses Gerät.
+   Der Server dazu liegt im Ordner "server".                           */
+const ZAEHLER_SERVER = "";          // z.B. "https://weltenkaempfer-zaehler.name.workers.dev"
+let weltweit = null;                // {gesamt, online} vom Server, sonst null
+
+// Jedes Konto bekommt eine zufällige Nummer, an der der Server es wiedererkennt
+function weltId(){
+  if(!kontoJetzt) return null;
+  if(!kontoJetzt.weltId){
+    const neu = "w" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+    kontoAendern(k => k.weltId = neu);
+  }
+  return kontoJetzt.weltId;
+}
+function zaehlerFragen(weg){
+  if(!ZAEHLER_SERVER || !kontoJetzt || typeof fetch !== "function") return;
+  const nummer = weltId();
+  if(!nummer) return;
+  // Antwortet der Server nicht, soll das Spiel nicht hängen bleiben
+  const steuer = typeof AbortController === "function" ? new AbortController() : null;
+  const uhr = steuer ? setTimeout(() => steuer.abort(), 8000) : null;
+  fetch(ZAEHLER_SERVER.replace(/\/+$/, "") + weg + "?id=" + encodeURIComponent(nummer),
+        {cache: "no-store", signal: steuer ? steuer.signal : undefined})
+    .then(a => a.json())
+    .then(d => {
+      if(!d || typeof d.gesamt !== "number") return;
+      weltweit = {gesamt: d.gesamt, online: d.online || 0};
+      if(weg === "/konto" && kontoJetzt) kontoAendern(k => k.gemeldet = true);
+      zaehlerZeichnen();
+    })
+    .catch(() => {})                 // kein Netz: dann eben nur dieses Gerät
+    .then(() => { if(uhr) clearTimeout(uhr); });
+}
+// Beim Anmelden einmal das Konto melden, danach nur noch "ich bin da"
+function zaehlerMelden(){
+  if(!kontoJetzt) return;
+  zaehlerFragen(kontoJetzt.gemeldet ? "/ping" : "/konto");
+}
+
 /* ---------- Wer ist gerade am Spielen? ----------
    Jedes angemeldete Konto trägt alle paar Sekunden die Uhrzeit ein.
    Wer sich länger als eine Minute nicht gemeldet hat, gilt als weg -
@@ -2309,15 +2354,18 @@ function onlineZahl(){
   return n;
 }
 function zaehlerZeichnen(){
-  const gesamt = kontenLesen().length, online = onlineZahl();
+  // Weiss der Server Bescheid, gelten seine Zahlen - sonst die von hier
+  const gesamt = weltweit ? weltweit.gesamt : kontenLesen().length;
+  const online = weltweit ? weltweit.online : onlineZahl();
+  const wo = weltweit ? ue("Spieler weltweit") : ue("Spieler auf diesem Gerät");
   const kurz = $("spielerZahl");
   if(kurz){
     kurz.textContent = "👥 " + gesamt + " · 🟢 " + online;
-    kurz.title = ue("Spieler auf diesem Gerät: ") + gesamt + " · " + ue("gerade am Spielen: ") + online;
+    kurz.title = wo + ": " + gesamt + " · " + ue("gerade am Spielen: ") + online;
   }
   for(const id of ["kontenZaehler", "startZaehler"]){
     const el = $(id);
-    if(el) el.innerHTML = "👥 <b>" + gesamt + "</b> " + ue("Spieler auf diesem Gerät")
+    if(el) el.innerHTML = "👥 <b>" + gesamt + "</b> " + wo
                         + " · 🟢 <b>" + online + "</b> " + ue("gerade am Spielen");
   }
 }
@@ -2334,6 +2382,7 @@ function kontoAnmelden(konto){
   try{ localStorage.setItem(KONTO_KEY, konto.raum); }catch(e){}
   try{ if(konto.abdruck) sessionStorage.setItem(OFFEN_KEY, konto.raum); }catch(e){}
   aktivMelden();
+  zaehlerMelden();
   // Alles, was zu diesem Spieler gehört, neu einlesen
   spielerName = konto.name;
   skinLaden();
@@ -2477,7 +2526,7 @@ function kontoNeuAnlegen(){
   const konto = kontoAnlegen(name, w1);
   kontoJetzt = konto; kontoRaum = konto.raum;
   kontoFrischMachen();
-  kontoAnmelden(konto);
+  kontoAnmelden(konto);          // meldet das neue Konto auch beim Server an
   tonZahm();
 }
 function kontoLoeschenFragen(raum){
@@ -2590,6 +2639,7 @@ function kontenStart(){
   return false;
 }
 setInterval(() => { if(kontoJetzt) aktivMelden(); }, 20000);
+setInterval(() => { if(kontoJetzt) zaehlerFragen("/ping"); }, 60000);
 setInterval(zaehlerZeichnen, 5000);
 addEventListener("beforeunload", () => aktivMelden(true));
 addEventListener("pagehide", () => aktivMelden(true));

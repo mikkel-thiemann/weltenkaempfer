@@ -1,0 +1,12 @@
+# Diese Datei brauchst du nur, wenn du den Server vom Computer aus
+# hochladen willst (mit "npx wrangler deploy"). Über die Cloudflare-
+# Webseite geht es auch ohne - so steht es in ANLEITUNG.md.
+
+name = "weltenkaempfer-zaehler"
+main = "worker.js"
+compatibility_date = "2026-01-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "weltenkaempfer"
+database_id = "HIER-DIE-ID-AUS-CLOUDFLARE-EINSETZEN"
