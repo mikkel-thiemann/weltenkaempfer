@@ -119,15 +119,25 @@ Spieler auf der Welt**.
 
 ## Was der Server speichert
 
-Nur zwei Dinge, und beide sind anonym:
+Nur dein **Profil** – also das, was andere Spieler sehen sollen:
 
 | Was | Beispiel |
 |---|---|
-| eine zufällige Nummer je Konto | `k7f3b9a2c1d8` |
-| wann diese Nummer zuletzt gespielt hat | `1792617000` |
+| eine zufällige Nummer je Spieler | `w7f3b9a2c1d8` |
+| dein Spielername | `Mikkel` |
+| deine höchste Stufe | `12` |
+| wie viele Welten du hast | `3` |
+| wie viele Kreaturen du gefangen hast | `41` |
+| wann du zuletzt gespielt hast | `1792617000` |
 
-**Nicht** gespeichert werden: dein Name, dein Passwort, deine Welten,
-dein Aussehen. Die bleiben wie bisher nur auf deinem eigenen Gerät.
+**Nicht** gespeichert werden: dein Passwort, deine Welten und alles,
+was du gebaut hast. Das bleibt nur auf deinem eigenen Gerät.
+
+Die Nummer verlässt den Server nie – in der Spielerliste stehen nur
+Name und Spielstände.
+
+⚠️ **Dein Spielername wird für alle sichtbar**, die das Spiel öffnen.
+Nimm darum einen Spitznamen und nicht deinen vollen echten Namen.
 
 ## Kostet das etwas?
 

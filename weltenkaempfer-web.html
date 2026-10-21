@@ -316,7 +316,7 @@
   <div class="zeile" style="font-size:11px"><span id="koord">x 0 · y 0 · z 0</span><span id="fps">–</span>
     <span style="pointer-events:auto"><a href="#" id="listeKnopf" onclick="zurueckZurListe();return false;">🌍 Welten</a></span>
     <span style="pointer-events:auto; cursor:pointer" id="tonKnopf" title="Ton an/aus" onclick="tonUmschalten()">🔊</span>
-    <span id="spielerZahl">👥 1 · 🟢 1</span></div>
+    <span style="pointer-events:auto; cursor:pointer" id="spielerZahl" onclick="spielerZeigen()">👥 1 · 🟢 1</span></div>
 </div>
 
 <div class="hud" id="hudRechts">
@@ -347,6 +347,19 @@
   <div class="vorspannKnoepfe">
     <button id="vorspannTon" class="hidden" onclick="vorspannTonAn()">🔊 Ton an</button>
     <button onclick="vorspannEnde()">Überspringen ⏭</button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="spieler">
+  <div class="fenster" style="width:min(620px,100%)">
+    <h2 style="text-align:center">🌍 Spieler</h2>
+    <p class="c-dim" style="margin-top:0; text-align:center" id="spielerKopf"></p>
+    <div id="spielerListe"></div>
+    <div id="spielerProfil" class="hidden"></div>
+    <div class="reihe" style="margin-top:12px">
+      <button id="spielerZurueck" class="hidden" onclick="spielerListeZurueck()">‹ Zur Liste</button>
+      <button class="primary" onclick="spielerSchliessen()">Weiter</button>
+    </div>
   </div>
 </div>
 
@@ -461,12 +474,13 @@
     <div style="font-size:52px">⛏️</div>
     <h2>WELTENKÄMPFER · BLOCKWELT</h2>
     <p class="c-dim" style="margin-top:0">Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.</p>
-    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 44 · Weltweiter Zähler vorbereitet</p>
+    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 45 · Spielerliste und Profile</p>
     <p style="margin:0 0 4px">Willkommen, <b id="grussName" class="c-gold">Held</b>
       <button onclick="nameAendern()" style="padding:4px 10px; font-size:12px; margin-left:8px">✏️ Name &amp; Skin</button>
       <button onclick="passwortZeigen()" style="padding:4px 10px; font-size:12px; margin-left:4px">🔒 Passwort</button>
       <button onclick="kontoAbmelden()" style="padding:4px 10px; font-size:12px; margin-left:4px">🚪 Konto wechseln</button>
       <button onclick="uebertragZeigen()" style="padding:4px 10px; font-size:12px; margin-left:4px">💾 Spielstand übertragen</button></p>
+    <p style="margin:0 0 4px"><button onclick="spielerZeigen()" style="padding:4px 10px; font-size:12px">🌍 Spieler ansehen</button></p>
     <p id="startZaehler" class="c-dim" style="margin:0 0 8px; font-size:12px"></p>
     <div style="text-align:left; font-size:13.5px; line-height:2; margin:14px 0">
       <span class="taste">W A S D</span> laufen &nbsp; <span class="taste">Leertaste</span> springen &nbsp; <span class="taste">Shift</span> rennen<br>
@@ -795,7 +809,7 @@ const EN = {
   "Eisschwert": "Ice Sword",
   "Eisspitzhacke": "Ice Pickaxe",
   "Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.": "Thirteen open block worlds. Build, dig, fight – and find the portal.",
-  "Ausgabe 44 · Weltweiter Zähler vorbereitet": "Build 44 · Worldwide counter ready",
+  "Ausgabe 45 · Spielerliste und Profile": "Build 45 · Player list and profiles",
   "Endlose Dünen. Und die Kakteen hier stehen nicht nur herum – sie laufen.": "Endless dunes. And the cacti here don't just stand around – they walk.",
   "Erde": "Dirt",
   "Erlege 14 Schattenriesen": "Slay 14 shadow giants",
@@ -1572,7 +1586,27 @@ const EN = {
   "🔒 Passwort gesetzt – merk es dir gut!": "🔒 Password set – remember it well!",
   "🔓 Das Konto hat jetzt kein Passwort mehr.": "🔓 This account has no password any more.",
   "🚪 Konto wechseln": "🚪 Switch account",
-  "Spieler weltweit": "players worldwide"
+  "Spieler weltweit": "players worldwide",
+  " (du)": " (you)",
+  " Kreaturen": " creatures",
+  " Minuten": " minutes ago",
+  " Stunden": " hours ago",
+  " Tagen": " days ago",
+  "Alle Spieler auf dem Server": "All players on the server",
+  "Dabei seit": "Playing since",
+  "Die Spieler auf diesem Gerät": "The players on this device",
+  "Hier ist noch niemand.": "Nobody here yet.",
+  "Kreaturen gefangen": "Creatures caught",
+  "Profile": "profiles",
+  "Welten": "Worlds",
+  "gerade eben": "just now",
+  "noch nie": "never",
+  "vor ": "",
+  "zuletzt ": "last seen ",
+  "‹ Zur Liste": "‹ Back to list",
+  "🌍 Spieler": "🌍 Players",
+  "🌍 Spieler ansehen": "🌍 See players",
+  "🟢 spielt gerade": "🟢 playing now"
 };
 function ue(s){
   if(sprache !== "en" || typeof s !== "string") return s;
@@ -2307,30 +2341,50 @@ function weltId(){
   }
   return kontoJetzt.weltId;
 }
+// Wie viele Kreaturen in dieser Welt schon gefangen sind
+function gefangenZahl(){
+  let n = 0;
+  const b = (s && s.buch) || {};
+  for(const k in b) if(b[k] >= 2) n++;
+  return n;
+}
+/* Das eigene Profil: nur Spielsachen, nichts Persönliches. Stufe und
+   Kreaturen kommen aus der besten Welt dieses Kontos.                 */
+function meinProfil(){
+  let stufe = 0, kreaturen = 0, welten = 0;
+  for(const w of weltListe()){
+    welten++;
+    stufe = Math.max(stufe, w.stufe || 0);
+    kreaturen = Math.max(kreaturen, w.kreaturen || 0);
+  }
+  return {name: kontoJetzt ? kontoJetzt.name : spielerName, stufe: stufe, welten: welten, kreaturen: kreaturen};
+}
 function zaehlerFragen(weg){
-  if(!ZAEHLER_SERVER || !kontoJetzt || typeof fetch !== "function") return;
+  if(!ZAEHLER_SERVER || !kontoJetzt || typeof fetch !== "function") return Promise.resolve(null);
   const nummer = weltId();
-  if(!nummer) return;
+  if(!nummer) return Promise.resolve(null);
+  let adresse = ZAEHLER_SERVER.replace(/\/+$/, "") + weg + "?id=" + encodeURIComponent(nummer);
+  if(weg === "/melden"){
+    const p = meinProfil();
+    adresse += "&name=" + encodeURIComponent(p.name) + "&stufe=" + p.stufe
+             + "&welten=" + p.welten + "&kreaturen=" + p.kreaturen;
+  }
   // Antwortet der Server nicht, soll das Spiel nicht hängen bleiben
   const steuer = typeof AbortController === "function" ? new AbortController() : null;
   const uhr = steuer ? setTimeout(() => steuer.abort(), 8000) : null;
-  fetch(ZAEHLER_SERVER.replace(/\/+$/, "") + weg + "?id=" + encodeURIComponent(nummer),
-        {cache: "no-store", signal: steuer ? steuer.signal : undefined})
+  return fetch(adresse, {cache: "no-store", signal: steuer ? steuer.signal : undefined})
     .then(a => a.json())
     .then(d => {
-      if(!d || typeof d.gesamt !== "number") return;
+      if(!d || typeof d.gesamt !== "number") return null;
       weltweit = {gesamt: d.gesamt, online: d.online || 0};
-      if(weg === "/konto" && kontoJetzt) kontoAendern(k => k.gemeldet = true);
       zaehlerZeichnen();
+      return d;
     })
-    .catch(() => {})                 // kein Netz: dann eben nur dieses Gerät
-    .then(() => { if(uhr) clearTimeout(uhr); });
+    .catch(() => null)               // kein Netz: dann zählt eben nur dieses Gerät
+    .then(d => { if(uhr) clearTimeout(uhr); return d; });
 }
-// Beim Anmelden einmal das Konto melden, danach nur noch "ich bin da"
-function zaehlerMelden(){
-  if(!kontoJetzt) return;
-  zaehlerFragen(kontoJetzt.gemeldet ? "/ping" : "/konto");
-}
+// Beim Anmelden das Profil melden, zwischendurch nur noch "ich bin da"
+function zaehlerMelden(){ if(kontoJetzt) zaehlerFragen("/melden"); }
 
 /* ---------- Wer ist gerade am Spielen? ----------
    Jedes angemeldete Konto trägt alle paar Sekunden die Uhrzeit ein.
@@ -2368,6 +2422,147 @@ function zaehlerZeichnen(){
     if(el) el.innerHTML = "👥 <b>" + gesamt + "</b> " + wo
                         + " · 🟢 <b>" + online + "</b> " + ue("gerade am Spielen");
   }
+}
+
+/* ---------- Die Spielerliste ----------
+   Steht ein Server bereit, zeigt sie alle Spieler der Welt. Sonst die
+   Konten auf diesem Gerät - so ist die Liste nie leer.               */
+let spielerDaten = null;            // vom Server geholte Profile, sonst null
+
+function vorZeit(sekunden){
+  if(!sekunden) return ue("noch nie");
+  const d = Math.max(0, Math.floor(Date.now()/1000) - sekunden);
+  if(d < 90) return ue("gerade eben");
+  if(d < 5400) return ue("vor ") + Math.round(d/60) + ue(" Minuten");
+  if(d < 172800) return ue("vor ") + Math.round(d/3600) + ue(" Stunden");
+  return ue("vor ") + Math.round(d/86400) + ue(" Tagen");
+}
+// Die Profile der Konten auf diesem Gerät
+function lokaleProfile(){
+  const aktiv = aktivLesen(), jetzt = Math.floor(Date.now()/1000);
+  return kontenLesen().map(k => {
+    let welten = 0, stufe = 0, kreaturen = 0;
+    try{
+      for(const w of JSON.parse(localStorage.getItem(k.raum + "wkListe")) || []){
+        welten++;
+        stufe = Math.max(stufe, w.stufe || 0);
+        kreaturen = Math.max(kreaturen, w.kreaturen || 0);
+      }
+    }catch(e){}
+    // Ist das Konto gerade nicht angemeldet, gilt sein letzter Besuch
+    const wann = aktiv[k.raum] || k.zuletzt || 0;
+    return {name: k.name, stufe: stufe, welten: welten, kreaturen: kreaturen,
+            zuletzt: Math.floor(wann / 1000), erstellt: Math.floor((k.erstellt || 0) / 1000),
+            online: Date.now() - (aktiv[k.raum] || 0) < AKTIV_FRIST,
+            ich: !!(kontoJetzt && k.raum === kontoRaum)};
+  }).sort((a, b) => b.zuletzt - a.zuletzt);
+}
+// Ein Abzeichen nach Stufe - das macht die Liste auf einen Blick lesbar
+function spielerZeichen(p){
+  if(p.stufe >= 30) return "👑";
+  if(p.stufe >= 20) return "🏆";
+  if(p.stufe >= 10) return "⭐";
+  if(p.stufe >= 5)  return "🙂";
+  return "🥚";
+}
+function spielerZeichnen(){
+  const liste = spielerDaten || lokaleProfile();
+  const kopf = $("spielerKopf");
+  kopf.textContent = spielerDaten
+    ? ue("Alle Spieler auf dem Server") + " · " + liste.length + " " + ue("Profile")
+    : ue("Die Spieler auf diesem Gerät");
+  const ziel = $("spielerListe");
+  ziel.innerHTML = "";
+  if(!liste.length){
+    const leer = document.createElement("p");
+    leer.className = "c-dim";
+    leer.textContent = ue("Hier ist noch niemand.");
+    ziel.appendChild(leer);
+    return;
+  }
+  for(const p of liste){
+    const karte = document.createElement("div");
+    karte.className = "karte2";
+    karte.style.cursor = "pointer";
+    karte.onclick = () => spielerProfilZeigen(p);
+
+    const links = document.createElement("span");
+    const name = document.createElement("b");
+    // textContent: ein fremder Name ist nur Text, niemals Befehle
+    name.textContent = spielerZeichen(p) + " " + p.name + (p.ich ? ue(" (du)") : "");
+    const zeile = document.createElement("span");
+    zeile.className = "c-dim";
+    zeile.style.fontSize = "12px";
+    zeile.textContent = ue("Stufe ") + p.stufe + " · " + p.welten + ue(" Welt(en)")
+                      + " · " + p.kreaturen + ue(" Kreaturen");
+    links.appendChild(name); links.appendChild(document.createElement("br")); links.appendChild(zeile);
+
+    const rechts = document.createElement("span");
+    rechts.style.fontSize = "12px";
+    rechts.className = p.online ? "c-gold" : "c-dim";
+    rechts.textContent = p.online ? ue("🟢 spielt gerade") : vorZeit(p.zuletzt);
+
+    karte.appendChild(links); karte.appendChild(rechts);
+    ziel.appendChild(karte);
+  }
+}
+// Ein einzelnes Profil gross ansehen
+function spielerProfilZeigen(p){
+  const k = $("spielerProfil");
+  k.innerHTML = "";
+  const oben = document.createElement("div");
+  oben.style.cssText = "text-align:center; margin-bottom:10px";
+  const sym = document.createElement("div");
+  sym.style.fontSize = "56px"; sym.textContent = spielerZeichen(p);
+  const name = document.createElement("div");
+  name.style.cssText = "font-size:22px; font-weight:700; margin:4px 0";
+  name.textContent = p.name;
+  const stand = document.createElement("p");
+  stand.className = p.online ? "c-gold" : "c-dim";
+  stand.style.margin = "0"; stand.style.fontSize = "13px";
+  stand.textContent = p.online ? ue("🟢 spielt gerade") : ue("zuletzt ") + vorZeit(p.zuletzt);
+  oben.appendChild(sym); oben.appendChild(name); oben.appendChild(stand);
+  k.appendChild(oben);
+
+  for(const [was, wert] of [[ue("Stufe"), p.stufe], [ue("Welten"), p.welten],
+                            [ue("Kreaturen gefangen"), p.kreaturen],
+                            [ue("Dabei seit"), p.erstellt
+                               ? new Date(p.erstellt*1000).toLocaleDateString(sprache === "en" ? "en-GB" : "de-CH")
+                               : "–"]]){
+    const z = document.createElement("div");
+    z.className = "karte2";
+    const a = document.createElement("span"); a.textContent = was;
+    const b = document.createElement("b"); b.textContent = wert;
+    z.appendChild(a); z.appendChild(b);
+    k.appendChild(z);
+  }
+  $("spielerListe").classList.add("hidden");
+  $("spielerKopf").classList.add("hidden");
+  k.classList.remove("hidden");
+  $("spielerZurueck").classList.remove("hidden");
+}
+function spielerListeZurueck(){
+  $("spielerProfil").classList.add("hidden");
+  $("spielerZurueck").classList.add("hidden");
+  $("spielerListe").classList.remove("hidden");
+  $("spielerKopf").classList.remove("hidden");
+}
+let spielerVonStart = false;
+function spielerZeigen(){
+  spielerVonStart = !$("start").classList.contains("hidden");
+  if(spielerVonStart) $("start").classList.add("hidden");
+  spielerListeZurueck();
+  spielerZeichnen();
+  oeffne("spieler");
+  // Erst das eigene Profil auffrischen, dann die Liste holen
+  zaehlerFragen("/melden");
+  zaehlerFragen("/profile").then(d => {
+    if(d && Array.isArray(d.spieler)){ spielerDaten = d.spieler; spielerZeichnen(); }
+  });
+}
+function spielerSchliessen(){
+  schliesse("spieler");
+  if(spielerVonStart){ spielerVonStart = false; $("start").classList.remove("hidden"); }
 }
 
 /* ---------- Anmelden, abmelden, Konto anlegen ---------- */
@@ -2694,7 +2889,8 @@ function speichern(){
     const kopie = Object.assign({}, s, {aenderungen: aenderungenPacken(s.aenderungen)});
     localStorage.setItem(standKey(s.id), JSON.stringify(kopie));
     const l = weltListe();
-    const eintrag = {id:s.id, name:s.name, saat:s.saat, stufe:s.level, welt:s.welt, zuletzt:Date.now()};
+    const eintrag = {id:s.id, name:s.name, saat:s.saat, stufe:s.level, welt:s.welt,
+                     zuletzt:Date.now(), kreaturen:gefangenZahl()};
     const alt = l.find(x => x.id === s.id);
     if(alt) Object.assign(alt, eintrag); else l.push(eintrag);
     listeSchreiben(l);
@@ -5710,7 +5906,7 @@ function oeffne(id){
 }
 function schliesse(id){
   $(id).classList.add("hidden");
-  const offen = ["kampf","pkampf","tafel","lager","stufe","info","reise","uebertragung","start","team","buch","rezepte","starter","neuewelt"].some(x => !$(x).classList.contains("hidden"));
+  const offen = ["kampf","pkampf","tafel","lager","stufe","info","reise","uebertragung","start","team","buch","rezepte","spieler","starter","neuewelt"].some(x => !$(x).classList.contains("hidden"));
   if(!offen) modus = "welt";
 }
 function infoZeigen(icon, titel, text){
@@ -9616,6 +9812,7 @@ addEventListener("keydown", e => {
       else if(!$("team").classList.contains("hidden")) schliesse("team");
       else if(!$("buch").classList.contains("hidden")) schliesse("buch");
       else if(!$("rezepte").classList.contains("hidden")) schliesse("rezepte");
+      else if(!$("spieler").classList.contains("hidden")) spielerSchliessen();
     }
     return;
   }
