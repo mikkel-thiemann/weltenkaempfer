@@ -315,7 +315,8 @@
   </div>
   <div class="zeile" style="font-size:11px"><span id="koord">x 0 · y 0 · z 0</span><span id="fps">–</span>
     <span style="pointer-events:auto"><a href="#" id="listeKnopf" onclick="zurueckZurListe();return false;">🌍 Welten</a></span>
-    <span style="pointer-events:auto; cursor:pointer" id="tonKnopf" title="Ton an/aus" onclick="tonUmschalten()">🔊</span></div>
+    <span style="pointer-events:auto; cursor:pointer" id="tonKnopf" title="Ton an/aus" onclick="tonUmschalten()">🔊</span>
+    <span id="spielerZahl">👥 1 · 🟢 1</span></div>
 </div>
 
 <div class="hud" id="hudRechts">
@@ -346,6 +347,77 @@
   <div class="vorspannKnoepfe">
     <button id="vorspannTon" class="hidden" onclick="vorspannTonAn()">🔊 Ton an</button>
     <button onclick="vorspannEnde()">Überspringen ⏭</button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="konten">
+  <div class="fenster" style="text-align:center; width:min(560px,100%)">
+    <div class="sprachwahl">
+      <button id="sprde3" onclick="spracheSetzen('de')">Deutsch</button>
+      <button id="spren3" onclick="spracheSetzen('en')">English</button>
+    </div>
+
+    <div id="kontoWahl">
+      <div style="font-size:48px">👥</div>
+      <h2>Wer spielt?</h2>
+      <p class="c-dim" style="margin-top:0">Jeder Spieler hat sein eigenes Konto mit eigenen Welten.
+        Mit einem Passwort kommt niemand sonst hinein.</p>
+      <p id="kontenZaehler" class="c-gold" style="font-size:13px"></p>
+      <div id="kontenListe"></div>
+      <div class="reihe" style="margin-top:12px"><button class="primary" onclick="kontoNeuZeigen()">➕ Neues Konto</button></div>
+    </div>
+
+    <div id="kontoNeu" class="hidden">
+      <div style="font-size:48px">🙂</div>
+      <h2>Neues Konto</h2>
+      <p class="c-dim" style="margin-top:0">Such dir einen Namen aus. Das Passwort kannst du freilassen –
+        dann kommt jeder an diesem Gerät in dein Konto.</p>
+      <div class="neuwelt" style="margin:14px 0; flex-direction:column; align-items:stretch">
+        <input id="neuKontoName" maxlength="18" placeholder="Dein Spielername" autocomplete="off">
+        <input id="neuKontoWort" type="password" maxlength="40" placeholder="Passwort (darf leer bleiben)" autocomplete="new-password">
+        <input id="neuKontoWort2" type="password" maxlength="40" placeholder="Passwort noch einmal" autocomplete="new-password">
+      </div>
+      <p class="c-bad" id="neuKontoFehler" style="font-size:12.5px"></p>
+      <div class="reihe">
+        <button class="primary" onclick="kontoNeuAnlegen()">Konto anlegen</button>
+        <button onclick="kontenZeigen()">Zurück</button>
+      </div>
+      <p class="c-dim" style="font-size:12px">Alles bleibt auf diesem Gerät. Nichts wird ins Netz geschickt –
+        darum kann dir auch niemand das Passwort zurücksetzen. Merk es dir gut!</p>
+    </div>
+
+    <div id="kontoTuer" class="hidden">
+      <div style="font-size:48px">🔒</div>
+      <h2>Passwort für <span id="tuerName" class="c-gold"></span></h2>
+      <div class="neuwelt" style="margin:14px 0">
+        <input id="tuerFeld" type="password" maxlength="40" placeholder="Dein Passwort" autocomplete="current-password">
+        <button class="primary" onclick="kontoTuerOeffnen()">🔑 Anmelden</button>
+      </div>
+      <p class="c-bad" id="tuerFehler" style="font-size:12.5px"></p>
+      <div class="reihe"><button onclick="kontenZeigen()">Zurück</button></div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="passwort">
+  <div class="fenster" style="text-align:center; width:min(480px,100%)">
+    <div style="font-size:48px">🔒</div>
+    <h2 id="pwTitel">Passwort setzen</h2>
+    <p class="c-dim" style="margin-top:0">Mit einem Passwort kommt kein anderer Spieler an diesem Gerät
+      in dein Konto.</p>
+    <div class="neuwelt" style="margin:14px 0; flex-direction:column; align-items:stretch">
+      <span id="pwAltReihe"><input id="pwAlt" type="password" maxlength="40" placeholder="Bisheriges Passwort" autocomplete="current-password" style="width:100%"></span>
+      <input id="pwNeu" type="password" maxlength="40" placeholder="Neues Passwort" autocomplete="new-password">
+      <input id="pwNeu2" type="password" maxlength="40" placeholder="Neues Passwort noch einmal" autocomplete="new-password">
+    </div>
+    <p class="c-bad" id="pwFehler" style="font-size:12.5px"></p>
+    <div class="reihe">
+      <button class="primary" onclick="passwortSpeichern()">Speichern</button>
+      <button id="pwWeg" onclick="passwortAbnehmen()">Passwort abnehmen</button>
+      <button onclick="passwortSchliessen()">Abbrechen</button>
+    </div>
+    <p class="c-dim" style="font-size:12px">Das Passwort wird nie im Klartext gespeichert, nur sein
+      Fingerabdruck. Niemand kann es dir zurücksetzen – schreib es dir auf.</p>
   </div>
 </div>
 
@@ -389,10 +461,13 @@
     <div style="font-size:52px">⛏️</div>
     <h2>WELTENKÄMPFER · BLOCKWELT</h2>
     <p class="c-dim" style="margin-top:0">Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.</p>
-    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 42 · 20 neue Kreaturen-Reihen</p>
+    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 43 · Konten mit Passwort</p>
     <p style="margin:0 0 4px">Willkommen, <b id="grussName" class="c-gold">Held</b>
       <button onclick="nameAendern()" style="padding:4px 10px; font-size:12px; margin-left:8px">✏️ Name &amp; Skin</button>
+      <button onclick="passwortZeigen()" style="padding:4px 10px; font-size:12px; margin-left:4px">🔒 Passwort</button>
+      <button onclick="kontoAbmelden()" style="padding:4px 10px; font-size:12px; margin-left:4px">🚪 Konto wechseln</button>
       <button onclick="uebertragZeigen()" style="padding:4px 10px; font-size:12px; margin-left:4px">💾 Spielstand übertragen</button></p>
+    <p id="startZaehler" class="c-dim" style="margin:0 0 8px; font-size:12px"></p>
     <div style="text-align:left; font-size:13.5px; line-height:2; margin:14px 0">
       <span class="taste">W A S D</span> laufen &nbsp; <span class="taste">Leertaste</span> springen &nbsp; <span class="taste">Shift</span> rennen<br>
       <span class="taste">Maus</span> umsehen &nbsp; <span class="taste">Linke Maustaste halten</span> Block abbauen<br>
@@ -720,7 +795,7 @@ const EN = {
   "Eisschwert": "Ice Sword",
   "Eisspitzhacke": "Ice Pickaxe",
   "Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.": "Thirteen open block worlds. Build, dig, fight – and find the portal.",
-  "Ausgabe 42 · 20 neue Kreaturen-Reihen": "Build 42 · 20 new creature lines",
+  "Ausgabe 43 · Konten mit Passwort": "Build 43 · Accounts with passwords",
   "Endlose Dünen. Und die Kakteen hier stehen nicht nur herum – sie laufen.": "Endless dunes. And the cacti here don't just stand around – they walk.",
   "Erde": "Dirt",
   "Erlege 14 Schattenriesen": "Slay 14 shadow giants",
@@ -1456,7 +1531,47 @@ const EN = {
   "unter dem Gras": "under the grass",
   "unter der Erde, überall": "underground, everywhere",
   "weiße Büsche im Wald und bei den Kirschblüten": "white bushes in the forest and among the cherry blossoms",
-  "📜 Ballrezepte": "📜 Ball recipes"
+  "📜 Ballrezepte": "📜 Ball recipes",
+  " Welt(en)": " world(s)",
+  " · mit Passwort": " · password protected",
+  " · 🟢 spielt gerade": " · 🟢 playing now",
+  "\" mit allen Welten wirklich löschen? Das geht nicht rückgängig.": "\" and all its worlds really be deleted? This cannot be undone.",
+  "Alles bleibt auf diesem Gerät. Nichts wird ins Netz geschickt – darum kann dir auch niemand das Passwort zurücksetzen. Merk es dir gut!": "Everything stays on this device. Nothing is sent over the internet – so nobody can reset your password either. Remember it well!",
+  "Bisheriges Passwort": "Current password",
+  "Bitte dein Passwort eingeben.": "Please enter your password.",
+  "Das Passwort braucht mindestens vier Zeichen.": "The password needs at least four characters.",
+  "Das Passwort stimmt nicht.": "That password is not right.",
+  "Das Passwort wird nie im Klartext gespeichert, nur sein Fingerabdruck. Niemand kann es dir zurücksetzen – schreib es dir auf.": "The password itself is never stored, only its fingerprint. Nobody can reset it for you – write it down.",
+  "Das bisherige Passwort stimmt nicht.": "The current password is not right.",
+  "Dein Passwort": "Your password",
+  "Die beiden Passwörter sind nicht gleich.": "The two passwords are not the same.",
+  "Diesen Namen gibt es hier schon.": "That name is already taken here.",
+  "Jeder Spieler hat sein eigenes Konto mit eigenen Welten. Mit einem Passwort kommt niemand sonst hinein.": "Every player has their own account with their own worlds. With a password nobody else can get in.",
+  "Konto \"": "Account \"",
+  "Konto anlegen": "Create account",
+  "Konto löschen": "Delete account",
+  "Mit einem Passwort kommt kein anderer Spieler an diesem Gerät in dein Konto.": "With a password no other player on this device can enter your account.",
+  "Neues Konto": "New account",
+  "Neues Passwort": "New password",
+  "Neues Passwort noch einmal": "New password again",
+  "Passwort (darf leer bleiben)": "Password (may stay empty)",
+  "Passwort abnehmen": "Remove password",
+  "Passwort für": "Password for",
+  "Passwort noch einmal": "Password again",
+  "Passwort setzen": "Set a password",
+  "Passwort ändern": "Change password",
+  "Spieler auf diesem Gerät": "players on this device",
+  "Spieler auf diesem Gerät: ": "players on this device: ",
+  "Such dir einen Namen aus. Das Passwort kannst du freilassen – dann kommt jeder an diesem Gerät in dein Konto.": "Pick a name. You can leave the password empty – then anyone on this device can enter your account.",
+  "Wer spielt?": "Who is playing?",
+  "gerade am Spielen": "playing right now",
+  "gerade am Spielen: ": "playing right now: ",
+  "➕ Neues Konto": "➕ New account",
+  "🔑 Anmelden": "🔑 Log in",
+  "🔒 Passwort": "🔒 Password",
+  "🔒 Passwort gesetzt – merk es dir gut!": "🔒 Password set – remember it well!",
+  "🔓 Das Konto hat jetzt kein Passwort mehr.": "🔓 This account has no password any more.",
+  "🚪 Konto wechseln": "🚪 Switch account"
 };
 function ue(s){
   if(sprache !== "en" || typeof s !== "string") return s;
@@ -1539,6 +1654,7 @@ function spracheAnwenden(){
   if(typeof talentKnoepfe === "function") talentKnoepfe();
   if(typeof nameAnzeigen === "function") nameAnzeigen();
   if(typeof weltlisteZeichnen === "function") weltlisteZeichnen();
+  if(typeof kontenZeichnen === "function" && !$("konten").classList.contains("hidden")) kontenZeichnen();
   if(typeof galerieZeichnen === "function") galerieZeichnen();
   if(typeof reiseFenster === "function" && !$("reise").classList.contains("hidden")) reiseFenster();
 }
@@ -2073,17 +2189,421 @@ function neuerStand(){
           breite:WELT_BREIT, hoch:WELT_HOCH, box:[], buch:{}, baelle:{normal:8},
           version:2};
 }
+
+/* =====================================================================
+   KONTEN: MEHRERE SPIELER AUF EINEM GERÄT
+   Jeder Spieler bekommt einen eigenen Raum im Speicher. Alles, was ihm
+   gehört - seine Welten, sein Name, sein Aussehen, seine Belohnungen -
+   liegt unter seinem eigenen Schlüssel. So sieht ein Spieler nie die
+   Welten eines anderen.
+
+   Wer mag, legt ein Passwort davor. Gespeichert wird nie das Passwort
+   selbst, sondern nur sein Fingerabdruck: eine lange Zahlenreihe, aus
+   der sich das Passwort nicht zurückrechnen lässt. Das hält andere
+   Spieler an diesem Gerät von deinem Konto fern. Ein Bankschloss ist es
+   nicht - alles liegt weiterhin auf diesem einen Computer.
+   ===================================================================== */
+const KONTEN_KEY = "wkKonten";          // alle Konten dieses Geräts
+const KONTO_KEY  = "wkKontoJetzt";      // wer zuletzt angemeldet war
+const OFFEN_KEY  = "wkOffen";           // mit Passwort geöffnet, nur für dieses Fenster
+let kontoJetzt = null;                  // das angemeldete Konto
+let kontoRaum = "gast#";                // Vorsatz vor jedem Speicherschlüssel
+
+// Jeder Speicherschlüssel bekommt den Raum des angemeldeten Kontos davor.
+// Das erste Konto erbt den alten Raum "" - so bleiben alte Welten da, wo
+// sie sind, und müssen nicht umkopiert werden.
+function raumKey(basis){ return (kontoRaum || "") + basis; }
+
+function kontenLesen(){
+  try{ const l = JSON.parse(localStorage.getItem(KONTEN_KEY)); return Array.isArray(l) ? l : []; }
+  catch(e){ return []; }
+}
+function kontenSchreiben(l){ try{ localStorage.setItem(KONTEN_KEY, JSON.stringify(l)); }catch(e){} }
+function kontoNach(raum){ return kontenLesen().find(k => k.raum === raum) || null; }
+
+/* ---------- Der Fingerabdruck eines Passworts ----------
+   SHA-256, die gleiche Rechnung, die auch Browser und Banken benutzen.
+   Sie läuft nur vorwärts: aus dem Passwort wird der Abdruck, aus dem
+   Abdruck nie wieder das Passwort.                                     */
+const SHA_K = [
+  0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+  0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+  0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+  0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+  0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+  0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+  0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+  0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+function utf8Bytes(s){
+  const b = [];
+  for(let i = 0; i < s.length; i++){
+    let c = s.codePointAt(i);
+    if(c > 0xffff) i++;
+    if(c < 0x80) b.push(c);
+    else if(c < 0x800) b.push(192 | c >> 6, 128 | c & 63);
+    else if(c < 0x10000) b.push(224 | c >> 12, 128 | (c >> 6) & 63, 128 | c & 63);
+    else b.push(240 | c >> 18, 128 | (c >> 12) & 63, 128 | (c >> 6) & 63, 128 | c & 63);
+  }
+  return b;
+}
+function sha256(text){
+  const b = utf8Bytes(text), bits = b.length * 8;
+  b.push(0x80);
+  while(b.length % 64 !== 56) b.push(0);
+  for(let i = 7; i >= 0; i--) b.push(Math.floor(bits / Math.pow(2, i*8)) & 255);
+  const H = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+  const w = new Uint32Array(64);
+  const dreh = (x, n) => (x >>> n) | (x << (32 - n));
+  for(let p = 0; p < b.length; p += 64){
+    for(let i = 0; i < 16; i++)
+      w[i] = (b[p+i*4] << 24) | (b[p+i*4+1] << 16) | (b[p+i*4+2] << 8) | b[p+i*4+3];
+    for(let i = 16; i < 64; i++){
+      const s0 = dreh(w[i-15], 7) ^ dreh(w[i-15], 18) ^ (w[i-15] >>> 3);
+      const s1 = dreh(w[i-2], 17) ^ dreh(w[i-2], 19) ^ (w[i-2] >>> 10);
+      w[i] = (w[i-16] + s0 + w[i-7] + s1) >>> 0;
+    }
+    let a = H[0], b1 = H[1], c = H[2], d = H[3], e = H[4], f = H[5], g = H[6], h = H[7];
+    for(let i = 0; i < 64; i++){
+      const S1 = dreh(e, 6) ^ dreh(e, 11) ^ dreh(e, 25);
+      const t1 = (h + S1 + ((e & f) ^ (~e & g)) + SHA_K[i] + w[i]) >>> 0;
+      const S0 = dreh(a, 2) ^ dreh(a, 13) ^ dreh(a, 22);
+      const t2 = (S0 + ((a & b1) ^ (a & c) ^ (b1 & c))) >>> 0;
+      h = g; g = f; f = e; e = (d + t1) >>> 0; d = c; c = b1; b1 = a; a = (t1 + t2) >>> 0;
+    }
+    H[0] = (H[0]+a)>>>0; H[1] = (H[1]+b1)>>>0; H[2] = (H[2]+c)>>>0; H[3] = (H[3]+d)>>>0;
+    H[4] = (H[4]+e)>>>0; H[5] = (H[5]+f)>>>0; H[6] = (H[6]+g)>>>0; H[7] = (H[7]+h)>>>0;
+  }
+  return Array.from(H, x => x.toString(16).padStart(8, "0")).join("");
+}
+/* Das Salz ist eine Zufallszahl je Konto. Zwei Spieler mit demselben
+   Passwort bekommen dadurch verschiedene Abdrücke. Die vielen Runden
+   machen jeden Rateversuch langsam.                                   */
+function abdruck(passwort, salz){
+  let h = salz + "|" + passwort;
+  for(let i = 0; i < 1500; i++) h = sha256(h);
+  return h;
+}
+function salzMachen(){
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+
+/* ---------- Wer ist gerade am Spielen? ----------
+   Jedes angemeldete Konto trägt alle paar Sekunden die Uhrzeit ein.
+   Wer sich länger als eine Minute nicht gemeldet hat, gilt als weg -
+   so verschwindet auch ein abgestürztes Fenster von allein.           */
+const AKTIV_KEY = "wkAktiv", AKTIV_FRIST = 60000;
+function aktivLesen(){
+  try{ const o = JSON.parse(localStorage.getItem(AKTIV_KEY)); return (o && typeof o === "object") ? o : {}; }
+  catch(e){ return {}; }
+}
+function aktivMelden(weg){
+  const o = aktivLesen(), jetzt = Date.now();
+  if(kontoJetzt){ if(weg) delete o[kontoRaum]; else o[kontoRaum] = jetzt; }
+  for(const r in o) if(jetzt - o[r] > AKTIV_FRIST * 5) delete o[r];
+  try{ localStorage.setItem(AKTIV_KEY, JSON.stringify(o)); }catch(e){}
+}
+function onlineZahl(){
+  const o = aktivLesen(), jetzt = Date.now();
+  let n = 0;
+  for(const r in o) if(jetzt - o[r] < AKTIV_FRIST) n++;
+  return n;
+}
+function zaehlerZeichnen(){
+  const gesamt = kontenLesen().length, online = onlineZahl();
+  const kurz = $("spielerZahl");
+  if(kurz){
+    kurz.textContent = "👥 " + gesamt + " · 🟢 " + online;
+    kurz.title = ue("Spieler auf diesem Gerät: ") + gesamt + " · " + ue("gerade am Spielen: ") + online;
+  }
+  for(const id of ["kontenZaehler", "startZaehler"]){
+    const el = $(id);
+    if(el) el.innerHTML = "👥 <b>" + gesamt + "</b> " + ue("Spieler auf diesem Gerät")
+                        + " · 🟢 <b>" + online + "</b> " + ue("gerade am Spielen");
+  }
+}
+
+/* ---------- Anmelden, abmelden, Konto anlegen ---------- */
+function kontoAnmelden(konto){
+  kontoJetzt = konto;
+  kontoRaum = konto.raum;
+  konto.zuletzt = Date.now();
+  const l = kontenLesen();
+  const eintrag = l.find(k => k.raum === konto.raum);
+  if(eintrag) eintrag.zuletzt = konto.zuletzt;
+  kontenSchreiben(l);
+  try{ localStorage.setItem(KONTO_KEY, konto.raum); }catch(e){}
+  try{ if(konto.abdruck) sessionStorage.setItem(OFFEN_KEY, konto.raum); }catch(e){}
+  aktivMelden();
+  // Alles, was zu diesem Spieler gehört, neu einlesen
+  spielerName = konto.name;
+  skinLaden();
+  belohnungenNachtragen();
+  nameAnzeigen();
+  weltlisteZeichnen();
+  zaehlerZeichnen();
+  $("konten").classList.add("hidden");
+  $("anmeldung").classList.add("hidden");
+  $("start").classList.remove("hidden");
+  // Ein Spielstand aus dem Link kommt erst jetzt dazu - sonst landete er im Nichts
+  if(typeof standAusLink === "function" && standAusLink()){
+    belohnungenNachtragen();
+    weltlisteZeichnen();
+  }
+}
+function kontoAbmelden(){
+  aktivMelden(true);
+  kontoJetzt = null;
+  kontoRaum = "gast#";
+  s = null;
+  try{ localStorage.removeItem(KONTO_KEY); }catch(e){}
+  try{ sessionStorage.removeItem(OFFEN_KEY); }catch(e){}
+  $("start").classList.add("hidden");
+  $("anmeldung").classList.add("hidden");
+  kontenZeigen();
+}
+function kontoAnlegen(name, passwort){
+  const raum = "k" + Date.now().toString(36) + Math.floor(Math.random()*1000).toString(36) + "#";
+  const konto = {name: name, raum: raum, erstellt: Date.now(), zuletzt: Date.now(),
+                 salz: "", abdruck: ""};
+  if(passwort){ konto.salz = salzMachen(); konto.abdruck = abdruck(passwort, konto.salz); }
+  const l = kontenLesen();
+  l.push(konto);
+  kontenSchreiben(l);
+  return konto;
+}
+// Ein neuer Spieler fängt mit leeren Händen an, nicht mit dem Zeug des Vorgängers
+function kontoFrischMachen(){
+  try{
+    localStorage.setItem(raumKey("wkSpieler"), kontoJetzt.name);
+    localStorage.removeItem(raumKey("wkListe"));
+    localStorage.removeItem(raumKey("wkSkin"));
+    localStorage.removeItem(raumKey("wkBelohnungen"));
+  }catch(e){}
+}
+
+/* ---------- Der Bildschirm „Wer spielt?“ ---------- */
+let kontoTuerRaum = null;            // welches Konto gerade nach dem Passwort fragt
+function kontenSeite(welche){
+  for(const id of ["kontoWahl", "kontoNeu", "kontoTuer"])
+    $(id).classList.toggle("hidden", id !== welche);
+}
+function kontenZeigen(){
+  kontenZeichnen();
+  kontenSeite(kontenLesen().length ? "kontoWahl" : "kontoNeu");
+  $("konten").classList.remove("hidden");
+  spracheAnwenden();
+}
+function kontenZeichnen(){
+  const ziel = $("kontenListe");
+  ziel.innerHTML = "";
+  const l = kontenLesen().sort((a, b) => (b.zuletzt||0) - (a.zuletzt||0));
+  const aktiv = aktivLesen(), jetzt = Date.now();
+  for(const k of l){
+    const karte = document.createElement("div");
+    karte.className = "karte2";
+    const links = document.createElement("span");
+    const name = document.createElement("b");
+    name.textContent = (k.abdruck ? "🔒 " : "🙂 ") + k.name;     // textContent: jedes Zeichen ist sicher
+    const zeile = document.createElement("span");
+    zeile.className = "c-dim";
+    zeile.style.fontSize = "12px";
+    let welten = 0;
+    try{ welten = (JSON.parse(localStorage.getItem(k.raum + "wkListe")) || []).length; }catch(e){}
+    const online = jetzt - (aktiv[k.raum] || 0) < AKTIV_FRIST;
+    zeile.textContent = welten + ue(" Welt(en)") + (k.abdruck ? ue(" · mit Passwort") : "")
+                      + (online ? ue(" · 🟢 spielt gerade") : "");
+    links.appendChild(name); links.appendChild(document.createElement("br")); links.appendChild(zeile);
+
+    const rechts = document.createElement("span");
+    const rein = document.createElement("button");
+    rein.className = "primary";
+    rein.textContent = k.abdruck ? ue("🔑 Anmelden") : ue("▶ Spielen");
+    rein.onclick = () => kontoWaehlen(k.raum);
+    const weg = document.createElement("button");
+    weg.textContent = "🗑️";
+    weg.title = ue("Konto löschen");
+    weg.style.marginLeft = "6px";
+    weg.onclick = () => kontoLoeschenFragen(k.raum);
+    rechts.appendChild(rein); rechts.appendChild(weg);
+
+    karte.appendChild(links); karte.appendChild(rechts);
+    ziel.appendChild(karte);
+  }
+  zaehlerZeichnen();
+}
+function kontoWaehlen(raum){
+  const k = kontoNach(raum);
+  if(!k) return;
+  if(!k.abdruck){ kontoAnmelden(k); return; }
+  kontoTuerRaum = raum;
+  $("tuerName").textContent = k.name;
+  $("tuerFeld").value = "";
+  $("tuerFehler").textContent = "";
+  kontenSeite("kontoTuer");
+  setTimeout(() => $("tuerFeld").focus(), 60);
+}
+function kontoTuerOeffnen(){
+  const k = kontoNach(kontoTuerRaum);
+  if(!k) return;
+  const eingabe = $("tuerFeld").value;
+  if(!eingabe){ $("tuerFehler").textContent = ue("Bitte dein Passwort eingeben."); return; }
+  if(abdruck(eingabe, k.salz) !== k.abdruck){
+    $("tuerFehler").textContent = ue("Das Passwort stimmt nicht.");
+    $("tuerFeld").value = "";
+    $("tuerFeld").focus();
+    tonFehler();
+    return;
+  }
+  kontoAnmelden(k);
+}
+function kontoNeuZeigen(){
+  $("neuKontoName").value = "";
+  $("neuKontoWort").value = "";
+  $("neuKontoWort2").value = "";
+  $("neuKontoFehler").textContent = "";
+  kontenSeite("kontoNeu");
+  setTimeout(() => $("neuKontoName").focus(), 60);
+}
+function kontoNeuAnlegen(){
+  const fehler = $("neuKontoFehler");
+  const name = $("neuKontoName").value.replace(/[^\p{L}\p{N} _.\-]/gu, "").trim().slice(0, 18);
+  const w1 = $("neuKontoWort").value, w2 = $("neuKontoWort2").value;
+  if(name.length < 2){ fehler.textContent = ue("Bitte mindestens zwei Zeichen eingeben."); return; }
+  if(kontenLesen().some(k => k.name.toLowerCase() === name.toLowerCase())){
+    fehler.textContent = ue("Diesen Namen gibt es hier schon."); return;
+  }
+  if(w1 && w1.length < 4){ fehler.textContent = ue("Das Passwort braucht mindestens vier Zeichen."); return; }
+  if(w1 !== w2){ fehler.textContent = ue("Die beiden Passwörter sind nicht gleich."); return; }
+  const konto = kontoAnlegen(name, w1);
+  kontoJetzt = konto; kontoRaum = konto.raum;
+  kontoFrischMachen();
+  kontoAnmelden(konto);
+  tonZahm();
+}
+function kontoLoeschenFragen(raum){
+  const k = kontoNach(raum);
+  if(!k) return;
+  if(!confirm(ue('Konto "') + k.name + ue('" mit allen Welten wirklich löschen? Das geht nicht rückgängig.'))) return;
+  try{
+    const liste = JSON.parse(localStorage.getItem(k.raum + "wkListe")) || [];
+    for(const w of liste) localStorage.removeItem(k.raum + "wkStand:" + w.id);
+    for(const basis of ["wkListe", "wkSpieler", "wkSkin", "wkBelohnungen"])
+      localStorage.removeItem(k.raum + basis);
+  }catch(e){}
+  kontenSchreiben(kontenLesen().filter(x => x.raum !== raum));
+  const o = aktivLesen(); delete o[raum];
+  try{ localStorage.setItem(AKTIV_KEY, JSON.stringify(o)); }catch(e){}
+  if(kontoJetzt && kontoJetzt.raum === raum){ kontoJetzt = null; kontoRaum = "gast#"; s = null; }
+  kontenZeichnen();
+  kontenSeite(kontenLesen().length ? "kontoWahl" : "kontoNeu");
+}
+
+/* ---------- Passwort setzen, ändern oder abnehmen ---------- */
+function passwortZeigen(){
+  if(!kontoJetzt) return;
+  $("pwAlt").value = ""; $("pwNeu").value = ""; $("pwNeu2").value = "";
+  $("pwFehler").textContent = "";
+  $("pwAltReihe").style.display = kontoJetzt.abdruck ? "" : "none";
+  $("pwTitel").textContent = kontoJetzt.abdruck ? ue("Passwort ändern") : ue("Passwort setzen");
+  $("pwWeg").style.display = kontoJetzt.abdruck ? "" : "none";
+  $("start").classList.add("hidden");
+  $("passwort").classList.remove("hidden");
+  setTimeout(() => $(kontoJetzt.abdruck ? "pwAlt" : "pwNeu").focus(), 60);
+}
+function passwortSchliessen(){
+  $("passwort").classList.add("hidden");
+  $("start").classList.remove("hidden");
+}
+function passwortAltStimmt(){
+  if(!kontoJetzt.abdruck) return true;
+  if(abdruck($("pwAlt").value, kontoJetzt.salz) === kontoJetzt.abdruck) return true;
+  $("pwFehler").textContent = ue("Das bisherige Passwort stimmt nicht.");
+  return false;
+}
+function passwortSpeichern(){
+  if(!kontoJetzt || !passwortAltStimmt()) return;
+  const w1 = $("pwNeu").value, w2 = $("pwNeu2").value;
+  if(w1.length < 4){ $("pwFehler").textContent = ue("Das Passwort braucht mindestens vier Zeichen."); return; }
+  if(w1 !== w2){ $("pwFehler").textContent = ue("Die beiden Passwörter sind nicht gleich."); return; }
+  kontoAendern(k => { k.salz = salzMachen(); k.abdruck = abdruck(w1, k.salz); });
+  try{ sessionStorage.setItem(OFFEN_KEY, kontoRaum); }catch(e){}
+  passwortSchliessen();
+  meldung(ue("🔒 Passwort gesetzt – merk es dir gut!"), "c-gold");
+  tonZahm();
+}
+function passwortAbnehmen(){
+  if(!kontoJetzt || !passwortAltStimmt()) return;
+  kontoAendern(k => { k.salz = ""; k.abdruck = ""; });
+  passwortSchliessen();
+  meldung(ue("🔓 Das Konto hat jetzt kein Passwort mehr."), "c-dim");
+}
+/* Kommt der Spielername aus einer Sicherung, soll das Konto genauso
+   heissen - sonst stuenden auf dem Startbildschirm zwei Namen.        */
+function kontoNameAngleichen(){
+  if(!kontoJetzt) return;
+  const frei = spielerName && spielerName !== kontoJetzt.name
+    && !kontenLesen().some(k => k.raum !== kontoRaum && k.name.toLowerCase() === spielerName.toLowerCase());
+  if(frei){ kontoAendern(k => k.name = spielerName); return; }
+  // Den Namen gibt es hier schon: das Konto behält seinen, der Held heisst wieder so
+  spielerName = kontoJetzt.name;
+  try{ localStorage.setItem(raumKey(NAME_KEY), spielerName); }catch(e){}
+}
+// Eine Änderung am angemeldeten Konto, in der Liste und in der Kopie hier
+function kontoAendern(was){
+  const l = kontenLesen();
+  const k = l.find(x => x.raum === kontoRaum);
+  if(!k) return;
+  was(k);
+  kontenSchreiben(l);
+  Object.assign(kontoJetzt, k);
+}
+
+/* ---------- Start: wer ist dran? ----------
+   Beim allerersten Mal mit Konten wird aus dem bisherigen Spieler sein
+   eigenes Konto. Es behält den alten Raum, darum bleiben alle Welten
+   genau da, wo sie sind.                                              */
+function kontenStart(){
+  let l = kontenLesen();
+  if(!l.length){
+    let alterName = null, alteWelten = 0;
+    try{
+      alterName = localStorage.getItem("wkSpieler");
+      alteWelten = (JSON.parse(localStorage.getItem("wkListe")) || []).length;
+    }catch(e){}
+    if(alterName || alteWelten){
+      kontenSchreiben([{name: alterName || ue("Held"), raum: "", erstellt: Date.now(),
+                        zuletzt: Date.now(), salz: "", abdruck: ""}]);
+      try{ localStorage.setItem(KONTO_KEY, ""); }catch(e){}
+      l = kontenLesen();
+    }
+  }
+  let raum = null;
+  try{ raum = localStorage.getItem(KONTO_KEY); }catch(e){}
+  if(raum !== null){
+    const k = kontoNach(raum);
+    let offen = null;
+    try{ offen = sessionStorage.getItem(OFFEN_KEY); }catch(e){}
+    // Ohne Passwort geht es gleich weiter. Mit Passwort nur, solange das
+    // Fenster offen war - nach dem Schliessen fragt das Spiel wieder.
+    if(k && (!k.abdruck || offen === raum)){ kontoAnmelden(k); return true; }
+  }
+  return false;
+}
+setInterval(() => { if(kontoJetzt) aktivMelden(); }, 20000);
+setInterval(zaehlerZeichnen, 5000);
+addEventListener("beforeunload", () => aktivMelden(true));
+addEventListener("pagehide", () => aktivMelden(true));
+
 /* ---------- Mehrere Spielwelten nebeneinander ----------
    "wkListe"        = Übersicht aller Welten
    "wkStand:<id>"   = der vollständige Spielstand einer Welt                      */
-const LISTE_KEY = "wkListe";
-const standKey = id => "wkStand:" + id;
+const standKey = id => raumKey("wkStand:" + id);
 
 function weltListe(){
-  try{ const l = JSON.parse(localStorage.getItem(LISTE_KEY)); return Array.isArray(l) ? l : []; }
+  try{ const l = JSON.parse(localStorage.getItem(raumKey("wkListe"))); return Array.isArray(l) ? l : []; }
   catch(e){ return []; }
 }
-function listeSchreiben(l){ try{ localStorage.setItem(LISTE_KEY, JSON.stringify(l)); }catch(e){} }
+function listeSchreiben(l){ try{ localStorage.setItem(raumKey("wkListe"), JSON.stringify(l)); }catch(e){} }
 
 /* Gesetzte und abgebaute Blöcke werden platzsparend abgelegt: statt
    {"11:1234567": 3} je Block eine Liste "qglj:3,..." pro Welt, mit
@@ -2183,6 +2703,12 @@ function weltLoeschen(id){
 }
 // Der alte Einzelspielstand wird beim ersten Start zur ersten Welt der Liste
 function altenStandUebernehmen(){
+  // Dieser Stand ist aelter als die Konten und liegt darum im Raum ohne Vorsatz
+  const merk = kontoRaum;
+  kontoRaum = "";
+  try{ altenStandHolen(); } finally { kontoRaum = merk; }
+}
+function altenStandHolen(){
   if(weltListe().length) return;
   let d = null;
   try{ d = JSON.parse(localStorage.getItem("wkBlock")); }catch(e){}
@@ -5204,7 +5730,7 @@ const SKIN_KEY = "wkSkin";
    wer den Warden einmal gelegt hat, behält den Skin überall.        */
 const BELOHNUNG_KEY = "wkBelohnungen";
 function belohnungen(){
-  try{ const l = JSON.parse(localStorage.getItem(BELOHNUNG_KEY)); return Array.isArray(l) ? l : []; }
+  try{ const l = JSON.parse(localStorage.getItem(raumKey(BELOHNUNG_KEY))); return Array.isArray(l) ? l : []; }
   catch(e){ return []; }
 }
 function hatBelohnung(id){ return !id || belohnungen().indexOf(id) >= 0; }
@@ -5237,7 +5763,7 @@ function belohnungenNachtragen(){
 function belohnungGeben(id){
   if(!id || hatBelohnung(id)) return false;
   const l = belohnungen(); l.push(id);
-  try{ localStorage.setItem(BELOHNUNG_KEY, JSON.stringify(l)); }catch(e){}
+  try{ localStorage.setItem(raumKey(BELOHNUNG_KEY), JSON.stringify(l)); }catch(e){}
   return true;
 }
 let skinDaten = null;        // das rohe Skin-Bild als Datenzeile
@@ -5246,7 +5772,7 @@ let heldLeinwand = null;     // dieselbe Figur als Leinwand, für die 3D-Ansicht
 let heldTextur = null;
 
 function skinLaden(){
-  try{ skinDaten = localStorage.getItem(SKIN_KEY) || null; }catch(e){ skinDaten = null; }
+  try{ skinDaten = localStorage.getItem(raumKey(SKIN_KEY)) || null; }catch(e){ skinDaten = null; }
   if(skinDaten) skinFigurBauen();
 }
 function skinSetzen(url){
@@ -5258,8 +5784,8 @@ function skinSetzen(url){
   skinRohTextur = null;
   heldNetz = null;
   try{
-    if(url) localStorage.setItem(SKIN_KEY, url);
-    else localStorage.removeItem(SKIN_KEY);
+    if(url) localStorage.setItem(raumKey(SKIN_KEY), url);
+    else localStorage.removeItem(raumKey(SKIN_KEY));
   }catch(e){}
   if(url) skinFigurBauen(); else figurenAuffrischen();
   const f = $("skinfehler");
@@ -9066,6 +9592,11 @@ addEventListener("keydown", e => {
 addEventListener("keyup", e => { tasten[e.key.length === 1 ? e.key.toLowerCase() : e.key] = false; });
 addEventListener("keydown", e => {          // Enter im Namensfeld bestätigt
   if(e.key === "Enter" && !$("anmeldung").classList.contains("hidden")) nameBestaetigen();
+  if(e.key === "Enter" && !$("konten").classList.contains("hidden")){
+    if(!$("kontoTuer").classList.contains("hidden")) kontoTuerOeffnen();
+    else if(!$("kontoNeu").classList.contains("hidden")) kontoNeuAnlegen();
+  }
+  if(e.key === "Enter" && !$("passwort").classList.contains("hidden")) passwortSpeichern();
   if(e.key === "Enter" && !$("start").classList.contains("hidden")
      && document.activeElement && document.activeElement.id === "neuSaat") neueWelt();
 });
@@ -9179,16 +9710,16 @@ function schleife(zeit){
 
 /* ---------- Spielername ----------
    Nur lokal gespeichert, kein Passwort, nichts wird verschickt.  */
-const NAME_KEY = "wkSpieler";
+const NAME_KEY = "wkSpieler";      // je Konto, siehe raumKey
 let spielerName = "Held";
 
 function nameLaden(){
-  try{ const n = localStorage.getItem(NAME_KEY); if(n) spielerName = n; return !!n; }
+  try{ const n = localStorage.getItem(raumKey(NAME_KEY)); if(n) spielerName = n; return !!n; }
   catch(e){ return false; }
 }
 function nameSetzen(n){
   spielerName = n;
-  try{ localStorage.setItem(NAME_KEY, n); }catch(e){}
+  try{ localStorage.setItem(raumKey(NAME_KEY), n); }catch(e){}
   nameAnzeigen();
 }
 function nameAnzeigen(){
@@ -9204,8 +9735,14 @@ function nameBestaetigen(){
     $("spielerFeld").focus();
     return;
   }
+  const neu = roh.slice(0, 18);
+  if(kontoJetzt && kontenLesen().some(k => k.raum !== kontoRaum && k.name.toLowerCase() === neu.toLowerCase())){
+    $("namefehler").textContent = ue("Diesen Namen gibt es hier schon.");
+    return;
+  }
   $("namefehler").textContent = "";
-  nameSetzen(roh.slice(0, 18));
+  if(kontoJetzt) kontoAendern(k => k.name = neu);
+  nameSetzen(neu);
   $("anmeldung").classList.add("hidden");
   weltlisteZeichnen();
   $("start").classList.remove("hidden");
@@ -9226,8 +9763,8 @@ function sicherungBauen(){
   const daten = {marke:"weltenkaempfer", version:1, zeit:Date.now(),
                  spieler:null, skin:null, liste:[], staende:{}};
   try{
-    daten.spieler = localStorage.getItem(NAME_KEY);
-    daten.skin = localStorage.getItem(SKIN_KEY);
+    daten.spieler = localStorage.getItem(raumKey(NAME_KEY));
+    daten.skin = localStorage.getItem(raumKey(SKIN_KEY));
     daten.liste = weltListe();
     daten.liste.forEach(w => {
       const roh = localStorage.getItem(standKey(w.id));
@@ -9247,8 +9784,8 @@ function sicherungEinlesen(text){
   }
   let welten = 0, geschuetzt = 0;
   try{
-    if(daten.spieler) localStorage.setItem(NAME_KEY, daten.spieler);
-    if(daten.skin) localStorage.setItem(SKIN_KEY, daten.skin);
+    if(daten.spieler) localStorage.setItem(raumKey(NAME_KEY), daten.spieler);
+    if(daten.skin) localStorage.setItem(raumKey(SKIN_KEY), daten.skin);
     /* Vorhandene Welten behalten, gesicherte dazulegen.
        Wichtig: eine Welt wird nie durch eine zurückliegende ersetzt.
        Sonst waeren mit einem alten Sicherungstext alle Stufen weg, die
@@ -9279,7 +9816,8 @@ function sicherungEinlesen(text){
     meldungsfeld.textContent = ue("Der Speicher ist voll – es passt nicht alles hinein.");
     return false;
   }
-  nameLaden(); skinLaden(); belohnungenNachtragen(); nameAnzeigen(); weltlisteZeichnen();
+  nameLaden(); kontoNameAngleichen(); skinLaden(); belohnungenNachtragen();
+  nameAnzeigen(); weltlisteZeichnen(); zaehlerZeichnen();
   meldungsfeld.textContent = welten + ue(" Welt(en) übernommen")
     + (daten.spieler ? ue(", Spieler: ") + daten.spieler : "") + " ✓"
     + (geschuetzt ? ue(" · Dein weiter fortgeschrittener Stand blieb erhalten.") : "");
@@ -9476,17 +10014,7 @@ function standAusLink(){
   return ok;
 }
 function startBildschirmZeigen(){
-  standAusLink();
-  belohnungenNachtragen();
-  if(nameLaden()){
-    nameAnzeigen();
-    weltlisteZeichnen();
-    $("start").classList.remove("hidden");
-  } else {
-    nameAnzeigen();
-    $("anmeldung").classList.remove("hidden");
-    setTimeout(() => $("spielerFeld").focus(), 100);
-  }
+  if(!kontenStart()) kontenZeigen();      // kein Konto offen: erst fragen, wer spielt
   spracheAnwenden();               // Deutsch oder Englisch, wie zuletzt gewählt
 }
 function vorspannEnde(){
