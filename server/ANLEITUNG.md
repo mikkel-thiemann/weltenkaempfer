@@ -1,4 +1,15 @@
-# Der weltweite Spielerzähler – Schritt für Schritt
+# Der weltweite Spielerzähler
+
+> ✅ **Dieser Server läuft bereits!**
+> Adresse: **https://weltenkaempfer-zaehler.mikkel-701.workers.dev**
+> Datenbank: `weltenkaempfer` · Bindung: `DB`
+> Eingerichtet am 22.10.2026. Im Spiel ist die Adresse schon eingetragen.
+>
+> Die Anleitung unten brauchst du nur noch, wenn du den Server neu
+> aufsetzen willst – oder wenn du `worker.js` änderst: dann den neuen
+> Inhalt in **Edit code** einfügen und auf **Deploy** klicken.
+
+## Schritt für Schritt (falls du neu anfängst)
 
 Damit dein Spiel zeigen kann, **wie viele Konten es auf der ganzen Welt gibt**
 und **wer gerade spielt**, braucht es einen kleinen Server im Internet.
