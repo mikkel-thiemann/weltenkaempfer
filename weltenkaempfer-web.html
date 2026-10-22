@@ -490,7 +490,7 @@
     <div style="font-size:52px">⛏️</div>
     <h2>WELTENKÄMPFER · BLOCKWELT</h2>
     <p class="c-dim" style="margin-top:0">Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.</p>
-    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 47 · Die gemeinsame Welt</p>
+    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 48 · Umsehen ohne Mausfang</p>
     <p style="margin:0 0 4px">Willkommen, <b id="grussName" class="c-gold">Held</b>
       <button onclick="nameAendern()" style="padding:4px 10px; font-size:12px; margin-left:8px">✏️ Name &amp; Skin</button>
       <button onclick="passwortZeigen()" style="padding:4px 10px; font-size:12px; margin-left:4px">🔒 Passwort</button>
@@ -501,6 +501,7 @@
     <div style="text-align:left; font-size:13.5px; line-height:2; margin:14px 0">
       <span class="taste">W A S D</span> laufen &nbsp; <span class="taste">Leertaste</span> springen &nbsp; <span class="taste">Shift</span> rennen<br>
       <span class="taste">Maus</span> umsehen &nbsp; <span class="taste">Linke Maustaste halten</span> Block abbauen<br>
+      <span class="c-dim">Fängt dein Browser die Maus nicht ein (oft auf dem Mac): einfach mit gedrückter Maustaste ziehen, um dich umzusehen.</span><br>
       <span class="taste">Rechtsklick</span> Block setzen &nbsp; <span class="taste">1–9</span> Material wählen &nbsp; <span class="taste">R</span> Kamera<br>
       <span class="taste">E</span> benutzen &nbsp; <span class="taste">Q</span> Quests &nbsp; <span class="taste">I</span> oder <span class="taste">B</span> Inventar &amp; Herstellen &nbsp; <span class="taste">Esc</span> Maus frei<br>
       <span class="taste">M</span> werfen &nbsp; <span class="taste">Z</span> auf ein gezähmtes Tier steigen &nbsp;
@@ -834,7 +835,7 @@ const EN = {
   "Eisschwert": "Ice Sword",
   "Eisspitzhacke": "Ice Pickaxe",
   "Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.": "Thirteen open block worlds. Build, dig, fight – and find the portal.",
-  "Ausgabe 47 · Die gemeinsame Welt": "Build 47 · The shared world",
+  "Ausgabe 48 · Umsehen ohne Mausfang": "Build 48 · Looking around without mouse lock",
   "Endlose Dünen. Und die Kakteen hier stehen nicht nur herum – sie laufen.": "Endless dunes. And the cacti here don't just stand around – they walk.",
   "Erde": "Dirt",
   "Erlege 14 Schattenriesen": "Slay 14 shadow giants",
@@ -1647,7 +1648,9 @@ const EN = {
   "🌐 Gemeinsame Welt": "🌐 Shared world",
   "🌐 Gemeinsame Welt betreten": "🌐 Enter the shared world",
   "🌐 Verbindung unterbrochen – ich versuche es gleich wieder.": "🌐 Connection lost – trying again shortly.",
-  "👋 ": "👋 "
+  "👋 ": "👋 ",
+  "Dieser Browser kann kein 3D": "This browser cannot do 3D",
+  "Fängt dein Browser die Maus nicht ein (oft auf dem Mac): einfach mit gedrückter Maustaste ziehen, um dich umzusehen.": "If your browser does not capture the mouse (often on a Mac): just drag with the mouse button held down to look around."
 };
 function ue(s){
   if(sprache !== "en" || typeof s !== "string") return s;
@@ -4436,7 +4439,16 @@ function emojiTextur(gl, emoji){
    WEBGL
    ===================================================================== */
 const leinwand = $("welt");
-const gl = leinwand.getContext("webgl", {antialias:false, alpha:false});
+const gl = leinwand.getContext("webgl", {antialias:false, alpha:false})
+        || leinwand.getContext("experimental-webgl", {antialias:false, alpha:false});
+if(!gl){
+  document.body.innerHTML = '<div style="color:#e9eefb; font:16px sans-serif; max-width:520px; margin:18vh auto; '
+    + 'text-align:center; line-height:1.6"><div style="font-size:52px">😕</div>'
+    + '<h2>Dieser Browser kann kein 3D</h2><p>Weltenkämpfer braucht WebGL. '
+    + 'Probier einen anderen Browser (Chrome, Firefox oder Safari) – oder schalte in den '
+    + 'Einstellungen die Grafikbeschleunigung ein.</p></div>';
+  throw new Error("WebGL fehlt");
+}
 let atlas, atlasTex, prog, progHimmel, himmelBuf, linienBuf, bbBuf, weissTex;
 let U = {}, A = {};
 
@@ -10211,17 +10223,34 @@ leinwand.addEventListener("mousedown", e => {
   if(modus !== "welt") return;
   // Erster Klick fängt die Maus – soll aber trotzdem schon graben
   if(document.pointerLockElement !== leinwand && !document.body.classList.contains("touch")) mausFangen();
+  // Klappt der Mausfang nicht, wird von hier aus gezogen
+  ziehX = e.clientX; ziehY = e.clientY; ziehtGerade = true;
   if(e.button === 0) grabend = true;
   if(e.button === 2) setzen();
 });
 addEventListener("mouseup", e => { if(e.button === 0){ grabend = false; abbauEnde(); } });
 leinwand.addEventListener("contextmenu", e => e.preventDefault());
+/* Umsehen: am schönsten mit eingefangener Maus. Erlaubt der Browser das
+   nicht - auf dem Mac fragt Safari erst um Erlaubnis -, kann man
+   stattdessen mit gedrückter Maustaste ziehen. So lässt sich das Spiel
+   überall spielen.                                                    */
+let ziehX = 0, ziehY = 0, ziehtGerade = false;
 addEventListener("mousemove", e => {
-  if(document.pointerLockElement === leinwand && modus === "welt"){
+  if(modus !== "welt") return;
+  if(document.pointerLockElement === leinwand){
     gier -= e.movementX*0.0024;
     nick = klemm(nick - e.movementY*0.0024, -1.5, 1.5);
+    return;
   }
+  if(!ziehtGerade) return;
+  // movementX kennt nicht jeder Browser ausserhalb des Mausfangs
+  const dx = (e.movementX !== undefined && e.movementX !== 0) ? e.movementX : (e.clientX - ziehX);
+  const dy = (e.movementY !== undefined && e.movementY !== 0) ? e.movementY : (e.clientY - ziehY);
+  ziehX = e.clientX; ziehY = e.clientY;
+  gier -= dx*0.0042;
+  nick = klemm(nick - dy*0.0042, -1.5, 1.5);
 });
+addEventListener("mouseup", () => { ziehtGerade = false; });
 addEventListener("wheel", e => {
   if(modus !== "welt") return;
   const n = besitz().length;
