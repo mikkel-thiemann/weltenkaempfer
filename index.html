@@ -497,7 +497,7 @@
     <div style="font-size:52px">⛏️</div>
     <h2>WELTENKÄMPFER · BLOCKWELT</h2>
     <p class="c-dim" style="margin-top:0">Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.</p>
-    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 46 · Der Server ist da</p>
+    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 47 · Die gemeinsame Welt</p>
     <p style="margin:0 0 4px">Willkommen, <b id="grussName" class="c-gold">Held</b>
       <button onclick="nameAendern()" style="padding:4px 10px; font-size:12px; margin-left:8px">✏️ Name &amp; Skin</button>
       <button onclick="passwortZeigen()" style="padding:4px 10px; font-size:12px; margin-left:4px">🔒 Passwort</button>
@@ -841,7 +841,7 @@ const EN = {
   "Eisschwert": "Ice Sword",
   "Eisspitzhacke": "Ice Pickaxe",
   "Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.": "Thirteen open block worlds. Build, dig, fight – and find the portal.",
-  "Ausgabe 46 · Der Server ist da": "Build 46 · The server is live",
+  "Ausgabe 47 · Die gemeinsame Welt": "Build 47 · The shared world",
   "Endlose Dünen. Und die Kakteen hier stehen nicht nur herum – sie laufen.": "Endless dunes. And the cacti here don't just stand around – they walk.",
   "Erde": "Dirt",
   "Erlege 14 Schattenriesen": "Slay 14 shadow giants",
@@ -2481,81 +2481,106 @@ function zaehlerZeichnen(){
    ===================================================================== */
 const MEHR_ID = "wGemeinsam";        // der Spielstand der gemeinsamen Welt
 const MEHR_SAAT = 20261022;          // alle bauen dieselbe Landschaft auf
-const MEHR_TAKT = 0.25;              // viermal je Sekunde sagen, wo ich bin
-let leitung = null;                  // die offene Leitung zum Server
+/* Allein kostet das Nachfragen fast nichts, zu zweit wird es flott.   */
+const MEHR_TAKT_ALLEIN = 2.0, MEHR_TAKT_ZUSAMMEN = 0.4;
 let mehrSpieler = new Map();         // Nummer -> {name, x,y,z,g, zx,zy,zz,zg, phase, staerke}
-let mehrIch = null;                  // meine eigene Nummer
-let mehrUhr = 0, mehrWarte = 0;
-let mehrLetzte = {x:0, y:0, z:0, g:0};
+let mehrSeit = 0;                    // bis hierhin kenne ich schon alles
+let mehrLaeuft = false;              // gerade ist eine Anfrage unterwegs
+let mehrVerbunden = false;
+let mehrOffen = [];                  // meine Blöcke, die noch niemand kennt
+let mehrSagenText = "";              // was ich sagen will
+let mehrUhr = 0;
 
 function mehrAn(){ return !!(s && s.gemeinsam); }
-function mehrSenden(n){
-  if(leitung && leitung.readyState === 1){ try{ leitung.send(JSON.stringify(n)); }catch(e){} }
-}
 
 function mehrVerbinden(){
-  if(leitung || !ZAEHLER_SERVER || typeof WebSocket !== "function") return;
-  const adresse = ZAEHLER_SERVER.replace(/^http/, "ws").replace(/\/+$/, "") + "/welt";
-  try{ leitung = new WebSocket(adresse); }catch(e){ leitung = null; return; }
-  leitung.onopen = () => {
-    mehrSenden({t:"hi", name: spielerName, x:pos.x, y:pos.y, z:pos.z, g:gier});
-    meldung(ue("🌐 Du bist in der gemeinsamen Welt."), "c-gold");
-    mehrListeZeichnen();
-  };
-  leitung.onmessage = e => {
-    let n; try{ n = JSON.parse(e.data); }catch(x){ return; }
-    mehrNachricht(n);
-  };
-  leitung.onclose = () => {
-    leitung = null; mehrSpieler.clear(); mehrListeZeichnen();
-    if(mehrAn()) meldung(ue("🌐 Verbindung unterbrochen – ich versuche es gleich wieder."), "c-dim");
-  };
-  leitung.onerror = () => {};
+  mehrSeit = 0; mehrVerbunden = false;
+  mehrSpieler.clear();
+  mehrListeZeichnen();
+  mehrFragen();
 }
 function mehrTrennen(){
-  if(leitung){ try{ leitung.close(); }catch(e){} }
-  leitung = null; mehrSpieler.clear(); mehrIch = null;
+  mehrSpieler.clear(); mehrOffen = []; mehrSagenText = "";
+  mehrSeit = 0; mehrVerbunden = false;
   mehrListeZeichnen();
+}
+
+/* Eine einzige Anfrage sagt dem Server, wo ich bin und was ich gebaut
+   habe - und bringt in derselben Antwort mit, was die anderen gemacht
+   haben. Das spart Anfragen und damit Guthaben.                       */
+function mehrFragen(){
+  if(mehrLaeuft || !mehrAn() || !ZAEHLER_SERVER || typeof fetch !== "function") return;
+  const nummer = weltId();
+  if(!nummer) return;
+  mehrLaeuft = true;
+  const schicke = mehrOffen.slice(0, 40);
+  const sagen = mehrSagenText;
+  let adresse = ZAEHLER_SERVER.replace(/\/+$/, "") + "/welt/sync"
+    + "?id=" + encodeURIComponent(nummer)
+    + "&name=" + encodeURIComponent(spielerName)
+    + "&x=" + pos.x.toFixed(2) + "&y=" + pos.y.toFixed(2) + "&z=" + pos.z.toFixed(2)
+    + "&g=" + gier.toFixed(2) + "&seit=" + mehrSeit;
+  if(schicke.length) adresse += "&b=" + encodeURIComponent(schicke.join(","));
+  if(sagen) adresse += "&c=" + encodeURIComponent(sagen);
+
+  fetch(adresse, {cache: "no-store"})
+    .then(a => a.json())
+    .then(d => {
+      if(!d || typeof d.jetzt !== "number") throw new Error("komische Antwort");
+      // Erst wenn es geklappt hat, gilt das Geschickte als angekommen
+      mehrOffen.splice(0, schicke.length);
+      if(sagen && mehrSagenText === sagen) mehrSagenText = "";
+      if(!mehrVerbunden){
+        mehrVerbunden = true;
+        meldung(ue("🌐 Du bist in der gemeinsamen Welt."), "c-gold");
+      }
+      mehrAntwort(d);
+    })
+    .catch(() => {
+      if(mehrVerbunden){
+        mehrVerbunden = false;
+        meldung(ue("🌐 Verbindung unterbrochen – ich versuche es gleich wieder."), "c-dim");
+      }
+      mehrListeZeichnen();
+    })
+    .then(() => { mehrLaeuft = false; });
 }
 
 /* Was vom Server kommt, ist fremder Text: er wird nur als Zahl oder als
    reiner Text verwendet, nie als Befehl.                              */
-function mehrNachricht(n){
-  if(!n || typeof n.t !== "string") return;
-  if(n.t === "start"){
-    mehrIch = n.du;
-    mehrBloeckeAnwenden(n.bloecke);
-    for(const p of (n.spieler || [])) mehrDazu(p);
-    mehrListeZeichnen();
+function mehrAntwort(d){
+  const erstesMal = mehrSeit === 0;      // beim Betreten kommt die ganze Welt auf einmal
+  mehrSeit = d.jetzt;
 
-  } else if(n.t === "dazu"){
-    mehrDazu(n.spieler);
-    if(n.spieler && n.spieler.name) chatZeile("", ue("👋 ") + n.spieler.name + ue(" ist dazugekommen."));
-    mehrListeZeichnen();
-
-  } else if(n.t === "weg"){
-    const p = mehrSpieler.get(n.nr);
-    if(p) chatZeile("", ue("👋 ") + p.name + ue(" ist gegangen."));
-    mehrSpieler.delete(n.nr);
-    mehrListeZeichnen();
-
-  } else if(n.t === "p"){
-    const p = mehrSpieler.get(n.nr);
-    if(!p) return;
-    p.zx = +n.x || 0; p.zy = +n.y || 0; p.zz = +n.z || 0; p.zg = +n.g || 0;
-
-  } else if(n.t === "b"){
-    mehrBlockSetzen(n.w, n.i, n.b);
-
-  } else if(n.t === "c"){
-    chatZeile(String(n.name || "").slice(0, 18), String(n.text || "").slice(0, 160));
-
-  } else if(n.t === "voll"){
-    meldung(ue("Die gemeinsame Welt ist voll – es passt kein Block mehr hinein."), "c-bad");
+  // Wer ist da? Wer ist neu? Wer ist weg?
+  const da = new Set();
+  for(const p of (d.spieler || [])){
+    if(!p || !p.nr) continue;
+    da.add(p.nr);
+    const alt = mehrSpieler.get(p.nr);
+    if(!alt){
+      mehrDazu(p);
+      chatZeile("", ue("👋 ") + String(p.name || "").slice(0, 18) + ue(" ist dazugekommen."));
+    } else {
+      alt.name = String(p.name || "").slice(0, 18);
+      alt.zx = +p.x || 0; alt.zy = +p.y || 0; alt.zz = +p.z || 0; alt.zg = +p.g || 0;
+    }
   }
+  for(const nr of Array.from(mehrSpieler.keys())){
+    if(da.has(nr)) continue;
+    chatZeile("", ue("👋 ") + mehrSpieler.get(nr).name + ue(" ist gegangen."));
+    mehrSpieler.delete(nr);
+  }
+
+  // Blöcke und Gesagtes
+  if(d.bloecke && Object.keys(d.bloecke).length) mehrBloeckeAnwenden(d.bloecke, !erstesMal);
+  for(const c of (d.chat || []))
+    chatZeile(String(c.name || "").slice(0, 18), String(c.text || "").slice(0, 160));
+
+  mehrListeZeichnen();
 }
 function mehrDazu(p){
-  if(!p || !p.nr || p.nr === mehrIch) return;
+  if(!p || !p.nr) return;
   mehrSpieler.set(p.nr, {
     name: String(p.name || "").slice(0, 18),
     x:+p.x||0, y:+p.y||0, z:+p.z||0, g:+p.g||0,
@@ -2575,7 +2600,7 @@ function mehrBlockSetzen(welt, i, b){
 /* Beim Betreten kommt alles auf einmal, was je gebaut wurde. Die Höhen
    werden erst am Schluss je Spalte einmal nachgerechnet - sonst würde
    das bei Tausenden von Blöcken ewig dauern.                          */
-function mehrBloeckeAnwenden(gepackt){
+function mehrBloeckeAnwenden(gepackt, still){
   const alle = aenderungenEntpacken(gepackt || {});
   const spalten = new Set();
   let n = 0;
@@ -2597,8 +2622,8 @@ function mehrBloeckeAnwenden(gepackt){
     chunkSchmutzig(x+1, z); chunkSchmutzig(x-1, z);
     chunkSchmutzig(x, z+1); chunkSchmutzig(x, z-1);
   }
-  if(n) meldung("🧱 " + n + ue(" Blöcke von den anderen übernommen."), "c-dim");
-  speichern();
+  if(n && !still) meldung("🧱 " + n + ue(" Blöcke von den anderen übernommen."), "c-dim");
+  if(n) speichern();
 }
 
 /* Jeden Takt sagen, wo ich bin - aber nur, wenn ich mich bewegt habe.
@@ -2606,11 +2631,6 @@ function mehrBloeckeAnwenden(gepackt){
 function mehrTakt(dt){
   if(!mehrAn()) return;
   mehrUhr += dt;
-  // Abgerissene Leitung alle fünf Sekunden neu versuchen
-  if(!leitung){
-    mehrWarte += dt;
-    if(mehrWarte > 5){ mehrWarte = 0; mehrVerbinden(); }
-  } else mehrWarte = 0;
 
   // Die anderen gleiten weich zu ihrem letzten gemeldeten Platz
   for(const p of mehrSpieler.values()){
@@ -2625,17 +2645,17 @@ function mehrTakt(dt){
     p.phase = (p.phase + weit*8*dt + dt*p.staerke*6) % (Math.PI*2);
   }
 
-  if(mehrUhr < MEHR_TAKT) return;
+  // Ist jemand da oder habe ich etwas zu sagen, wird öfter nachgefragt
+  const eilig = mehrSpieler.size > 0 || mehrOffen.length || mehrSagenText;
+  if(mehrUhr < (eilig ? MEHR_TAKT_ZUSAMMEN : MEHR_TAKT_ALLEIN)) return;
   mehrUhr = 0;
-  const bewegt = Math.abs(pos.x - mehrLetzte.x) > 0.02 || Math.abs(pos.y - mehrLetzte.y) > 0.02
-              || Math.abs(pos.z - mehrLetzte.z) > 0.02 || Math.abs(gier - mehrLetzte.g) > 0.03;
-  if(!bewegt) return;
-  mehrLetzte = {x:pos.x, y:pos.y, z:pos.z, g:gier};
-  mehrSenden({t:"p", x:+pos.x.toFixed(2), y:+pos.y.toFixed(2), z:+pos.z.toFixed(2), g:+gier.toFixed(2)});
+  mehrFragen();
 }
 // Ein Block, den ich selbst verändert habe, geht an alle anderen
 function mehrBlockMelden(x, y, z, b){
-  if(mehrAn()) mehrSenden({t:"b", w:s.welt, i:idx(x,y,z), b:b});
+  if(!mehrAn()) return;
+  mehrOffen.push(s.welt + ":" + idx(x,y,z) + ":" + b);
+  if(mehrOffen.length > 400) mehrOffen.splice(0, mehrOffen.length - 400);
 }
 
 /* ---------- Reden ---------- */
@@ -2679,7 +2699,7 @@ function chatSchliessen(senden){
   const text = f.value.trim();
   f.classList.add("hidden");
   f.value = "";
-  if(senden && text) mehrSenden({t:"c", text: text.slice(0, 160)});
+  if(senden && text){ mehrSagenText = text.slice(0, 160); mehrUhr = 99; }
   chatZeichnen();
 }
 // Die Liste oben rechts: wer ist gerade mit dabei
@@ -2699,7 +2719,7 @@ function mehrListeZeichnen(){
     d.textContent = "• " + p.name;
     kasten.appendChild(d);
   }
-  if(!leitung){
+  if(!mehrVerbunden){
     const w = document.createElement("div");
     w.className = "c-bad";
     w.textContent = ue("keine Verbindung");
