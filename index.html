@@ -249,6 +249,19 @@
   .zutaten .fehlt{color:#ff9a9a}
   .zutaten .ok{color:var(--xp)}
   .zutaten small{color:#93a1b8}
+  /* ---- Die gemeinsame Welt ---- */
+  #mehrliste{position:fixed; right:10px; top:176px; z-index:6; max-width:190px;
+             background:rgba(12,16,26,.72); border-radius:10px; padding:7px 10px;
+             font-size:12.5px; line-height:1.55; color:#e9eefb}
+  #mehrliste b{display:block; color:var(--gold); margin-bottom:2px}
+  #chatbox{position:fixed; left:10px; bottom:92px; z-index:6; max-width:min(420px,60vw);
+           display:flex; flex-direction:column; gap:2px; font-size:13px; pointer-events:none}
+  #chatbox div{background:rgba(12,16,26,.68); border-radius:8px; padding:3px 9px; width:fit-content;
+               color:#e9eefb; text-shadow:0 1px 2px #000}
+  #chatbox b{color:var(--gold)}
+  #chatfeld{position:fixed; left:10px; bottom:60px; z-index:7; width:min(420px,60vw);
+            background:rgba(12,16,26,.92); border:1px solid var(--rahmen); border-radius:8px;
+            padding:7px 10px; color:#fff; font:13px inherit; outline:none}
   .buchgitter{display:grid; grid-template-columns:repeat(auto-fill,minmax(106px,1fr)); gap:8px;
               max-height:56vh; overflow-y:auto; padding-right:4px}
   .buchfeld{background:rgba(255,255,255,.05); border:1px solid var(--rahmen); border-radius:10px;
@@ -331,6 +344,9 @@
   <div id="questbox"></div>
 </div>
 
+<div class="hud hidden" id="mehrliste"></div>
+<div class="hud hidden" id="chatbox"></div>
+<input class="hidden" id="chatfeld" maxlength="160" autocomplete="off" placeholder="Sag etwas … (Enter schickt, Esc bricht ab)">
 <div class="hud" id="namen"></div>
 <div class="hud" id="meldungen"></div>
 <div class="hud hidden" id="hinweis"></div>
@@ -497,6 +513,7 @@
       <span class="taste">M</span> werfen &nbsp; <span class="taste">Z</span> auf ein gezähmtes Tier steigen &nbsp;
       <span class="taste">G</span> sitzen bleiben &nbsp; <span class="taste">N</span> Namen geben &nbsp;
       <span class="taste">K</span> Tiere &nbsp; <span class="taste">P</span> Kreaturenbuch &nbsp; <span class="taste">Y</span> Ballrezepte
+      &nbsp; <span class="taste">T</span> reden (gemeinsame Welt)
       <span class="c-dim">(nur im Sammler-Modus)</span><br>
       Oben links neben „🌍 Welten“ schaltet 🔊 den Ton an und aus.
       <div class="c-dim" style="line-height:1.6; margin-top:8px">
@@ -510,6 +527,14 @@
         bricht Stein, das Schwert schlägt im Kampf zu.
       </div>
     </div>
+    <h3 style="text-align:left; margin-top:18px">🌐 Gemeinsame Welt</h3>
+    <p class="c-dim" style="font-size:12.5px; text-align:left; margin-top:0">Eine einzige Welt für alle.
+      Ihr seht euch gegenseitig herumlaufen, baut zusammen und könnt euch mit <span class="taste">T</span>
+      etwas sagen. Alles, was jemand baut, bleibt für immer stehen.</p>
+    <div class="reihe" style="justify-content:flex-start">
+      <button class="primary" onclick="gemeinsamBetreten()">🌐 Gemeinsame Welt betreten</button>
+    </div>
+
     <h3 style="text-align:left; margin-top:18px">Deine Welten</h3>
     <div id="weltliste"></div>
 
@@ -1613,7 +1638,23 @@ const EN = {
   "‹ Zur Liste": "‹ Back to list",
   "🌍 Spieler": "🌍 Players",
   "🌍 Spieler ansehen": "🌍 See players",
-  "🟢 spielt gerade": "🟢 playing now"
+  "🟢 spielt gerade": "🟢 playing now",
+  " Blöcke von den anderen übernommen.": " blocks taken over from the others.",
+  " in der Welt": " in the world",
+  " ist dazugekommen.": " has joined.",
+  " ist gegangen.": " has left.",
+  "Dafür fehlt noch der Server.": "The server for that is still missing.",
+  "Die gemeinsame Welt ist voll – es passt kein Block mehr hinein.": "The shared world is full – no more blocks fit in.",
+  "Eine einzige Welt für alle. Ihr seht euch gegenseitig herumlaufen, baut zusammen und könnt euch mit T etwas sagen. Alles, was jemand baut, bleibt für immer stehen.": "One single world for everyone. You see each other walking around, build together and can talk with T. Everything anyone builds stays forever.",
+  "Gemeinsame Welt": "Shared world",
+  "Sag etwas … (Enter schickt, Esc bricht ab)": "Say something … (Enter sends, Esc cancels)",
+  "keine Verbindung": "no connection",
+  "reden (gemeinsame Welt)": "talk (shared world)",
+  "🌐 Du bist in der gemeinsamen Welt.": "🌐 You are in the shared world.",
+  "🌐 Gemeinsame Welt": "🌐 Shared world",
+  "🌐 Gemeinsame Welt betreten": "🌐 Enter the shared world",
+  "🌐 Verbindung unterbrochen – ich versuche es gleich wieder.": "🌐 Connection lost – trying again shortly.",
+  "👋 ": "👋 "
 };
 function ue(s){
   if(sprache !== "en" || typeof s !== "string") return s;
@@ -2429,6 +2470,260 @@ function zaehlerZeichnen(){
     if(el) el.innerHTML = "👥 <b>" + gesamt + "</b> " + wo
                         + " · 🟢 <b>" + online + "</b> " + ue("gerade am Spielen");
   }
+}
+
+/* =====================================================================
+   DIE GEMEINSAME WELT
+   Eine einzige Welt, in der alle zusammen sind. Die Landschaft wird
+   nicht verschickt: jeder baut sie aus demselben Startwert bei sich
+   selbst auf. Über die Leitung gehen nur die Änderungen - wer wo steht,
+   welcher Block sich geändert hat und was jemand sagt.
+   ===================================================================== */
+const MEHR_ID = "wGemeinsam";        // der Spielstand der gemeinsamen Welt
+const MEHR_SAAT = 20261022;          // alle bauen dieselbe Landschaft auf
+const MEHR_TAKT = 0.25;              // viermal je Sekunde sagen, wo ich bin
+let leitung = null;                  // die offene Leitung zum Server
+let mehrSpieler = new Map();         // Nummer -> {name, x,y,z,g, zx,zy,zz,zg, phase, staerke}
+let mehrIch = null;                  // meine eigene Nummer
+let mehrUhr = 0, mehrWarte = 0;
+let mehrLetzte = {x:0, y:0, z:0, g:0};
+
+function mehrAn(){ return !!(s && s.gemeinsam); }
+function mehrSenden(n){
+  if(leitung && leitung.readyState === 1){ try{ leitung.send(JSON.stringify(n)); }catch(e){} }
+}
+
+function mehrVerbinden(){
+  if(leitung || !ZAEHLER_SERVER || typeof WebSocket !== "function") return;
+  const adresse = ZAEHLER_SERVER.replace(/^http/, "ws").replace(/\/+$/, "") + "/welt";
+  try{ leitung = new WebSocket(adresse); }catch(e){ leitung = null; return; }
+  leitung.onopen = () => {
+    mehrSenden({t:"hi", name: spielerName, x:pos.x, y:pos.y, z:pos.z, g:gier});
+    meldung(ue("🌐 Du bist in der gemeinsamen Welt."), "c-gold");
+    mehrListeZeichnen();
+  };
+  leitung.onmessage = e => {
+    let n; try{ n = JSON.parse(e.data); }catch(x){ return; }
+    mehrNachricht(n);
+  };
+  leitung.onclose = () => {
+    leitung = null; mehrSpieler.clear(); mehrListeZeichnen();
+    if(mehrAn()) meldung(ue("🌐 Verbindung unterbrochen – ich versuche es gleich wieder."), "c-dim");
+  };
+  leitung.onerror = () => {};
+}
+function mehrTrennen(){
+  if(leitung){ try{ leitung.close(); }catch(e){} }
+  leitung = null; mehrSpieler.clear(); mehrIch = null;
+  mehrListeZeichnen();
+}
+
+/* Was vom Server kommt, ist fremder Text: er wird nur als Zahl oder als
+   reiner Text verwendet, nie als Befehl.                              */
+function mehrNachricht(n){
+  if(!n || typeof n.t !== "string") return;
+  if(n.t === "start"){
+    mehrIch = n.du;
+    mehrBloeckeAnwenden(n.bloecke);
+    for(const p of (n.spieler || [])) mehrDazu(p);
+    mehrListeZeichnen();
+
+  } else if(n.t === "dazu"){
+    mehrDazu(n.spieler);
+    if(n.spieler && n.spieler.name) chatZeile("", ue("👋 ") + n.spieler.name + ue(" ist dazugekommen."));
+    mehrListeZeichnen();
+
+  } else if(n.t === "weg"){
+    const p = mehrSpieler.get(n.nr);
+    if(p) chatZeile("", ue("👋 ") + p.name + ue(" ist gegangen."));
+    mehrSpieler.delete(n.nr);
+    mehrListeZeichnen();
+
+  } else if(n.t === "p"){
+    const p = mehrSpieler.get(n.nr);
+    if(!p) return;
+    p.zx = +n.x || 0; p.zy = +n.y || 0; p.zz = +n.z || 0; p.zg = +n.g || 0;
+
+  } else if(n.t === "b"){
+    mehrBlockSetzen(n.w, n.i, n.b);
+
+  } else if(n.t === "c"){
+    chatZeile(String(n.name || "").slice(0, 18), String(n.text || "").slice(0, 160));
+
+  } else if(n.t === "voll"){
+    meldung(ue("Die gemeinsame Welt ist voll – es passt kein Block mehr hinein."), "c-bad");
+  }
+}
+function mehrDazu(p){
+  if(!p || !p.nr || p.nr === mehrIch) return;
+  mehrSpieler.set(p.nr, {
+    name: String(p.name || "").slice(0, 18),
+    x:+p.x||0, y:+p.y||0, z:+p.z||0, g:+p.g||0,
+    zx:+p.x||0, zy:+p.y||0, zz:+p.z||0, zg:+p.g||0,
+    phase: 0, staerke: 0
+  });
+}
+
+// Einen einzelnen Block übernehmen, den jemand anders verändert hat
+function mehrBlockSetzen(welt, i, b){
+  if(+welt !== s.welt) { s.aenderungen[welt + ":" + i] = b; return; }
+  const x = i % WX, z = Math.floor(i / WX) % WZ, y = Math.floor(i / (WX*WZ));
+  if(x < 0 || y < 0 || z < 0 || x >= WX || y >= WY || z >= WZ) return;
+  setzeBlock(x, y, z, b, true);
+  blockUmgebungNeu(x, z);
+}
+/* Beim Betreten kommt alles auf einmal, was je gebaut wurde. Die Höhen
+   werden erst am Schluss je Spalte einmal nachgerechnet - sonst würde
+   das bei Tausenden von Blöcken ewig dauern.                          */
+function mehrBloeckeAnwenden(gepackt){
+  const alle = aenderungenEntpacken(gepackt || {});
+  const spalten = new Set();
+  let n = 0;
+  for(const k in alle){
+    const p = k.indexOf(":");
+    const welt = +k.slice(0, p), i = +k.slice(p+1);
+    s.aenderungen[k] = alle[k];
+    if(welt !== s.welt) continue;
+    const x = i % WX, z = Math.floor(i / WX) % WZ, y = Math.floor(i / (WX*WZ));
+    if(x < 0 || y < 0 || z < 0 || x >= WX || y >= WY || z >= WZ) continue;
+    setzeBlock(x, y, z, alle[k], false);
+    spalten.add(z*WX + x);
+    n++;
+  }
+  for(const nr of spalten){
+    const x = nr % WX, z = Math.floor(nr / WX);
+    hoeheNeu(x, z);
+    chunkSchmutzig(x, z);
+    chunkSchmutzig(x+1, z); chunkSchmutzig(x-1, z);
+    chunkSchmutzig(x, z+1); chunkSchmutzig(x, z-1);
+  }
+  if(n) meldung("🧱 " + n + ue(" Blöcke von den anderen übernommen."), "c-dim");
+  speichern();
+}
+
+/* Jeden Takt sagen, wo ich bin - aber nur, wenn ich mich bewegt habe.
+   Wer still steht, schickt nichts. Das spart Guthaben.                */
+function mehrTakt(dt){
+  if(!mehrAn()) return;
+  mehrUhr += dt;
+  // Abgerissene Leitung alle fünf Sekunden neu versuchen
+  if(!leitung){
+    mehrWarte += dt;
+    if(mehrWarte > 5){ mehrWarte = 0; mehrVerbinden(); }
+  } else mehrWarte = 0;
+
+  // Die anderen gleiten weich zu ihrem letzten gemeldeten Platz
+  for(const p of mehrSpieler.values()){
+    const k = Math.min(1, dt*8);
+    const weit = Math.hypot(p.zx - p.x, p.zz - p.z);
+    p.x += (p.zx - p.x)*k; p.y += (p.zy - p.y)*k; p.z += (p.zz - p.z)*k;
+    let d = p.zg - p.g;
+    while(d > Math.PI) d -= Math.PI*2;
+    while(d < -Math.PI) d += Math.PI*2;
+    p.g += d*k;
+    p.staerke += (Math.min(1, weit*3) - p.staerke) * Math.min(1, dt*6);
+    p.phase = (p.phase + weit*8*dt + dt*p.staerke*6) % (Math.PI*2);
+  }
+
+  if(mehrUhr < MEHR_TAKT) return;
+  mehrUhr = 0;
+  const bewegt = Math.abs(pos.x - mehrLetzte.x) > 0.02 || Math.abs(pos.y - mehrLetzte.y) > 0.02
+              || Math.abs(pos.z - mehrLetzte.z) > 0.02 || Math.abs(gier - mehrLetzte.g) > 0.03;
+  if(!bewegt) return;
+  mehrLetzte = {x:pos.x, y:pos.y, z:pos.z, g:gier};
+  mehrSenden({t:"p", x:+pos.x.toFixed(2), y:+pos.y.toFixed(2), z:+pos.z.toFixed(2), g:+gier.toFixed(2)});
+}
+// Ein Block, den ich selbst verändert habe, geht an alle anderen
+function mehrBlockMelden(x, y, z, b){
+  if(mehrAn()) mehrSenden({t:"b", w:s.welt, i:idx(x,y,z), b:b});
+}
+
+/* ---------- Reden ---------- */
+const chatZeilen = [];
+function chatZeile(wer, text){
+  chatZeilen.push({wer:wer, text:text, zeit:Date.now()});
+  while(chatZeilen.length > 8) chatZeilen.shift();
+  chatZeichnen();
+}
+function chatZeichnen(){
+  const kasten = $("chatbox");
+  if(!kasten) return;
+  kasten.innerHTML = "";
+  const jetzt = Date.now();
+  let sichtbar = 0;
+  for(const z of chatZeilen){
+    if(jetzt - z.zeit > 25000 && $("chatfeld").classList.contains("hidden")) continue;
+    const d = document.createElement("div");
+    if(z.wer){
+      const b = document.createElement("b");
+      b.textContent = z.wer + ": ";        // textContent: fremder Text bleibt Text
+      d.appendChild(b);
+    }
+    d.appendChild(document.createTextNode(z.text));
+    kasten.appendChild(d);
+    sichtbar++;
+  }
+  kasten.classList.toggle("hidden", !sichtbar);
+}
+function chatOeffnen(){
+  if(!mehrAn()) return;
+  const f = $("chatfeld");
+  f.classList.remove("hidden");
+  f.value = "";
+  chatZeichnen();
+  if(document.pointerLockElement) document.exitPointerLock();
+  setTimeout(() => f.focus(), 30);
+}
+function chatSchliessen(senden){
+  const f = $("chatfeld");
+  const text = f.value.trim();
+  f.classList.add("hidden");
+  f.value = "";
+  if(senden && text) mehrSenden({t:"c", text: text.slice(0, 160)});
+  chatZeichnen();
+}
+// Die Liste oben rechts: wer ist gerade mit dabei
+function mehrListeZeichnen(){
+  const kasten = $("mehrliste");
+  if(!kasten) return;
+  if(!mehrAn()){ kasten.classList.add("hidden"); return; }
+  kasten.innerHTML = "";
+  const kopf = document.createElement("b");
+  kopf.textContent = "🌐 " + (mehrSpieler.size + 1) + ue(" in der Welt");
+  kasten.appendChild(kopf);
+  const mich = document.createElement("div");
+  mich.textContent = "• " + spielerName + ue(" (du)");
+  kasten.appendChild(mich);
+  for(const p of mehrSpieler.values()){
+    const d = document.createElement("div");
+    d.textContent = "• " + p.name;
+    kasten.appendChild(d);
+  }
+  if(!leitung){
+    const w = document.createElement("div");
+    w.className = "c-bad";
+    w.textContent = ue("keine Verbindung");
+    kasten.appendChild(w);
+  }
+  kasten.classList.remove("hidden");
+}
+
+/* Die gemeinsame Welt betreten - sie hat immer denselben Startwert,
+   damit bei allen dieselbe Landschaft steht.                         */
+function gemeinsamBetreten(){
+  if(!ZAEHLER_SERVER){ meldung(ue("Dafür fehlt noch der Server."), "c-bad"); return; }
+  if(!standLaden(MEHR_ID)){
+    s = neuerStand();
+    s.id = MEHR_ID;
+    s.name = ue("Gemeinsame Welt");
+    s.saat = MEHR_SAAT;
+  }
+  s.gemeinsam = true;
+  s.welt = 0;
+  s.saat = MEHR_SAAT;
+  speichern();
+  starteAktuelleWelt();
+  mehrVerbinden();
 }
 
 /* ---------- Die Spielerliste ----------
@@ -4488,6 +4783,7 @@ function abbauSchritt(dt){
   setzeBlock(z.x, z.y, z.z, B_LUFT, true);
   tonBruch(def);
   blockUmgebungNeu(z.x, z.z);
+  mehrBlockMelden(z.x, z.y, z.z, B_LUFT);
   const beute = def.gibt !== undefined ? def.gibt : z.block;
   if(beute){
     gibMaterial(beute, 1);
@@ -4522,6 +4818,7 @@ function setzen(){
   setzeBlock(x, y, zz, id, true);
   tonLegen(BLOECKE[id]);
   blockUmgebungNeu(x, zz);
+  mehrBlockMelden(x, y, zz, id);
   speichern();
 }
 function hoeheNeu(x,z){
@@ -5101,6 +5398,19 @@ function namenZeichnen(mvp){
     feld.hidden = false;
     n++;
   }
+  // Über jedem Mitspieler steht sein Name
+  if(mehrAn()) for(const p of mehrSpieler.values()){
+    if(Math.hypot(p.x - pos.x, p.z - pos.z) > 60) continue;
+    const q = aufSchirm(mvp, p.x, p.y + 2.1, p.z);
+    if(!q) continue;
+    let feld = namenFelder[n];
+    if(!feld){ feld = document.createElement("span"); $("namen").appendChild(feld); namenFelder[n] = feld; }
+    feld.textContent = p.name;
+    feld.style.left = q.x + "px";
+    feld.style.top  = q.y + "px";
+    feld.hidden = false;
+    n++;
+  }
   for(let i = n; i < namenFelder.length; i++) namenFelder[i].hidden = true;
 }
 function zeichneWesen(mvp){
@@ -5132,6 +5442,7 @@ function zeichneWesen(mvp){
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
   if(kameraModus > 0) zeichneHeld();
+  if(mehrAn()) mehrFigurenZeichnen();
   gl.disable(gl.BLEND);
   gl.bindTexture(gl.TEXTURE_2D, atlasTex);
   namenZeichnen(mvp);
@@ -5369,23 +5680,24 @@ function handDingVorn(){
   wuerfelZeichnen(daten);
 }
 
-function zeichneHeld(){
-  if(kameraAbstand < 0.9) return;      // Kamera klebt an einer Wand - sonst säßen wir im Kopf
+/* Eine Spielfigur an eine beliebige Stelle malen. Dein eigener Held
+   nimmt dieselbe Rechnung wie jeder andere Spieler in der gemeinsamen
+   Welt - darum steht sie hier einmal für alle.                       */
+function figurZeichnen(fx, fy, fz, fgier, fnick, phase, staerke, sitzt, mitHand){
   if(!skinRohBereit()) return;
   if(!skinRohTextur) skinRohTextur = texturVon(gl, skinRohLeinwand);
   if(!heldNetz) heldNetzBauen();
 
-  const co = Math.cos(gier), si = Math.sin(gier);
+  const co = Math.cos(fgier), si = Math.sin(fgier);
 
   /* Arme und Beine schwingen gegengleich, der Kopf schaut mit.
      Auf dem Reittier sitzt du: beide Beine klappen nach vorn, die Arme
      greifen leicht vor, und die ganze Figur rutscht so weit nach unten,
      dass der Po wirklich auf dem Rücken der Kuh liegt.               */
-  const sitzt = !!reittier;
-  const takt = Math.sin(schrittPhase) * 0.85 * schrittStaerke;
+  const takt = Math.sin(phase) * 0.85 * staerke;
   const winkel = sitzt
-    ? [0, 0.32, 0.32, 1.30, 1.30, klemm(nick*0.6, -0.5, 0.5)]
-    : [0, takt, -takt, -takt, takt, klemm(nick*0.6, -0.5, 0.5)];
+    ? [0, 0.32, 0.32, 1.30, 1.30, klemm(fnick*0.6, -0.5, 0.5)]
+    : [0, takt, -takt, -takt, takt, klemm(fnick*0.6, -0.5, 0.5)];
   const tiefer = sitzt ? 0.40 : 0;
   const dreh = [];
   for(let k=0; k<6; k++)
@@ -5400,9 +5712,9 @@ function zeichneHeld(){
       y = d[2] + dy*d[0] - z*d[1];
       z =        dy*d[1] + z*d[0];
     }
-    daten[j]   = pos.x + x*co + z*si;
-    daten[j+1] = pos.y + y - tiefer;
-    daten[j+2] = pos.z - x*si + z*co;
+    daten[j]   = fx + x*co + z*si;
+    daten[j+1] = fy + y - tiefer;
+    daten[j+2] = fz - x*si + z*co;
     daten[j+3] = heldNetz[i+3];
     daten[j+4] = heldNetz[i+4];
     daten[j+5] = heldNetz[i+5];
@@ -5414,7 +5726,18 @@ function zeichneHeld(){
   gl.vertexAttribPointer(A.licht, 1, gl.FLOAT, false, 24, 20);
   gl.bindTexture(gl.TEXTURE_2D, skinRohTextur);
   gl.drawArrays(gl.TRIANGLES, 0, daten.length/6);
-  handDingHinten(co, si, dreh[1], tiefer);
+  if(mitHand) handDingHinten(co, si, dreh[1], tiefer);
+}
+function zeichneHeld(){
+  if(kameraAbstand < 0.9) return;      // Kamera klebt an einer Wand - sonst säßen wir im Kopf
+  figurZeichnen(pos.x, pos.y, pos.z, gier, nick, schrittPhase, schrittStaerke, !!reittier, true);
+}
+// Alle anderen Spieler der gemeinsamen Welt
+function mehrFigurenZeichnen(){
+  for(const p of mehrSpieler.values()){
+    if(Math.hypot(p.x - pos.x, p.z - pos.z) > sichtWeite) continue;
+    figurZeichnen(p.x, p.y, p.z, p.g, 0, p.phase, p.staerke, false, false);
+  }
 }
 
 // Der Block wird beim Abbauen immer dunkler – wie Risse in Minecraft
@@ -9809,11 +10132,17 @@ function tonFehler(){ klang("square", 180, 0.14, 0.10, 120); }
    EINGABE
    ===================================================================== */
 addEventListener("keydown", e => {
+  // Steht der Mauszeiger im Redefeld, gehören alle Tasten dorthin
+  if(document.activeElement === $("chatfeld") && !$("chatfeld").classList.contains("hidden")){
+    if(e.key === "Enter"){ e.preventDefault(); chatSchliessen(true); }
+    if(e.key === "Escape"){ e.preventDefault(); chatSchliessen(false); }
+    return;
+  }
   const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
   tonWecken();                                 // Browser erlauben Ton erst nach einer Eingabe
   tasten[k] = true;
   if(modus === "menue"){                       // offene Fenster mit Esc / I / Q schliessen
-    if(k === "Escape" || k === "i" || k === "q" || k === "t" || k === "k" || k === "p" || k === "y"){
+    if(k === "Escape" || k === "i" || k === "q" || k === "k" || k === "p" || k === "y"){
       if(!$("tafel").classList.contains("hidden")) tafelSchliessen();
       else if(!$("lager").classList.contains("hidden")) schliesse("lager");
       else if(!$("team").classList.contains("hidden")) schliesse("team");
@@ -9834,7 +10163,8 @@ addEventListener("keydown", e => {
   if(k === "m") werfen();
   if(k === "g") sitzenSagen();
   if(k === "n") tierBenennen();
-  if(k === "k" || k === "t") teamZeigen();      // K ist die Taste, T geht weiter
+  if(k === "k") teamZeigen();
+  if(k === "t" && mehrAn()) chatOeffnen();     // reden wie im grossen Vorbild
   if(k === "p") buchZeigen();
   if(k === "y") rezepteZeigen();
   if(k === "i") tafelZeigen("tasche");
@@ -9943,6 +10273,7 @@ function schleife(zeit){
 
   if(modus === "welt"){
     bewegen(dt);
+    mehrTakt(dt);
     wesenAktualisieren(dt);
     wuerfeAktualisieren(dt);
     if(grabend || tasten["abbau"]) abbauSchritt(dt);
@@ -10224,6 +10555,7 @@ function starteAktuelleWelt(){
 // Zurück zur Weltliste (Knopf im Spiel)
 function zurueckZurListe(){
   if(s && s.id) speichern();
+  mehrTrennen();
   modus = "start";
   for(const k in tasten) tasten[k] = false;
   if(document.pointerLockElement) document.exitPointerLock();
