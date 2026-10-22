@@ -249,6 +249,11 @@
   .zutaten .fehlt{color:#ff9a9a}
   .zutaten .ok{color:var(--xp)}
   .zutaten small{color:#93a1b8}
+  #neuebox{position:fixed; left:50%; top:10px; transform:translateX(-50%); z-index:30;
+           background:rgba(16,22,36,.95); border:1px solid var(--gold); border-radius:12px;
+           padding:9px 14px; font-size:13px; color:#e9eefb; pointer-events:auto;
+           display:flex; align-items:center; gap:10px; box-shadow:0 6px 20px rgba(0,0,0,.45)}
+  #neuebox button{padding:5px 12px; font-size:12.5px}
   /* ---- Die gemeinsame Welt ---- */
   #mehrliste{position:fixed; right:10px; top:176px; z-index:6; max-width:190px; pointer-events:auto;
              background:rgba(12,16,26,.72); border-radius:10px; padding:7px 10px;
@@ -344,6 +349,10 @@
   <div id="questbox"></div>
 </div>
 
+<div class="hud hidden" id="neuebox">
+  <span>🎉 Es gibt eine neuere Ausgabe (<b id="neueZahl"></b>)!</span>
+  <button onclick="location.reload()">Jetzt holen</button>
+</div>
 <div class="hud hidden" id="mehrliste"></div>
 <div class="hud hidden" id="chatbox"></div>
 <input class="hidden" id="chatfeld" maxlength="160" autocomplete="off" placeholder="Sag etwas … (Enter schickt, Esc bricht ab)">
@@ -497,7 +506,7 @@
     <div style="font-size:52px">⛏️</div>
     <h2>WELTENKÄMPFER · BLOCKWELT</h2>
     <p class="c-dim" style="margin-top:0">Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.</p>
-    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 51 · Tastenfehler behoben</p>
+    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 52 · Update-Hinweis</p>
     <p style="margin:0 0 4px">Willkommen, <b id="grussName" class="c-gold">Held</b>
       <button onclick="nameAendern()" style="padding:4px 10px; font-size:12px; margin-left:8px">✏️ Name &amp; Skin</button>
       <button onclick="passwortZeigen()" style="padding:4px 10px; font-size:12px; margin-left:4px">🔒 Passwort</button>
@@ -901,7 +910,7 @@ const EN = {
   "Eisschwert": "Ice Sword",
   "Eisspitzhacke": "Ice Pickaxe",
   "Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.": "Thirteen open block worlds. Build, dig, fight – and find the portal.",
-  "Ausgabe 51 · Tastenfehler behoben": "Build 51 · Key handling fixed",
+  "Ausgabe 52 · Update-Hinweis": "Build 52 · Update notice",
   "Endlose Dünen. Und die Kakteen hier stehen nicht nur herum – sie laufen.": "Endless dunes. And the cacti here don't just stand around – they walk.",
   "Erde": "Dirt",
   "Erlege 14 Schattenriesen": "Slay 14 shadow giants",
@@ -1718,7 +1727,9 @@ const EN = {
   "Dieser Browser kann kein 3D": "This browser cannot do 3D",
   "Fängt dein Browser die Maus nicht ein (oft auf dem Mac): einfach mit gedrückter Maustaste ziehen, um dich umzusehen.": "If your browser does not capture the mouse (often on a Mac): just drag with the mouse button held down to look around.",
   "Name antippen = Profil": "Tap a name for the profile",
-  "Profil ansehen": "See profile"
+  "Profil ansehen": "See profile",
+  "Es gibt eine neuere Ausgabe (": "There is a newer build (",
+  "Jetzt holen": "Get it now"
 };
 function ue(s){
   if(sprache !== "en" || typeof s !== "string") return s;
@@ -2433,6 +2444,28 @@ function abdruck(passwort, salz){
 function salzMachen(){
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
+
+/* ---------- Gibt es eine neuere Ausgabe? ----------
+   Browser halten eine einmal geladene Seite gern lange fest. Dann spielt
+   jemand monatelang mit einer alten Fassung und wundert sich, warum
+   Neues fehlt. Darum fragt das Spiel ab und zu eine winzige Datei ab,
+   in der nur die Nummer der neuesten Ausgabe steht.                   */
+const AUSGABE = 52;
+function ausgabePruefen(){
+  if(!/^https?:$/.test(location.protocol) || typeof fetch !== "function") return;
+  fetch("ausgabe.txt?frisch=" + Date.now(), {cache: "no-store"})
+    .then(a => a.ok ? a.text() : null)
+    .then(txt => {
+      const n = parseInt(txt, 10);
+      const kasten = $("neuebox");
+      if(!n || n <= AUSGABE || !kasten || !kasten.classList.contains("hidden")) return;
+      $("neueZahl").textContent = n;
+      kasten.classList.remove("hidden");
+    })
+    .catch(() => {});
+}
+setTimeout(ausgabePruefen, 4000);
+setInterval(ausgabePruefen, 600000);
 
 /* ---------- Der weltweite Zähler ----------
    Steht unten eine Serveradresse, fragt das Spiel dort nach, wie viele
