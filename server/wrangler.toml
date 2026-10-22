@@ -6,7 +6,17 @@ name = "weltenkaempfer-zaehler"
 main = "worker.js"
 compatibility_date = "2026-01-01"
 
+# Der Zähler
 [[d1_databases]]
 binding = "DB"
 database_name = "weltenkaempfer"
-database_id = "HIER-DIE-ID-AUS-CLOUDFLARE-EINSETZEN"
+database_id = "ecca166f-21e4-4299-a714-325dc901293f"
+
+# Die gemeinsame Welt
+[[durable_objects.bindings]]
+name = "WELT"
+class_name = "Welt"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Welt"]

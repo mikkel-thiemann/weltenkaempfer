@@ -1,17 +1,25 @@
 /* =====================================================================
    WELTENKÄMPFER - DER OFFIZIELLE SERVER
 
-   Er merkt sich drei Dinge:
-     1. wie viele Spieler es auf der ganzen Welt gibt
-     2. wer gerade spielt
-     3. das Profil jedes Spielers: Name, Stufe, Welten, Kreaturen
+   Er kann zwei Dinge:
 
-   Er bekommt nie ein Passwort und nie eine Welt zu sehen. Nur das, was
-   im Profil stehen soll, und eine zufällige Nummer, an der er einen
-   Spieler wiedererkennt.
+   A) DER ZÄHLER  (/melden, /ping, /zaehler, /profile)
+      Merkt sich, wie viele Spieler es gibt, wer gerade spielt und das
+      Profil jedes Spielers: Name, Stufe, Welten, Kreaturen.
 
-   Er läuft als Cloudflare Worker und speichert in einer D1-Datenbank.
-   Wie man ihn aufsetzt, steht in ANLEITUNG.md.
+   B) DIE GEMEINSAME WELT  (/welt)
+      Eine einzige Welt, in der alle zusammen sind. Der Server merkt
+      sich, welcher Block wo verändert wurde, und sagt jedem sofort
+      Bescheid, wenn jemand baut, abbaut, sich bewegt oder etwas sagt.
+
+      Die Landschaft selbst wird nicht verschickt: jeder baut sie aus
+      demselben Startwert bei sich selbst auf. Darum müssen nur die
+      Änderungen über die Leitung - das ist winzig.
+
+   Er bekommt nie ein Passwort zu sehen.
+
+   Er läuft als Cloudflare Worker. Teil B braucht zusätzlich die
+   Bindung WELT auf die Klasse "Welt" (Durable Object).
    ===================================================================== */
 
 const FRIST = 90;                 // so lange gilt jemand als "spielt gerade" (Sekunden)
@@ -56,15 +64,169 @@ async function melden(db, id, jetzt){
   ).bind(id, jetzt).run();
 }
 
+/* =====================================================================
+   B) DIE GEMEINSAME WELT
+   Ein Durable Object ist ein kleiner Server, den es nur einmal gibt.
+   Alle Spieler hängen mit einer offenen Leitung (WebSocket) daran, und
+   was einer schickt, bekommen alle anderen sofort.
+   ===================================================================== */
+const BLOCK_GRENZE = 30000;       // so viele veränderte Blöcke merkt sich die Welt
+const NAME_MAX = 18, CHAT_MAX = 160;
+
+export class Welt {
+  constructor(ctx, umgebung){
+    this.ctx = ctx;
+    this.umgebung = umgebung;
+    this.bloecke = null;          // Map "welt:index" -> Blocknummer
+    this.naechsteNr = 1;
+  }
+
+  /* Die veränderten Blöcke einmal aus dem Speicher holen. Danach liegen
+     sie im Arbeitsspeicher und das Nachschlagen kostet nichts mehr.    */
+  async bloeckeLaden(){
+    if(this.bloecke) return this.bloecke;
+    const m = new Map();
+    let ab = undefined;
+    for(let runde = 0; runde < 60; runde++){
+      const teil = await this.ctx.storage.list({prefix: "b:", limit: 1000, startAfter: ab});
+      if(!teil.size) break;
+      for(const [k, v] of teil){ m.set(k.slice(2), v); ab = k; }
+      if(teil.size < 1000) break;
+    }
+    this.bloecke = m;
+    return m;
+  }
+
+  // Alle offenen Leitungen ausser einer bestimmten
+  senden(nachricht, ausser){
+    const text = JSON.stringify(nachricht);
+    for(const s of this.ctx.getWebSockets()){
+      if(s === ausser) continue;
+      try{ s.send(text); }catch(e){}
+    }
+  }
+  // Was weiss ich über diese Leitung?
+  wer(ws){
+    try{ return ws.deserializeAttachment() || null; }catch(e){ return null; }
+  }
+
+  async fetch(anfrage){
+    if(anfrage.headers.get("Upgrade") !== "websocket")
+      return new Response("Hier geht es nur mit WebSocket weiter.", {status: 426});
+
+    const paar = new WebSocketPair();
+    const client = paar[0], server = paar[1];
+    this.ctx.acceptWebSocket(server);
+
+    // Eine Nummer, an der die anderen diesen Spieler erkennen
+    const nr = "s" + Date.now().toString(36) + Math.floor(Math.random()*1296).toString(36);
+    server.serializeAttachment({nr: nr, name: "", x: 0, y: 0, z: 0, g: 0});
+
+    return new Response(null, {status: 101, webSocket: client});
+  }
+
+  async webSocketMessage(ws, roh){
+    let n;
+    try{ n = JSON.parse(roh); }catch(e){ return; }
+    if(!n || typeof n.t !== "string") return;
+    const ich = this.wer(ws);
+    if(!ich) return;
+
+    // ---- Anmelden: Name sagen und alles bekommen, was es schon gibt
+    if(n.t === "hi"){
+      ich.name = sauberName(n.name).slice(0, NAME_MAX) || "Gast";
+      ich.x = +n.x || 0; ich.y = +n.y || 0; ich.z = +n.z || 0; ich.g = +n.g || 0;
+      ws.serializeAttachment(ich);
+
+      const bloecke = await this.bloeckeLaden();
+      // Dieselbe Packweise wie im Spiel: je Welt "index:block" zur Basis 36
+      const proWelt = {};
+      for(const [k, b] of bloecke){
+        const p = k.indexOf(":");
+        const w = k.slice(0, p);
+        (proWelt[w] = proWelt[w] || []).push(
+          parseInt(k.slice(p+1), 10).toString(36) + ":" + (b|0).toString(36));
+      }
+      const gepackt = {};
+      for(const w in proWelt) gepackt[w] = proWelt[w].join(",");
+
+      const andere = [];
+      for(const s of this.ctx.getWebSockets()){
+        if(s === ws) continue;
+        const a = this.wer(s);
+        if(a && a.name) andere.push(a);
+      }
+      ws.send(JSON.stringify({t: "start", du: ich.nr, bloecke: gepackt, spieler: andere}));
+      this.senden({t: "dazu", spieler: ich}, ws);
+      return;
+    }
+
+    if(!ich.name) return;          // wer sich nicht gemeldet hat, darf nichts
+
+    // ---- Wo ich gerade bin
+    if(n.t === "p"){
+      ich.x = +n.x || 0; ich.y = +n.y || 0; ich.z = +n.z || 0; ich.g = +n.g || 0;
+      ich.b = !!n.b;               // bewegt sich gerade
+      ws.serializeAttachment(ich);
+      this.senden({t: "p", nr: ich.nr, x: ich.x, y: ich.y, z: ich.z, g: ich.g, b: ich.b}, ws);
+      return;
+    }
+
+    // ---- Ein Block wurde gesetzt oder abgebaut
+    if(n.t === "b"){
+      const w = sauberZahl(n.w, 20), i = sauberZahl(n.i, 1e9), b = sauberZahl(n.b, 255);
+      const schluessel = w + ":" + i;
+      const bloecke = await this.bloeckeLaden();
+      if(!bloecke.has(schluessel) && bloecke.size >= BLOCK_GRENZE){
+        ws.send(JSON.stringify({t: "voll"}));
+        return;
+      }
+      bloecke.set(schluessel, b);
+      await this.ctx.storage.put("b:" + schluessel, b);
+      this.senden({t: "b", w: w, i: i, b: b, nr: ich.nr}, ws);
+      return;
+    }
+
+    // ---- Etwas gesagt
+    if(n.t === "c"){
+      const text = String(n.text || "").replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, CHAT_MAX);
+      if(!text) return;
+      this.senden({t: "c", nr: ich.nr, name: ich.name, text: text});
+      ws.send(JSON.stringify({t: "c", nr: ich.nr, name: ich.name, text: text}));
+      return;
+    }
+  }
+
+  async webSocketClose(ws){
+    const ich = this.wer(ws);
+    if(ich && ich.name) this.senden({t: "weg", nr: ich.nr}, ws);
+  }
+  async webSocketError(ws){
+    const ich = this.wer(ws);
+    if(ich && ich.name) this.senden({t: "weg", nr: ich.nr}, ws);
+  }
+}
+
 export default {
   async fetch(anfrage, umgebung){
     if(anfrage.method === "OPTIONS") return new Response(null, {headers: KOPF});
 
+    const url = new URL(anfrage.url);
+    const weg = url.pathname.replace(/\/+$/, "") || "/";
+
+    // ---- Die gemeinsame Welt läuft über eine offene Leitung
+    if(weg === "/welt"){
+      if(!umgebung.WELT) return antwort({fehler: "Die gemeinsame Welt ist nicht eingerichtet. Bindung WELT fehlt."}, 500);
+      if(anfrage.headers.get("Upgrade") !== "websocket")
+        return antwort({fehler: "Hier geht es nur mit WebSocket weiter."}, 426);
+      const kennung = umgebung.WELT.idFromName("welt1");
+      return umgebung.WELT.get(kennung).fetch(anfrage);
+    }
+
+    // ---- Alles andere ist der Zähler
     const db = umgebung.DB;
     if(!db) return antwort({fehler: "Keine Datenbank verbunden. Bindung DB fehlt."}, 500);
 
-    const url = new URL(anfrage.url);
-    const weg = url.pathname.replace(/\/+$/, "") || "/";
     const f = url.searchParams;
     const id = f.get("id") || "";
     const jetzt = Math.floor(Date.now() / 1000);
