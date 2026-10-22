@@ -497,7 +497,7 @@
     <div style="font-size:52px">⛏️</div>
     <h2>WELTENKÄMPFER · BLOCKWELT</h2>
     <p class="c-dim" style="margin-top:0">Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.</p>
-    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 50 · Profile der Mitspieler</p>
+    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 51 · Tastenfehler behoben</p>
     <p style="margin:0 0 4px">Willkommen, <b id="grussName" class="c-gold">Held</b>
       <button onclick="nameAendern()" style="padding:4px 10px; font-size:12px; margin-left:8px">✏️ Name &amp; Skin</button>
       <button onclick="passwortZeigen()" style="padding:4px 10px; font-size:12px; margin-left:4px">🔒 Passwort</button>
@@ -765,7 +765,7 @@
     /* Kommt der Fehler gleich beim Start, läuft gar nichts - dann gehört
        er auf den ganzen Bildschirm. Später stört das nur: dann genügt
        eine kleine Ecke, die man wegklicken kann.                      */
-    var frueh = performance.now() < 20000;
+    var frueh = !window.__spielDa && performance.now() < 20000;
     var d = document.createElement("div");
     d.setAttribute("style", frueh
       ? "position:fixed; inset:0; z-index:99999; background:#160d10; color:#ffd9d9;" +
@@ -901,7 +901,7 @@ const EN = {
   "Eisschwert": "Ice Sword",
   "Eisspitzhacke": "Ice Pickaxe",
   "Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.": "Thirteen open block worlds. Build, dig, fight – and find the portal.",
-  "Ausgabe 50 · Profile der Mitspieler": "Build 50 · Profiles of the others",
+  "Ausgabe 51 · Tastenfehler behoben": "Build 51 · Key handling fixed",
   "Endlose Dünen. Und die Kakteen hier stehen nicht nur herum – sie laufen.": "Endless dunes. And the cacti here don't just stand around – they walk.",
   "Erde": "Dirt",
   "Erlege 14 Schattenriesen": "Slay 14 shadow giants",
@@ -10256,6 +10256,10 @@ addEventListener("keydown", e => {
     if(e.key === "Escape"){ e.preventDefault(); chatSchliessen(false); }
     return;
   }
+  /* Manche Browser-Erweiterungen (zum Beispiel Passwort-Manager) schicken
+     Tastenereignisse ganz ohne Taste. Die werden einfach übergangen -
+     sonst stolpert das ganze Spiel darüber.                            */
+  if(typeof e.key !== "string") return;
   const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
   tonWecken();                                 // Browser erlauben Ton erst nach einer Eingabe
   tasten[k] = true;
@@ -10291,7 +10295,10 @@ addEventListener("keydown", e => {
   if(k === "b") tafelZeigen("tasche");
   if(k === " " || k.indexOf("Arrow") === 0) e.preventDefault();
 });
-addEventListener("keyup", e => { tasten[e.key.length === 1 ? e.key.toLowerCase() : e.key] = false; });
+addEventListener("keyup", e => {
+  if(typeof e.key !== "string") return;
+  tasten[e.key.length === 1 ? e.key.toLowerCase() : e.key] = false;
+});
 addEventListener("keydown", e => {          // Enter im Namensfeld bestätigt
   if(e.key === "Enter" && !$("anmeldung").classList.contains("hidden")) nameBestaetigen();
   if(e.key === "Enter" && !$("konten").classList.contains("hidden")){
@@ -10735,6 +10742,7 @@ function standAusLink(){
   return ok;
 }
 function startBildschirmZeigen(){
+  window.__spielDa = true;          // ab hier ist das Spiel oben - Fehler nur noch klein melden
   if(!kontenStart()) kontenZeigen();      // kein Konto offen: erst fragen, wer spielt
   spracheAnwenden();               // Deutsch oder Englisch, wie zuletzt gewählt
 }
