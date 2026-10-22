@@ -252,8 +252,15 @@ async function weltSync(db, f, jetzt){
 
   // Und jetzt alles einsammeln, was der Spieler noch nicht kennt
   const lesen = await db.batch([
-    db.prepare("SELECT id, name, x, y, z, g FROM weltspieler WHERE zeit > ?1 AND id <> ?2")
-      .bind(jetzt - WELT_FRIST, id),
+    /* Zu jedem Mitspieler kommt gleich sein Profil mit - dann kann man
+       im Spiel auf den Namen tippen und sieht, wie weit er ist.      */
+    db.prepare(
+      "SELECT w.id AS id, w.name AS name, w.x AS x, w.y AS y, w.z AS z, w.g AS g, " +
+      "COALESCE(k.stufe,0) AS stufe, COALESCE(k.welten,0) AS welten, " +
+      "COALESCE(k.kreaturen,0) AS kreaturen, COALESCE(k.erstellt,0) AS erstellt " +
+      "FROM weltspieler w LEFT JOIN konten k ON k.id = w.id " +
+      "WHERE w.zeit > ?1 AND w.id <> ?2"
+    ).bind(jetzt - WELT_FRIST, id),
     db.prepare("SELECT k, b FROM weltbloecke WHERE zeit > ? ORDER BY zeit LIMIT 4000").bind(seit),
     db.prepare("SELECT name, text FROM weltchat WHERE zeit > ? ORDER BY zeit LIMIT 30").bind(seit)
   ]);
@@ -280,7 +287,8 @@ async function weltSync(db, f, jetzt){
   return antwort({
     jetzt: jetzt,
     spieler: (lesen[0].results || []).map(r => ({
-      nr: r.id, name: r.name, x: r.x, y: r.y, z: r.z, g: r.g
+      nr: r.id, name: r.name, x: r.x, y: r.y, z: r.z, g: r.g,
+      stufe: r.stufe, welten: r.welten, kreaturen: r.kreaturen, erstellt: r.erstellt
     })),
     bloecke: bloecke,
     chat: (lesen[2].results || []).map(r => ({name: r.name, text: r.text}))
