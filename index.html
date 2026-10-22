@@ -497,7 +497,7 @@
     <div style="font-size:52px">⛏️</div>
     <h2>WELTENKÄMPFER · BLOCKWELT</h2>
     <p class="c-dim" style="margin-top:0">Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.</p>
-    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 48 · Umsehen ohne Mausfang</p>
+    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 49 · Fehler werden sichtbar</p>
     <p style="margin:0 0 4px">Willkommen, <b id="grussName" class="c-gold">Held</b>
       <button onclick="nameAendern()" style="padding:4px 10px; font-size:12px; margin-left:8px">✏️ Name &amp; Skin</button>
       <button onclick="passwortZeigen()" style="padding:4px 10px; font-size:12px; margin-left:4px">🔒 Passwort</button>
@@ -752,6 +752,65 @@
 </div>
 
 <script>
+/* ---------- Der Fehlermelder ----------
+   Steht absichtlich in einem eigenen Block VOR dem Spiel. Geht im Spiel
+   etwas schief - auch schon beim Einlesen -, erscheint der Grund auf dem
+   Bildschirm, statt dass alles einfach schwarz bleibt. So kann man sagen,
+   was los ist, ohne den Browser aufschrauben zu müssen.               */
+(function(){
+  var gezeigt = false;
+  function zeigen(text){
+    if(gezeigt) return;
+    gezeigt = true;
+    /* Kommt der Fehler gleich beim Start, läuft gar nichts - dann gehört
+       er auf den ganzen Bildschirm. Später stört das nur: dann genügt
+       eine kleine Ecke, die man wegklicken kann.                      */
+    var frueh = performance.now() < 20000;
+    var d = document.createElement("div");
+    d.setAttribute("style", frueh
+      ? "position:fixed; inset:0; z-index:99999; background:#160d10; color:#ffd9d9;" +
+        "font:14px/1.6 system-ui,sans-serif; padding:24px; overflow:auto"
+      : "position:fixed; right:10px; bottom:10px; max-width:380px; max-height:50vh; z-index:99999;" +
+        "background:#160d10; color:#ffd9d9; font:12px/1.5 system-ui,sans-serif; padding:14px;" +
+        "border-radius:12px; overflow:auto; box-shadow:0 6px 24px rgba(0,0,0,.5)");
+    var zu = document.createElement("button");
+    zu.textContent = "✕";
+    zu.setAttribute("style", "float:right; background:none; border:0; color:#ffd9d9; font-size:18px; cursor:pointer");
+    zu.onclick = function(){ d.remove(); };
+    d.appendChild(zu);
+    var h = document.createElement("div");
+    h.setAttribute("style", frueh ? "font-size:44px" : "font-size:22px");
+    h.textContent = "😕";
+    var t1 = document.createElement("h2");
+    t1.textContent = "Da ist etwas schiefgegangen";
+    var t2 = document.createElement("p");
+    t2.textContent = "Zeig diesen Text bitte dem, der das Spiel gebaut hat:";
+    var k = document.createElement("pre");
+    k.setAttribute("style",
+      "white-space:pre-wrap; word-break:break-word; background:#000; color:#ff9a9a;" +
+      "padding:12px; border-radius:8px; font-size:12.5px");
+    k.textContent = text + "\n\n" + navigator.userAgent;
+    var b = document.createElement("button");
+    b.textContent = "Text kopieren";
+    b.setAttribute("style", "margin-top:10px; padding:8px 16px; font-size:14px; cursor:pointer");
+    b.onclick = function(){
+      try{ navigator.clipboard.writeText(k.textContent); b.textContent = "kopiert ✓"; }
+      catch(e){ b.textContent = "bitte von Hand markieren"; }
+    };
+    d.appendChild(h); d.appendChild(t1); d.appendChild(t2); d.appendChild(k); d.appendChild(b);
+    (document.body || document.documentElement).appendChild(d);
+  }
+  window.addEventListener("error", function(e){
+    zeigen((e.message || "Fehler") + "\n" + (e.filename || "") + " Zeile " + (e.lineno || "?"));
+  });
+  window.addEventListener("unhandledrejection", function(e){
+    var g = e.reason;
+    zeigen("Versprechen gebrochen: " + ((g && (g.message || g)) || "unbekannt"));
+  });
+})();
+</script>
+
+<script>
 "use strict";
 
 /* ================= Sprache: Deutsch oder Englisch =================
@@ -842,7 +901,7 @@ const EN = {
   "Eisschwert": "Ice Sword",
   "Eisspitzhacke": "Ice Pickaxe",
   "Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.": "Thirteen open block worlds. Build, dig, fight – and find the portal.",
-  "Ausgabe 48 · Umsehen ohne Mausfang": "Build 48 · Looking around without mouse lock",
+  "Ausgabe 49 · Fehler werden sichtbar": "Build 49 · Errors made visible",
   "Endlose Dünen. Und die Kakteen hier stehen nicht nur herum – sie laufen.": "Endless dunes. And the cacti here don't just stand around – they walk.",
   "Erde": "Dirt",
   "Erlege 14 Schattenriesen": "Slay 14 shadow giants",
