@@ -20,3 +20,32 @@ CREATE TABLE IF NOT EXISTS aktiv (
 
 -- Damit das Zählen der gerade Spielenden schnell geht
 CREATE INDEX IF NOT EXISTS aktiv_zeit ON aktiv (zeit);
+
+-- ---- Die gemeinsame Welt ----
+-- Wer wo steht
+CREATE TABLE IF NOT EXISTS weltspieler (
+  id   TEXT PRIMARY KEY,
+  name TEXT NOT NULL DEFAULT '',
+  x    REAL NOT NULL DEFAULT 0,
+  y    REAL NOT NULL DEFAULT 0,
+  z    REAL NOT NULL DEFAULT 0,
+  g    REAL NOT NULL DEFAULT 0,
+  zeit INTEGER NOT NULL DEFAULT 0
+);
+
+-- Jeder Block, den jemand verändert hat
+CREATE TABLE IF NOT EXISTS weltbloecke (
+  k    TEXT PRIMARY KEY,          -- "welt:index"
+  b    INTEGER NOT NULL,
+  zeit INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS weltbloecke_zeit ON weltbloecke (zeit);
+
+-- Was gesagt wurde
+CREATE TABLE IF NOT EXISTS weltchat (
+  nr   INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  text TEXT NOT NULL,
+  zeit INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS weltchat_zeit ON weltchat (zeit);

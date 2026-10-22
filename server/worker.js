@@ -207,6 +207,86 @@ export class Welt {
   }
 }
 
+/* =====================================================================
+   DIE GEMEINSAME WELT ÜBER GANZ NORMALE ANFRAGEN
+   Durable Objects lassen sich nur mit einem Befehl vom Computer aus
+   einschalten. Damit das Zusammenspielen trotzdem heute schon geht,
+   kann die Welt auch über die Datenbank laufen: jeder sagt viermal je
+   Sekunde "ich bin hier" und bekommt in derselben Antwort zurück, wo
+   die anderen stehen, was sich an Blöcken geändert hat und was jemand
+   gesagt hat. Eine Anfrage, alles drin.
+   ===================================================================== */
+const WELT_FRIST = 10000;         // wer sich 10 Sekunden nicht meldet, ist weg
+const CHAT_HALT = 600000;         // Gesagtes bleibt zehn Minuten stehen
+
+async function weltSync(db, f, jetzt){
+  const id = f.get("id") || "";
+  if(!ID_MUSTER.test(id)) return antwort({fehler: "Nummer fehlt"}, 400);
+  const name = sauberName(f.get("name")) || "Gast";
+  const zahl = (s2) => { const n = Number(s2); return Number.isFinite(n) ? Math.round(n*100)/100 : 0; };
+  const seit = Math.max(0, Math.min(jetzt, Math.floor(Number(f.get("seit")) || 0)));
+
+  const schreiben = [
+    db.prepare(
+      "INSERT INTO weltspieler (id, name, x, y, z, g, zeit) VALUES (?1,?2,?3,?4,?5,?6,?7) " +
+      "ON CONFLICT(id) DO UPDATE SET name=?2, x=?3, y=?4, z=?5, g=?6, zeit=?7"
+    ).bind(id, name, zahl(f.get("x")), zahl(f.get("y")), zahl(f.get("z")), zahl(f.get("g")), jetzt)
+  ];
+
+  // Blöcke, die dieser Spieler gerade verändert hat: "welt:index:block,..."
+  const roh = (f.get("b") || "").split(",").filter(Boolean).slice(0, 40);
+  for(const stueck of roh){
+    const teil = stueck.split(":");
+    if(teil.length !== 3) continue;
+    const w = sauberZahl(teil[0], 20), i = sauberZahl(teil[1], 1e9), b = sauberZahl(teil[2], 255);
+    schreiben.push(db.prepare(
+      "INSERT INTO weltbloecke (k, b, zeit) VALUES (?1,?2,?3) ON CONFLICT(k) DO UPDATE SET b=?2, zeit=?3"
+    ).bind(w + ":" + i, b, jetzt));
+  }
+  // Etwas gesagt?
+  const gesagt = String(f.get("c") || "").replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, CHAT_MAX);
+  if(gesagt) schreiben.push(db.prepare(
+    "INSERT INTO weltchat (name, text, zeit) VALUES (?1,?2,?3)").bind(name, gesagt, jetzt));
+
+  await db.batch(schreiben);
+
+  // Und jetzt alles einsammeln, was der Spieler noch nicht kennt
+  const lesen = await db.batch([
+    db.prepare("SELECT id, name, x, y, z, g FROM weltspieler WHERE zeit > ?1 AND id <> ?2")
+      .bind(jetzt - WELT_FRIST, id),
+    db.prepare("SELECT k, b FROM weltbloecke WHERE zeit > ? ORDER BY zeit LIMIT 4000").bind(seit),
+    db.prepare("SELECT name, text FROM weltchat WHERE zeit > ? ORDER BY zeit LIMIT 30").bind(seit)
+  ]);
+
+  // Blöcke in derselben Packweise wie im Spiel: je Welt "index:block" zur Basis 36
+  const proWelt = {};
+  for(const r of (lesen[1].results || [])){
+    const p = r.k.indexOf(":");
+    const w = r.k.slice(0, p);
+    (proWelt[w] = proWelt[w] || []).push(
+      parseInt(r.k.slice(p+1), 10).toString(36) + ":" + (r.b|0).toString(36));
+  }
+  const bloecke = {};
+  for(const w in proWelt) bloecke[w] = proWelt[w].join(",");
+
+  // Ab und zu aufräumen
+  if(Math.random() < 0.02){
+    await db.batch([
+      db.prepare("DELETE FROM weltchat WHERE zeit < ?").bind(jetzt - CHAT_HALT),
+      db.prepare("DELETE FROM weltspieler WHERE zeit < ?").bind(jetzt - 86400000)
+    ]);
+  }
+
+  return antwort({
+    jetzt: jetzt,
+    spieler: (lesen[0].results || []).map(r => ({
+      nr: r.id, name: r.name, x: r.x, y: r.y, z: r.z, g: r.g
+    })),
+    bloecke: bloecke,
+    chat: (lesen[2].results || []).map(r => ({name: r.name, text: r.text}))
+  });
+}
+
 export default {
   async fetch(anfrage, umgebung){
     if(anfrage.method === "OPTIONS") return new Response(null, {headers: KOPF});
@@ -223,11 +303,15 @@ export default {
       return umgebung.WELT.get(kennung).fetch(anfrage);
     }
 
-    // ---- Alles andere ist der Zähler
+    // ---- Alles andere braucht die Datenbank
     const db = umgebung.DB;
     if(!db) return antwort({fehler: "Keine Datenbank verbunden. Bindung DB fehlt."}, 500);
 
     const f = url.searchParams;
+    if(weg === "/welt/sync"){
+      try{ return await weltSync(db, f, Date.now()); }
+      catch(fehler){ return antwort({fehler: String(fehler && fehler.message || fehler)}, 500); }
+    }
     const id = f.get("id") || "";
     const jetzt = Math.floor(Date.now() / 1000);
     const brauchtId = weg === "/ping" || weg === "/melden" || weg === "/konto";
