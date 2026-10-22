@@ -250,7 +250,7 @@
   .zutaten .ok{color:var(--xp)}
   .zutaten small{color:#93a1b8}
   /* ---- Die gemeinsame Welt ---- */
-  #mehrliste{position:fixed; right:10px; top:176px; z-index:6; max-width:190px;
+  #mehrliste{position:fixed; right:10px; top:176px; z-index:6; max-width:190px; pointer-events:auto;
              background:rgba(12,16,26,.72); border-radius:10px; padding:7px 10px;
              font-size:12.5px; line-height:1.55; color:#e9eefb}
   #mehrliste b{display:block; color:var(--gold); margin-bottom:2px}
@@ -497,7 +497,7 @@
     <div style="font-size:52px">⛏️</div>
     <h2>WELTENKÄMPFER · BLOCKWELT</h2>
     <p class="c-dim" style="margin-top:0">Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.</p>
-    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 49 · Fehler werden sichtbar</p>
+    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 50 · Profile der Mitspieler</p>
     <p style="margin:0 0 4px">Willkommen, <b id="grussName" class="c-gold">Held</b>
       <button onclick="nameAendern()" style="padding:4px 10px; font-size:12px; margin-left:8px">✏️ Name &amp; Skin</button>
       <button onclick="passwortZeigen()" style="padding:4px 10px; font-size:12px; margin-left:4px">🔒 Passwort</button>
@@ -901,7 +901,7 @@ const EN = {
   "Eisschwert": "Ice Sword",
   "Eisspitzhacke": "Ice Pickaxe",
   "Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.": "Thirteen open block worlds. Build, dig, fight – and find the portal.",
-  "Ausgabe 49 · Fehler werden sichtbar": "Build 49 · Errors made visible",
+  "Ausgabe 50 · Profile der Mitspieler": "Build 50 · Profiles of the others",
   "Endlose Dünen. Und die Kakteen hier stehen nicht nur herum – sie laufen.": "Endless dunes. And the cacti here don't just stand around – they walk.",
   "Erde": "Dirt",
   "Erlege 14 Schattenriesen": "Slay 14 shadow giants",
@@ -1716,7 +1716,9 @@ const EN = {
   "🌐 Verbindung unterbrochen – ich versuche es gleich wieder.": "🌐 Connection lost – trying again shortly.",
   "👋 ": "👋 ",
   "Dieser Browser kann kein 3D": "This browser cannot do 3D",
-  "Fängt dein Browser die Maus nicht ein (oft auf dem Mac): einfach mit gedrückter Maustaste ziehen, um dich umzusehen.": "If your browser does not capture the mouse (often on a Mac): just drag with the mouse button held down to look around."
+  "Fängt dein Browser die Maus nicht ein (oft auf dem Mac): einfach mit gedrückter Maustaste ziehen, um dich umzusehen.": "If your browser does not capture the mouse (often on a Mac): just drag with the mouse button held down to look around.",
+  "Name antippen = Profil": "Tap a name for the profile",
+  "Profil ansehen": "See profile"
 };
 function ue(s){
   if(sprache !== "en" || typeof s !== "string") return s;
@@ -2626,6 +2628,8 @@ function mehrAntwort(d){
     } else {
       alt.name = String(p.name || "").slice(0, 18);
       alt.zx = +p.x || 0; alt.zy = +p.y || 0; alt.zz = +p.z || 0; alt.zg = +p.g || 0;
+      alt.stufe = +p.stufe || 0; alt.welten = +p.welten || 0;
+      alt.kreaturen = +p.kreaturen || 0; alt.erstellt = +p.erstellt || 0;
     }
   }
   for(const nr of Array.from(mehrSpieler.keys())){
@@ -2647,7 +2651,18 @@ function mehrDazu(p){
     name: String(p.name || "").slice(0, 18),
     x:+p.x||0, y:+p.y||0, z:+p.z||0, g:+p.g||0,
     zx:+p.x||0, zy:+p.y||0, zz:+p.z||0, zg:+p.g||0,
+    stufe:+p.stufe||0, welten:+p.welten||0, kreaturen:+p.kreaturen||0, erstellt:+p.erstellt||0,
     phase: 0, staerke: 0
+  });
+}
+// Das Profil eines Mitspielers gross ansehen
+function mehrProfilZeigen(p){
+  spielerVonStart = false;
+  oeffne("spieler");
+  spielerZeichnen();
+  spielerProfilZeigen({
+    name: p.name, stufe: p.stufe || 0, welten: p.welten || 0, kreaturen: p.kreaturen || 0,
+    zuletzt: Math.floor(Date.now()/1000), erstellt: p.erstellt || 0, online: true, ich: false
   });
 }
 
@@ -2778,8 +2793,20 @@ function mehrListeZeichnen(){
   kasten.appendChild(mich);
   for(const p of mehrSpieler.values()){
     const d = document.createElement("div");
-    d.textContent = "• " + p.name;
+    d.style.cursor = "pointer";
+    d.style.pointerEvents = "auto";
+    d.title = ue("Profil ansehen");
+    // textContent: ein fremder Name ist nur Text, niemals Befehle
+    d.textContent = "• " + p.name + (p.stufe ? "  Lv " + p.stufe : "");
+    d.onclick = () => mehrProfilZeigen(p);
     kasten.appendChild(d);
+  }
+  if(mehrSpieler.size){
+    const tipp = document.createElement("div");
+    tipp.className = "c-dim";
+    tipp.style.fontSize = "11px";
+    tipp.textContent = ue("Name antippen = Profil");
+    kasten.appendChild(tipp);
   }
   if(!mehrVerbunden){
     const w = document.createElement("div");
