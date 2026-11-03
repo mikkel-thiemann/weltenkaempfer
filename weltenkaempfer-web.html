@@ -499,7 +499,7 @@
     <div style="font-size:52px">⛏️</div>
     <h2>WELTENKÄMPFER · BLOCKWELT</h2>
     <p class="c-dim" style="margin-top:0">Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.</p>
-    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 54 · Server-Anzeige</p>
+    <p class="c-gold" style="margin:0 0 10px; font-size:12px; letter-spacing:1px">Ausgabe 55 · Wer war heute hier</p>
     <p style="margin:0 0 4px">Willkommen, <b id="grussName" class="c-gold">Held</b>
       <button onclick="nameAendern()" style="padding:4px 10px; font-size:12px; margin-left:8px">✏️ Name &amp; Skin</button>
       <button onclick="passwortZeigen()" style="padding:4px 10px; font-size:12px; margin-left:4px">🔒 Passwort</button>
@@ -903,7 +903,7 @@ const EN = {
   "Eisschwert": "Ice Sword",
   "Eisspitzhacke": "Ice Pickaxe",
   "Dreizehn offene Blockwelten. Bau, grab, kämpfe – und finde das Portal.": "Thirteen open block worlds. Build, dig, fight – and find the portal.",
-  "Ausgabe 54 · Server-Anzeige": "Build 54 · Server status",
+  "Ausgabe 55 · Wer war heute hier": "Build 55 · Who was here today",
   "Endlose Dünen. Und die Kakteen hier stehen nicht nur herum – sie laufen.": "Endless dunes. And the cacti here don't just stand around – they walk.",
   "Erde": "Dirt",
   "Erlege 14 Schattenriesen": "Slay 14 shadow giants",
@@ -1726,7 +1726,8 @@ const EN = {
   "Ausgabe ": "Build ",
   "Frage den Server …": "Asking the server …",
   "Kein Kontakt zum Server – es werden nur die Spieler dieses Geräts gezeigt.": "No contact with the server – only the players on this device are shown.",
-  "Mit dem Server verbunden": "Connected to the server"
+  "Mit dem Server verbunden": "Connected to the server",
+  "Heute schon hier:": "Here earlier today:"
 };
 function ue(s){
   if(sprache !== "en" || typeof s !== "string") return s;
@@ -2447,7 +2448,7 @@ function salzMachen(){
    jemand monatelang mit einer alten Fassung und wundert sich, warum
    Neues fehlt. Darum fragt das Spiel ab und zu eine winzige Datei ab,
    in der nur die Nummer der neuesten Ausgabe steht.                   */
-const AUSGABE = 54;
+const AUSGABE = 55;
 function ausgabePruefen(){
   if(!/^https?:$/.test(location.protocol) || typeof fetch !== "function") return;
   fetch("ausgabe.txt?frisch=" + Date.now(), {cache: "no-store"})
@@ -2580,6 +2581,7 @@ const MEHR_SAAT = 20261022;          // alle bauen dieselbe Landschaft auf
 const MEHR_TAKT_ALLEIN = 2.0, MEHR_TAKT_ZUSAMMEN = 0.4;
 let mehrSpieler = new Map();         // Nummer -> {name, x,y,z,g, zx,zy,zz,zg, phase, staerke}
 let mehrSeit = 0;                    // bis hierhin kenne ich schon alles
+let mehrKuerzlich = [];              // wer war heute schon hier?
 let mehrLaeuft = false;              // gerade ist eine Anfrage unterwegs
 let mehrVerbunden = false;
 let mehrOffen = [];                  // meine Blöcke, die noch niemand kennt
@@ -2595,7 +2597,7 @@ function mehrVerbinden(){
   mehrFragen();
 }
 function mehrTrennen(){
-  mehrSpieler.clear(); mehrOffen = []; mehrSagenText = "";
+  mehrSpieler.clear(); mehrKuerzlich = []; mehrOffen = []; mehrSagenText = "";
   mehrSeit = 0; mehrVerbunden = false;
   mehrListeZeichnen();
 }
@@ -2668,6 +2670,8 @@ function mehrAntwort(d){
     chatZeile("", ue("👋 ") + mehrSpieler.get(nr).name + ue(" ist gegangen."));
     mehrSpieler.delete(nr);
   }
+
+  mehrKuerzlich = Array.isArray(d.kuerzlich) ? d.kuerzlich.slice(0, 12) : [];
 
   // Blöcke und Gesagtes
   if(d.bloecke && Object.keys(d.bloecke).length) mehrBloeckeAnwenden(d.bloecke, !erstesMal);
@@ -2838,6 +2842,22 @@ function mehrListeZeichnen(){
     tipp.style.fontSize = "11px";
     tipp.textContent = ue("Name antippen = Profil");
     kasten.appendChild(tipp);
+  }
+  /* Spielt man zu verschiedenen Zeiten, wäre die Welt sonst immer leer.
+     Darum steht hier auch, wer heute schon da war.                    */
+  if(mehrKuerzlich.length){
+    const kopf2 = document.createElement("div");
+    kopf2.className = "c-dim";
+    kopf2.style.cssText = "margin-top:6px; font-size:11px";
+    kopf2.textContent = ue("Heute schon hier:");
+    kasten.appendChild(kopf2);
+    for(const p of mehrKuerzlich){
+      const d = document.createElement("div");
+      d.className = "c-dim";
+      d.style.fontSize = "11.5px";
+      d.textContent = "· " + String(p.name || "").slice(0, 18) + " (" + vorZeit(p.zuletzt) + ")";
+      kasten.appendChild(d);
+    }
   }
   if(!mehrVerbunden){
     const w = document.createElement("div");
