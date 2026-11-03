@@ -262,7 +262,14 @@ async function weltSync(db, f, jetzt){
       "WHERE w.zeit > ?1 AND w.id <> ?2"
     ).bind(jetzt - WELT_FRIST, id),
     db.prepare("SELECT k, b FROM weltbloecke WHERE zeit > ? ORDER BY zeit LIMIT 4000").bind(seit),
-    db.prepare("SELECT name, text FROM weltchat WHERE zeit > ? ORDER BY zeit LIMIT 30").bind(seit)
+    db.prepare("SELECT name, text FROM weltchat WHERE zeit > ? ORDER BY zeit LIMIT 30").bind(seit),
+    /* Wer war heute schon hier? Spielt man zu verschiedenen Zeiten,
+       wäre die Welt sonst immer leer - so sieht man wenigstens, wer
+       mitbaut und wann er da war.                                    */
+    db.prepare(
+      "SELECT name, zeit FROM weltspieler WHERE zeit > ?1 AND zeit <= ?2 AND id <> ?3 " +
+      "ORDER BY zeit DESC LIMIT 12"
+    ).bind(jetzt - 86400000, jetzt - WELT_FRIST, id)
   ]);
 
   // Blöcke in derselben Packweise wie im Spiel: je Welt "index:block" zur Basis 36
@@ -291,7 +298,8 @@ async function weltSync(db, f, jetzt){
       stufe: r.stufe, welten: r.welten, kreaturen: r.kreaturen, erstellt: r.erstellt
     })),
     bloecke: bloecke,
-    chat: (lesen[2].results || []).map(r => ({name: r.name, text: r.text}))
+    chat: (lesen[2].results || []).map(r => ({name: r.name, text: r.text})),
+    kuerzlich: (lesen[3].results || []).map(r => ({name: r.name, zuletzt: Math.floor(r.zeit/1000)}))
   });
 }
 
